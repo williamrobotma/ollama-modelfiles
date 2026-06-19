@@ -1,0 +1,371 @@
+# =============================================================================
+# GitHub gitignore templates — https://github.com/github/gitignore
+# =============================================================================
+
+# =============================================================================
+# Python (from Python.gitignore)
+# =============================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.hypothesis/
+.pytest_cache/
+cover/
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+*.lcov
+
+# Translations
+*.mo
+*.pot
+
+# Sphinx documentation
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pdm
+.pdm-python
+.pdm-build/
+
+# pixi
+.pixi/*
+!.pixi/config.toml
+
+# PEP 582
+__pypackages__/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Ruff
+.ruff_cache/
+
+# PyPI configuration
+.pypirc
+
+# Marimo
+marimo/_static/
+marimo/_lsp/
+__marimo__/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Rope project settings
+.ropeproject
+
+# Spyder
+.spyderproject
+.spyproject
+
+# =============================================================================
+# Editor / IDE
+# =============================================================================
+
+# Visual Studio Code (from Global/VisualStudioCode.gitignore)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+!*.code-workspace
+*.vsix
+
+# JetBrains — PyCharm, IntelliJ, Rider, etc. (from Global/JetBrains.gitignore)
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+.idea/**/aws.xml
+.idea/**/contentModel.xml
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
+.idea/**/gradle.xml
+.idea/**/libraries
+.idea/**/mongoSettings.xml
+cmake-build-*/
+*.iws
+out/
+.idea_modules/
+.idea/replstate.xml
+.idea/sonarlint/
+.idea/sonarlint.xml
+.idea/httpRequests
+http-client.private.env.json
+.idea/caches/build_file_checksums.ser
+.idea/.cache/.Apifox_Helper
+.idea/ApifoxUploaderProjectSetting.xml
+.idea/**/copilot.data.migration.*.xml
+
+# Vim (from Global/Vim.gitignore)
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+.netrwhist
+*~
+[._]*.un~
+
+# Emacs (from Global/Emacs.gitignore)
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+.org-id-locations
+*_archive
+*_flymake.*
+/eshell/history
+/eshell/lastdir
+/elpa/
+*.rel
+/auto/
+.cask/
+dist/
+flycheck_*.el
+/server/
+.projectile
+.dir-locals.el
+/network-security.data
+*.~undo-tree~
+
+# =============================================================================
+# Ollama
+# =============================================================================
+
+# Local model copies / downloads (models live in ~/.ollama/models or $OLLAMA_MODELS)
+ollama-models/
+*.gguf
+
+# =============================================================================
+# Secrets / credentials
+# =============================================================================
+
+.webui_secret_key
+
+# =============================================================================
+# OS — macOS (from Global/macOS.gitignore)
+# OS — Windows (from Global/Windows.gitignore)
+# OS — Linux (from Global/Linux.gitignore)
+# =============================================================================
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs_vista.db
+$RECYCLE.BIN/
+*.stackdump
+[Dd]esktop.ini
+.Trash-*
+.fuse_hidden*
+.directory
+.nfs*
+nohup.out
+.localized
+__MACOSX/
+.AppleDouble
+.LSOverride
+Icon[ ]
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.com.apple.timemachine.supported
+.hotfiles.btree
+.vol
+.file
+.disk_label*
+lost+found
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# =============================================================================
+# Archives (from Global/Archives.gitignore)
+# Backup files (from Global/Backup.gitignore)
+# =============================================================================
+
+*.7z
+*.jar
+*.rar
+*.zip
+*.gz
+*.gzip
+*.tgz
+*.bzip
+*.bzip2
+*.bz2
+*.xz
+*.lzma
+*.cab
+*.xar
+*.zst
+*.tzst
+*.bak
+*.back
+*.backup
+*.gho
+*.ori
+*.orig
+*.original
+*.tmp
+*.temp
+*.temporary
+
+# =============================================================================
+# Image files (from Global/Images.gitignore)
+# =============================================================================
+
+*.jpg
+*.jpeg
+*.jpe
+*.jif
+*.jfif
+*.jfi
+*.jp2
+*.j2k
+*.jpf
+*.jpx
+*.jpm
+*.mj2
+*.jxr
+*.hdp
+*.wdp
+*.gif
+*.raw
+*.webp
+*.png
+*.apng
+*.mng
+*.tiff
+*.tif
+*.svg
+*.svgz
+*.pdf
+*.xbm
+*.bmp
+*.dib
+*.ico
+*.3dm
+*.max
+
+# =============================================================================
+# Redis (from Global/Redis.gitignore)
+# =============================================================================
+
+*.rdb
+*.aof
+
+# =============================================================================
+# Tags / cscope (from Global/Tags.gitignore)
+# =============================================================================
+
+TAGS
+.TAGS
+!TAGS/
+tags
+.tags
+!tags/
+gtags.files
+GTAGS
+GRTAGS
+GPATH
+GSYMS
+cscope.files
+cscope.out
+cscope.in.out
+cscope.po.out
+
+# =============================================================================
+# SVN (from Global/SVN.gitignore)
+# =============================================================================
+
+.svn/
