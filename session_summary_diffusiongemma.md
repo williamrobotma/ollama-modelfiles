@@ -14,8 +14,8 @@
     *   "User Fact Priority" was set to blind skepticism (assume tools are wrong), which is prone to hallucination loops.
 
 ### Research Outcomes
-1.  **Gemma 4 Reasoning Architecture:** 
-    *   Confirmed that activation requires the specific control token `<|thought|>` at the start of a system prompt in Unsloth/Google-style implementations.
+1.  **Gemma 4 Reasoning Architecture:**
+    *   Confirmed that activation requires the specific control token `<|think|>` at the start of a system prompt in Unsloth/Google-style implementations.
     *   The actual generation channel uses `<think>...</think>` tags to separate reasoning from final answers.
 2.  **Unsloth QAT (Quantization-Aware Training):** 
     *   Identified that QAT is critical for low-bitrate models (like the `A4B` variants) to prevent accuracy collapse by simulating rounding errors during fine-tuning.
@@ -49,6 +49,7 @@ Created two specialized profiles to address the unique non-autoregressive nature
 ### Errors & Learnings
 *   **Assumption Error:** Initially assumed that wrapping instructions in `<think>` was sufficient for activation; research revealed the requirement of a specific system-level token (`<|thought|>`).
 *   **Correction Speed:** When tool calls failed due to string mismatching, I shifted from high-order `Edit` attempts to direct `Write` operations/Bash commands to ensure the file state reached parity with intent.
+*   **Token Correction:** The initial attempt used `<|thought|>`, which was rejected by documentation. The correct token is `<|think|>`.
 
 ### Final Verdict on Implementation
 The current configuration moves the models away from "generic LLM" behavior toward specialized tools: a **High-Agency Researcher** (Gemma) and an efficient, structurally aware **Parallel Synthesizer** (DiffusionGemma).
