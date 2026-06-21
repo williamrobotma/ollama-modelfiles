@@ -1,0 +1,11 @@
+# Python floor for the repo's helper scripts (currently benchmark-report.py).
+# The Modelfiles and the *.sh benchmark harness need no Python; this pins only
+# the analysis tooling. ruff/uv/pip read `requires-python` directly, so no
+# separate tool config is needed.
+
+[project]
+name = "ollama-modelfiles-tools"
+version = "0.1.0"
+description = "Local benchmark-analysis helpers for the Ollama Modelfiles repo."
+requires-python = ">=3.10"
+dependencies = []  # stdlib only — no third-party packages
