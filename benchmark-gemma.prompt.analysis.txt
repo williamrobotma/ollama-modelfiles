@@ -1,0 +1,23 @@
+Read the project note below and produce a decision memo.
+
+Project note:
+The team maintains a local model stack on one workstation with a 12 GB NVIDIA
+GPU. They care about stable daily use more than peak benchmark numbers. Current
+workloads are long-context reading, code review, note synthesis, and occasional
+OCR-style extraction. They have observed that very large models can feel slower
+than expected because of mixed CPU/GPU placement. They are willing to keep one
+smaller model for responsiveness and one larger model for higher-quality passes.
+They do not want a recommendation that depends on undocumented runtime features.
+They also want to avoid benchmark plans that are so broad that they stop being
+actionable.
+
+Task:
+- Write a short decision memo with a primary recommendation and one fallback.
+- Explicitly weigh stability, throughput, memory pressure, and implementation
+  risk.
+
+Output constraints:
+- Return only Markdown.
+- Use exactly these section headings: "Recommendation", "Fallback",
+  "Tradeoffs".
+- Keep the full response under 220 words.

@@ -1,0 +1,25 @@
+FROM hf.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL
+
+# --- CONTEXT CALIBRATION ---
+PARAMETER num_ctx 131072
+PARAMETER num_predict 65536
+
+# --- SPECULATIVE DECODING (MTP) ---
+# GGUF has embedded MTP tensors; Ollama auto-detects and self-drafts.
+# Unsloth's recommended starting value for Qwen3.6 MTP (--spec-draft-n-max 2).
+PARAMETER draft_num_predict 2
+
+# --- OFFICIAL UNSLOTH "PRECISE CODING" PROFILE ---
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+
+# --- LOGIC PROTECTION ---
+# Mandated by Unsloth docs: Any value other than 1.0 will cause the
+# model's logical code-generation paths to output structural garbage.
+PARAMETER repeat_penalty 1.0
+
+# --- SAMPLING FIDELITY ---
+# Recommended by Unsloth for precise coding (Qwen 3.6)
+PARAMETER min_p 0.0
+PARAMETER presence_penalty 0.0

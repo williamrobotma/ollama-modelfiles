@@ -1,0 +1,3 @@
+# model	family	mode	quant	approx_size
+gemma4-12b-it-qat	gemma4-12b	thinking	UD-Q4_K_XL	~7 GB
+gemma4-26b-a4b-it-qat	gemma4-26b-a4b	thinking	UD-Q4_K_XL	~15 GB
