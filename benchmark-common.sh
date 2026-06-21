@@ -15,6 +15,10 @@ server_keepalive="24h"
 server_context_length="131072"
 server_flash_attention="1"
 server_kv_cache_type="q8_0"
+# Isolated serve runs as the invoking user; point it at the systemd `ollama`
+# user's store so models built via `ollama create` are visible (needs the
+# invoking user in the `ollama` group for read access).
+server_models_dir="/usr/share/ollama/.ollama/models"
 time_format=$'wall_clock_seconds=%e\nmax_rss_kb=%M\nexit_status=%x'
 repetitions=2
 warmup=1
@@ -140,6 +144,7 @@ build_server_env() {
     server_env_args=(
         env
         "OLLAMA_HOST=$host"
+        "OLLAMA_MODELS=$server_models_dir"
         "OLLAMA_CONTEXT_LENGTH=$server_context_length"
         "OLLAMA_KEEP_ALIVE=$server_keepalive"
         "OLLAMA_FLASH_ATTENTION=$server_flash_attention"

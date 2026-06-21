@@ -28,19 +28,22 @@ benchmark-gemma.matrix.tsv           — First-pass Gemma benchmark matrix
 benchmark-gemma.runtime.tsv          — Runtime A/B matrix for graphs off vs on
 benchmark-gemma.prompt.*.txt         — Fixed text-only prompts for repeatable local runs
 benchmark-common.sh                  — Shared harness body sourced by both benchmark-*.sh wrappers
+benchmark-report.py                  — Post-run report: per-prompt throughput mean/stdev + coarse sanity flags
+pyproject.toml                       — Python floor (>=3.10) and deps (none) for the helper scripts
 ollama-create.sh                     — Bash script to build one or all models
 session_summary_diffusiongemma.md    — Research log for DiffusionGemma work
+session_summary_runtime_ab.md        — Research log: graphs A/B run, CUDA-graphs diagnosis, analysis tool
 .task_plan.md                        — Active task plan
 ```
 
 ## Key Conventions
 
-- **UD-Q4_K_XL** is the only recommended quantization for Gemma 4 QAT models. Standard Q4_0 degrades accuracy and is actually larger.
+- **UD-Q4_K_XL is the only weight GGUF published for the Gemma 4 QAT repos** (`gemma-4-{12B,26B-A4B}-it-qat-GGUF`) — verified against the HF file listing; no IQ4_XS/UD-IQ4_XS/Q5/Q6/Q8. By design (QAT targets ~Q4), so there is no QAT quant matrix to build. Standard Q4_0 degrades accuracy and is larger. A fuller quant ladder exists only in the non-QAT repos (`gemma-4-*-it-GGUF`), at a quality cost vs QAT-Q4.
 - **Gemma benchmark scope**: the repo's first-pass Gemma Ollama benchmark covers only `gemma4-12b-it-qat` and `gemma4-26b-a4b-it-qat`, using text-only prompts.
 - Canonical Qwen benchmark filenames append the exact upstream quant tag. Mirror upstream tags verbatim rather than forcing a repo-local rename scheme.
 - Qwen 27B IQ variants are published as `IQ4_XS`, while 35B-A3B IQ variants are published as `UD-IQ4_XS`.
 - **Gemma 4 thinking**: activate with `<|think|>` at the start of the system prompt. There is no other trigger.
-- **Gemma 4 MTP**: documented by Unsloth for `llama.cpp` and Unsloth Studio, but not confirmed for Ollama `hf.co/...` loading, so do not stage Gemma MTP variants here unless Ollama support is verified.
+- **Gemma 4 MTP**: Ollama added support (`DRAFT` Modelfile directive + `ollama create --quantize-draft`, PR #15980, May 2026) but **MLX/Apple-Silicon runner only** — the CUDA runner returns "requires macOS" (issue #16019) as of late May 2026. Mechanism = target model + separate drafter (`mtp-gemma-4-*.gguf` in the QAT repos), unlike Qwen's single self-contained MTP GGUF. Do not stage Gemma MTP variants here until the CUDA runner supports it; recheck `ollama --version`/release notes.
 - **Qwen 3.6 thinking**: enabled by default. Disable with `--chat-template-kwargs '{"enable_thinking":false}'` or `/no_think` in the prompt.
 - **Qwen 3.6 repeat_penalty**: must be exactly 1.0. Unsloth docs mandate this — any other value causes structural garbage in code output.
 - **CUDA 13.2 produces corrupted outputs** for Gemma 4. Use 13.1 or 13.3.
@@ -106,6 +109,7 @@ All values verified against [Unsloth docs](https://unsloth.ai/docs/models/) and 
 - **Benchmark harness**: `./benchmark-qwen.sh` is dry-run by default and should stay that way; require an explicit `--execute` to run Ollama.
 - **Gemma benchmark harness**: `./benchmark-gemma.sh` is also dry-run by default and should stay text-only unless the repo intentionally adds multimodal benchmarking inputs.
 - **Runtime A/B**: benchmark runtime profiles should compare the current `GGML_CUDA_DISABLE_GRAPHS=1` setup against a graphs-enabled run using isolated alternate-port `ollama serve` instances, not by mutating systemd mid-run.
+- **Isolated serve models dir**: those alternate-port serve instances run as the invoking user, so the harness sets `OLLAMA_MODELS=/usr/share/ollama/.ollama/models` (the systemd `ollama` user's store) so `ollama create`d models are visible. This requires the invoking user to be in the `ollama` group for read access.
 - **Shared runtime ports**: the current Qwen and Gemma runtime TSVs both use `127.0.0.1:11435` and `127.0.0.1:11436`, so do not execute both harnesses concurrently unless the host assignments are changed.
 
 ## Common Commands
