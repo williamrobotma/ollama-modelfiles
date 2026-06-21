@@ -94,6 +94,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Benchmark outputs
+benchmark-results/
+
 # Ruff
 .ruff_cache/
 

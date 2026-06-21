@@ -1,0 +1,21 @@
+You are evaluating a research operations plan.
+
+Scenario:
+- A two-person team has one 8-hour day.
+- They must complete five tasks: intake review (90 min), source verification
+  (120 min), risk memo (75 min), recommendation draft (110 min), and final
+  handoff (45 min).
+- Source verification must finish before the risk memo starts.
+- The recommendation draft must start after both intake review and risk memo.
+- Final handoff must be last.
+- Each person can work on at most one task at a time.
+
+Task:
+- Produce the best schedule that minimizes total elapsed time.
+- Explain any unavoidable idle time briefly.
+
+Output constraints:
+- Return only JSON.
+- Use keys: "schedule", "elapsed_minutes", "idle_minutes", "rationale".
+- In "schedule", list objects with keys: "task", "owner", "start", "end".
+- Keep "rationale" under 90 words.

@@ -1,0 +1,3 @@
+# profile	host	cuda_graphs	description
+graphs-off	127.0.0.1:11435	disabled	Match the current systemd override with GGML_CUDA_DISABLE_GRAPHS=1
+graphs-on	127.0.0.1:11436	enabled	Leave GGML_CUDA_DISABLE_GRAPHS unset to A/B CUDA graph capture
