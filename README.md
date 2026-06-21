@@ -180,6 +180,7 @@ Executed runs write raw logs and timing metadata under `benchmark-results/<times
 | `benchmark-qwen.matrix.tsv` | Benchmark matrix listing the canonical Qwen model IDs to compare |
 | `benchmark-qwen.prompt.*.txt` | Fixed coding prompt fixtures for repeatable Qwen runs |
 | `benchmark-qwen.runtime.tsv` | Runtime A/B matrix for CUDA graphs disabled versus enabled |
+| `benchmark-common.sh` | Shared harness body sourced by `benchmark-qwen.sh` and `benchmark-gemma.sh` |
 | `ollama-create.sh` | Build script — creates canonical models directly and resolves alias dependencies automatically |
 | `session_summary_diffusiongemma.md` | Engineering log: research, iteration, and self-critique for DiffusionGemma configuration |
 | `.task_plan.md` | Active task plan for ongoing modelfile review work |

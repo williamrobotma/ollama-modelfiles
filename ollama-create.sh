@@ -15,8 +15,10 @@ build_modelfile() {
 
     [[ -n "${built[$modelfile]:-}" ]] && return
 
+    # FROM names a sibling alias Modelfile to build first; a remote hf.co ref
+    # yields a nonexistent path, so -f below rejects it.
     from="$(from_target "$modelfile")"
-    if [[ -n "$from" && "$from" != hf.co/* && "$from" != /* && "$from" != ./* && "$from" != ../* ]]; then
+    if [[ -n "$from" ]]; then
         dep="$(dirname "$modelfile")/Modelfile.$from"
         if [[ -f "$dep" ]]; then
             build_modelfile "$dep"

@@ -27,6 +27,7 @@ benchmark-gemma.sh                   — Dry-run-by-default Gemma benchmark harn
 benchmark-gemma.matrix.tsv           — First-pass Gemma benchmark matrix
 benchmark-gemma.runtime.tsv          — Runtime A/B matrix for graphs off vs on
 benchmark-gemma.prompt.*.txt         — Fixed text-only prompts for repeatable local runs
+benchmark-common.sh                  — Shared harness body sourced by both benchmark-*.sh wrappers
 ollama-create.sh                     — Bash script to build one or all models
 session_summary_diffusiongemma.md    — Research log for DiffusionGemma work
 .task_plan.md                        — Active task plan
