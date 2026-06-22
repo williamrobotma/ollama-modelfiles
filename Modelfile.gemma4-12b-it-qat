@@ -1,6 +1,6 @@
 FROM hf.co/unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL
 
-PARAMETER num_ctx 131072
+PARAMETER num_ctx 200000
 PARAMETER num_predict 65536
 
 PARAMETER temperature 1.0
