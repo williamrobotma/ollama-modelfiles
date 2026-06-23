@@ -30,6 +30,17 @@ Canonical Qwen benchmark variants use explicit quant suffixes. Unsuffixed Qwen f
 | `Modelfile.qwen3.6-35b-a3b-coding` | `qwen3.6-35b-a3b-coding-ud-iq4-xs` |
 | `Modelfile.qwen3.6-35b-a3b-mtp-coding` | `qwen3.6-35b-a3b-mtp-coding-ud-iq4-xs` |
 
+### Small Coders (fit 12 GB VRAM)
+
+Qwen 3.6's smallest GGUF is 27B (offloads on a 12 GB card), so these use the **Qwen 3.5** dense line, which fits fully GPU-resident. Both run the same precise-coding profile as the Qwen 3.6 coders.
+
+| Modelfile | Base Model | Mode | Quantization | Approx. Size |
+|---|---|---|---|
+| `Modelfile.qwen3.5-9b-coding-ud-q4-k-xl` | Qwen 3.5 9B | Precise coding | UD-Q4_K_XL | ~6.0 GB |
+| `Modelfile.qwopus3.5-9b-coder-q4-k-m` | Qwopus3.5-9B-Coder (Qwen3.5-9B finetune) | Precise coding | Q4_K_M | ~5.6 GB |
+
+Qwopus is an experimental community finetune (Claude-Opus trace-inversion distill); its coding edge over the base 9B is self-reported, which is what the `benchmark-9b-coders` suite tests.
+
 ## Quantization
 
 Canonical models use an **Unsloth Dynamic ("UD-")** quant or a closely related upstream GGUF tag such as `IQ4_XS`. This is not standard llama.cpp Q4_0:
@@ -137,12 +148,14 @@ The repo includes dry-run-by-default benchmark harnesses for both Qwen and Gemma
 - `benchmark-gemma.matrix.tsv` defines the first-pass Gemma benchmark set: `gemma4-12b-it-qat` and `gemma4-26b-a4b-it-qat`.
 - `benchmark-gemma.runtime.tsv` defines the Gemma runtime A/B profiles. It mirrors the same graphs-off versus graphs-on setup as the Qwen harness.
 - `benchmark-gemma.prompt.reasoning.txt` and `benchmark-gemma.prompt.analysis.txt` provide fixed text-only prompts for repeatable Gemma runs.
+- `benchmark-9b-coders.sh` prints the plan for the VRAM-fit small coders (Qwen3.5-9B, the Qwopus3.5-9B-Coder finetune, and the `gemma4-12b-it-qat` baseline); `benchmark-9b-coders.matrix.tsv` lists them and `benchmark-9b-coders.prompt.*.txt` reuses the Qwen coding prompts.
+- `benchmark-all.sh` runs the Qwen, Gemma, and 9B-coders suites sequentially.
 
 Nothing runs unless you pass `--execute`.
 
 When executed, each harness starts temporary isolated `ollama serve` instances on the hosts defined in its runtime TSV so the graphs-off and graphs-on runs stay separate without editing systemd in place. For the cleanest results, stop or idle the systemd Ollama service before running a benchmark.
 
-The current Qwen and Gemma runtime TSVs reuse the same alternate hosts (`127.0.0.1:11435` and `127.0.0.1:11436`). Run one harness at a time unless you intentionally change the host assignments.
+The Qwen, Gemma, and 9B-coders runtime TSVs reuse the same alternate hosts (`127.0.0.1:11435` and `127.0.0.1:11436`). Run one harness at a time unless you intentionally change the host assignments; `benchmark-all.sh` runs them sequentially, which is safe.
 
 Gemma benchmarking is intentionally narrower than Qwen benchmarking in this repo. The current Gemma harness covers only the existing Ollama QAT models, uses text-only prompts, and does not assume Gemma MTP support through Ollama because Unsloth documents Gemma MTP for `llama.cpp` and Unsloth Studio, not for Ollama's `hf.co/...` loading path.
 
@@ -180,7 +193,13 @@ Executed runs write raw logs and timing metadata under `benchmark-results/<times
 | `benchmark-qwen.matrix.tsv` | Benchmark matrix listing the canonical Qwen model IDs to compare |
 | `benchmark-qwen.prompt.*.txt` | Fixed coding prompt fixtures for repeatable Qwen runs |
 | `benchmark-qwen.runtime.tsv` | Runtime A/B matrix for CUDA graphs disabled versus enabled |
-| `benchmark-common.sh` | Shared harness body sourced by `benchmark-qwen.sh` and `benchmark-gemma.sh` |
+| `benchmark-common.sh` | Shared harness body sourced by the `benchmark-qwen.sh`, `benchmark-gemma.sh`, and `benchmark-9b-coders.sh` wrappers |
+| `benchmark-9b-coders.sh` | Dry-run-by-default harness for small coders that fit 12 GB VRAM |
+| `benchmark-9b-coders.matrix.tsv` | Matrix: Qwen3.5-9B, Qwopus3.5-9B-Coder, Gemma baseline |
+| `benchmark-9b-coders.runtime.tsv` | Runtime A/B matrix (graphs off vs on) |
+| `benchmark-9b-coders.prompt.*.txt` | Fixed coding prompts (copies of the Qwen suite prompts) |
+| `benchmark-all.sh` | Runs the Qwen, Gemma, and 9B-coders suites sequentially |
 | `ollama-create.sh` | Build script — creates canonical models directly and resolves alias dependencies automatically |
 | `session_summary_diffusiongemma.md` | Engineering log: research, iteration, and self-critique for DiffusionGemma configuration |
+| `session_summary_9b_coders_vram.md` | Research log: 9B-coders VRAM fit + validation of prior Sonnet research |
 | `.task_plan.md` | Active task plan for ongoing modelfile review work |

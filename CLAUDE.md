@@ -19,6 +19,8 @@ Modelfile.qwen3.6-27b-coding         — Compatibility alias for the current 27B
 Modelfile.qwen3.6-27b-mtp-coding     — Compatibility alias for the current 27B MTP default quant
 Modelfile.qwen3.6-35b-a3b-coding     — Compatibility alias for the current 35B-A3B default quant
 Modelfile.qwen3.6-35b-a3b-mtp-coding — Compatibility alias for the current 35B-A3B MTP default quant
+Modelfile.qwen3.5-9b-coding-ud-q4-k-xl — Qwen 3.5 9B precise-coding GGUF, fits 12 GB VRAM
+Modelfile.qwopus3.5-9b-coder-q4-k-m    — Qwopus3.5-9B-Coder: community finetune of Qwen3.5-9B (experimental)
 benchmark-qwen.sh                    — Dry-run-by-default Qwen benchmark harness
 benchmark-qwen.matrix.tsv            — Canonical Qwen benchmark matrix
 benchmark-qwen.runtime.tsv           — Runtime A/B matrix for graphs off vs on
@@ -27,12 +29,18 @@ benchmark-gemma.sh                   — Dry-run-by-default Gemma benchmark harn
 benchmark-gemma.matrix.tsv           — First-pass Gemma benchmark matrix
 benchmark-gemma.runtime.tsv          — Runtime A/B matrix for graphs off vs on
 benchmark-gemma.prompt.*.txt         — Fixed text-only prompts for repeatable local runs
+benchmark-9b-coders.sh               — Dry-run-by-default 9B-coders (VRAM-fit) benchmark harness
+benchmark-9b-coders.matrix.tsv       — 9B-coders matrix: Qwen3.5-9B, Qwopus, Gemma baseline
+benchmark-9b-coders.runtime.tsv      — Runtime A/B matrix for graphs off vs on
+benchmark-9b-coders.prompt.*.txt     — Fixed coding prompts (copies of the Qwen suite prompts)
+benchmark-all.sh                     — Runs all suites sequentially: qwen, gemma, 9b-coders
 benchmark-common.sh                  — Shared harness body sourced by both benchmark-*.sh wrappers
 benchmark-report.py                  — Post-run report: per-prompt throughput mean/stdev + coarse sanity flags
 pyproject.toml                       — Python floor (>=3.10) and deps (none) for the helper scripts
 ollama-create.sh                     — Bash script to build one or all models
 session_summary_diffusiongemma.md    — Research log for DiffusionGemma work
 session_summary_runtime_ab.md        — Research log: graphs A/B run, CUDA-graphs diagnosis, analysis tool
+session_summary_9b_coders_vram.md    — Research log: 9B-coders VRAM fit + validation of prior Sonnet research
 .task_plan.md                        — Active task plan
 ```
 
@@ -40,6 +48,7 @@ session_summary_runtime_ab.md        — Research log: graphs A/B run, CUDA-grap
 
 - **UD-Q4_K_XL is the only weight GGUF published for the Gemma 4 QAT repos** (`gemma-4-{12B,26B-A4B}-it-qat-GGUF`) — verified against the HF file listing; no IQ4_XS/UD-IQ4_XS/Q5/Q6/Q8. By design (QAT targets ~Q4), so there is no QAT quant matrix to build. Standard Q4_0 degrades accuracy and is larger. A fuller quant ladder exists only in the non-QAT repos (`gemma-4-*-it-GGUF`), at a quality cost vs QAT-Q4.
 - **Gemma benchmark scope**: the repo's first-pass Gemma Ollama benchmark covers only `gemma4-12b-it-qat` and `gemma4-26b-a4b-it-qat`, using text-only prompts.
+- **9B-coders benchmark scope**: `benchmark-9b-coders` covers small coders that fit fully in 12 GB VRAM — `qwen3.5-9b-coding` and the `qwopus3.5-9b-coder` community finetune, against the `gemma4-12b-it-qat` baseline. Qwen **3.5** is used because Qwen 3.6's smallest GGUF (27B) offloads; Qwen3.5-9B uses the same precise-coding profile as 3.6 (verified). The Qwopus finetune's coding edge is **self-reported only** — the benchmark exists to test it. See `session_summary_9b_coders_vram.md`.
 - Canonical Qwen benchmark filenames append the exact upstream quant tag. Mirror upstream tags verbatim rather than forcing a repo-local rename scheme.
 - Qwen 27B IQ variants are published as `IQ4_XS`, while 35B-A3B IQ variants are published as `UD-IQ4_XS`.
 - **Gemma 4 thinking**: activate with `<|think|>` at the start of the system prompt. There is no other trigger.
@@ -110,7 +119,7 @@ All values verified against [Unsloth docs](https://unsloth.ai/docs/models/) and 
 - **Gemma benchmark harness**: `./benchmark-gemma.sh` is also dry-run by default and should stay text-only unless the repo intentionally adds multimodal benchmarking inputs.
 - **Runtime A/B**: benchmark runtime profiles should compare the current `GGML_CUDA_DISABLE_GRAPHS=1` setup against a graphs-enabled run using isolated alternate-port `ollama serve` instances, not by mutating systemd mid-run.
 - **Isolated serve models dir**: those alternate-port serve instances run as the invoking user, so the harness sets `OLLAMA_MODELS=/usr/share/ollama/.ollama/models` (the systemd `ollama` user's store) so `ollama create`d models are visible. This requires the invoking user to be in the `ollama` group for read access.
-- **Shared runtime ports**: the current Qwen and Gemma runtime TSVs both use `127.0.0.1:11435` and `127.0.0.1:11436`, so do not execute both harnesses concurrently unless the host assignments are changed.
+- **Shared runtime ports**: the Qwen, Gemma, and 9B-coders runtime TSVs all use `127.0.0.1:11435` and `127.0.0.1:11436`, so do not execute more than one harness concurrently unless the host assignments are changed. (`benchmark-all.sh` runs them sequentially, which is safe.)
 
 ## Common Commands
 

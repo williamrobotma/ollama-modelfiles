@@ -1,0 +1,24 @@
+FROM hf.co/unsloth/Qwen3.5-9B-GGUF:UD-Q4_K_XL
+
+# --- CONTEXT CALIBRATION ---
+# Native context is 256K (262144), so 131072 stays within native — no YaRN.
+# Gated-DeltaNet hybrid (24 linear + 8 full-attn layers) keeps the KV cache
+# small, easing the 12 GB RTX 4070 budget at long ctx.
+PARAMETER num_ctx 131072
+PARAMETER num_predict 65536
+
+
+# --- OFFICIAL UNSLOTH "PRECISE CODING" PROFILE (Qwen 3.5, thinking mode) ---
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+
+# --- LOGIC PROTECTION ---
+# Mandated by Unsloth docs: Any value other than 1.0 will cause the
+# model's logical code-generation paths to output structural garbage.
+PARAMETER repeat_penalty 1.0
+
+# --- SAMPLING FIDELITY ---
+# Recommended by Unsloth for precise coding (Qwen 3.5)
+PARAMETER min_p 0.0
+PARAMETER presence_penalty 0.0

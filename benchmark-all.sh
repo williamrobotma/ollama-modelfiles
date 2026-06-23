@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Unified benchmark runner for Qwen and Gemma suites.
-# This script executes both suites sequentially. If one suite fails,
-# the other will still be attempted.
+# Unified benchmark runner for the Qwen, Gemma, and 9B-coders suites.
+# This script executes the suites sequentially. If one suite fails,
+# the others will still be attempted.
 
 set -euo pipefail
 
@@ -9,10 +9,11 @@ usage() {
     cat <<EOF
 Usage: ./benchmark-all.sh [options]
 
-Set up or run all benchmark suites (Qwen and Gemma) against Ollama models.
+Set up or run all benchmark suites (Qwen, Gemma, 9B-coders) against Ollama models.
 
 The benchmark matrix is evaluated across isolated runtime profiles defined in
-benchmark-qwen.runtime.tsv and benchmark-gemma.runtime.tsv.
+benchmark-qwen.runtime.tsv, benchmark-gemma.runtime.tsv, and
+benchmark-9b-coders.runtime.tsv.
 The default profiles A/B the current GGML_CUDA_DISABLE_GRAPHS=1 setting against a graphs-enabled run on a separate Ollama host.
 
 By default this is a dry run: it prints the benchmark plan for both suites,
@@ -78,6 +79,7 @@ run_suite() {
 if [[ "$execute" -eq 1 ]]; then
     run_suite "./benchmark-qwen.sh" --execute
     run_suite "./benchmark-gemma.sh" --execute
+    run_suite "./benchmark-9b-coders.sh" --execute
 else
     echo "Dry run only. Pass --execute to run the benchmark."
     echo
@@ -87,4 +89,7 @@ else
     echo
     echo "--- Gemma Plan ---"
     bash "./benchmark-gemma.sh"
+    echo
+    echo "--- 9B-Coders Plan ---"
+    bash "./benchmark-9b-coders.sh"
 fi
