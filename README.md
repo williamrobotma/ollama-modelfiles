@@ -202,4 +202,4 @@ Executed runs write raw logs and timing metadata under `benchmark-results/<times
 | `ollama-create.sh` | Build script — creates canonical models directly and resolves alias dependencies automatically |
 | `session_summary_diffusiongemma.md` | Engineering log: research, iteration, and self-critique for DiffusionGemma configuration |
 | `session_summary_9b_coders_vram.md` | Research log: 9B-coders VRAM fit + validation of prior Sonnet research |
-| `.task_plan.md` | Active task plan for ongoing modelfile review work |
+| `.task_plan.md` | Active task plan for the current work |
