@@ -1,0 +1,24 @@
+FROM hf.co/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic-i1-GGUF:i1-Q5_K_M
+# mradermacher imatrix (i1) Q5_K_M requant of llmfan46's "ultra-uncensored-heretic"
+# (Heretic 1.2.0 + ARA on attn.o_proj L11-22; reported 3/100 refusals, KL 0.1237,
+# MMLU 79.99 vs 82.48 base). Gemma-4-26B-A4B MoE: 25.2B total / ~3.8B active -> fast
+# when offloaded into RAM. i1-Q5_K_M chosen over Q6_K for a higher GPU-resident
+# fraction on 12 GB VRAM at negligible quality cost (imatrix narrows the Q5<->Q6 gap).
+# Ollama's built-in gemma4 RENDERER handles the chat template (Claude-Code-safe);
+# confirm with the 3-system-message smoke test before trusting.
+
+# --- CONTEXT CALIBRATION (26B-A4B max is 262144) ---
+PARAMETER num_ctx 200000
+PARAMETER num_predict 65536
+
+# --- GOOGLE/UNSLOTH RECOMMENDED GEMMA 4 PARAMETERS ---
+# Verified against unsloth.ai/docs/models/gemma-4: temp 1.0, top_p 0.95, top_k 64.
+PARAMETER temperature 1.0
+PARAMETER top_p 0.95
+PARAMETER top_k 64
+
+# Neutral; Gemma 4 needs no repeat penalty (not specified upstream).
+PARAMETER repeat_penalty 1.0
+
+# Gemma 4 thinking: activate with <|think|> at the start of the system prompt.
+SYSTEM <|think|>
