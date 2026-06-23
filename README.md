@@ -13,12 +13,8 @@ Canonical Qwen benchmark variants use explicit quant suffixes. Unsuffixed Qwen f
 | `Modelfile.gemma4-12b-it-qat` | Gemma 4 12B IT QAT | Thinking | UD-Q4_K_XL | ~7 GB |
 | `Modelfile.gemma4-26b-a4b-it-qat` | Gemma 4 26B A4B IT QAT | Thinking | UD-Q4_K_XL | ~15 GB |
 | `Modelfile.qwen3.6-27b-coding-ud-q4-k-xl` | Qwen 3.6 27B | Precise coding | UD-Q4_K_XL | ~17.6 GB |
-| `Modelfile.qwen3.6-27b-coding-iq4-xs` | Qwen 3.6 27B | Precise coding | IQ4_XS | ~15.4 GB |
 | `Modelfile.qwen3.6-27b-mtp-coding-ud-q4-k-xl` | Qwen 3.6 27B MTP | Precise coding + MTP | UD-Q4_K_XL | ~17.9 GB |
-| `Modelfile.qwen3.6-27b-mtp-coding-iq4-xs` | Qwen 3.6 27B MTP | Precise coding + MTP | IQ4_XS | ~15.7 GB |
-| `Modelfile.qwen3.6-35b-a3b-coding-ud-iq4-xs` | Qwen 3.6 35B-A3B | Precise coding | UD-IQ4_XS | ~17.7 GB |
 | `Modelfile.qwen3.6-35b-a3b-coding-ud-q4-k-xl` | Qwen 3.6 35B-A3B | Precise coding | UD-Q4_K_XL | ~22.4 GB |
-| `Modelfile.qwen3.6-35b-a3b-mtp-coding-ud-iq4-xs` | Qwen 3.6 35B-A3B MTP | Precise coding + MTP | UD-IQ4_XS | ~18.2 GB |
 | `Modelfile.qwen3.6-35b-a3b-mtp-coding-ud-q4-k-xl` | Qwen 3.6 35B-A3B MTP | Precise coding + MTP | UD-Q4_K_XL | ~22.9 GB |
 
 ### Compatibility Aliases
@@ -27,8 +23,8 @@ Canonical Qwen benchmark variants use explicit quant suffixes. Unsuffixed Qwen f
 |---|---|
 | `Modelfile.qwen3.6-27b-coding` | `qwen3.6-27b-coding-ud-q4-k-xl` |
 | `Modelfile.qwen3.6-27b-mtp-coding` | `qwen3.6-27b-mtp-coding-ud-q4-k-xl` |
-| `Modelfile.qwen3.6-35b-a3b-coding` | `qwen3.6-35b-a3b-coding-ud-iq4-xs` |
-| `Modelfile.qwen3.6-35b-a3b-mtp-coding` | `qwen3.6-35b-a3b-mtp-coding-ud-iq4-xs` |
+| `Modelfile.qwen3.6-35b-a3b-coding` | `qwen3.6-35b-a3b-coding-ud-q4-k-xl` |
+| `Modelfile.qwen3.6-35b-a3b-mtp-coding` | `qwen3.6-35b-a3b-mtp-coding-ud-q4-k-xl` |
 
 ### Small Coders (fit 12 GB VRAM)
 
@@ -43,11 +39,11 @@ Qwopus is an experimental community finetune (Claude-Opus trace-inversion distil
 
 ## Quantization
 
-Canonical models use an **Unsloth Dynamic ("UD-")** quant or a closely related upstream GGUF tag such as `IQ4_XS`. This is not standard llama.cpp Q4_0:
+Canonical models use an **Unsloth Dynamic ("UD-")** quant. This is not standard llama.cpp Q4_0:
 
 - **UD-** prefix = Unsloth Dynamic — every layer gets a custom quantization type based on a 1.5M+ token calibration dataset
 - **Q4_K_XL** = standard llama.cpp base; **XL** suffix means embedding and output weights are kept at Q8_0 for better accuracy
-- Qwen canonical filenames mirror upstream quant tags verbatim; 27B IQ variants are published as `IQ4_XS`, while 35B A3B IQ variants are published as `UD-IQ4_XS`
+- Qwen canonical filenames mirror upstream quant tags verbatim
 - For Gemma 4 QAT models, standard Q4_0 degrades accuracy from ~89% to ~74% Top-1% and is actually *larger* (6.98 GB vs 6.72 GB for UD-Q4_K_XL)
 - See [Unsloth Dynamic 2.0 GGUFs](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs)
 
@@ -138,7 +134,7 @@ Canonical Modelfiles reference their source on HuggingFace via Unsloth's GGUF bu
 
 ## Benchmarking
 
-The repo includes dry-run-by-default benchmark harnesses for both Qwen and Gemma:
+The repo includes dry-run-by-default benchmark harnesses for the Qwen, Gemma, and 9B-coders suites:
 
 - `benchmark-qwen.sh` prints the benchmark plan and exact `ollama run --verbose` commands for the canonical Qwen coding variants.
 - `benchmark-qwen.matrix.tsv` defines the canonical Qwen variants to compare.
