@@ -28,11 +28,12 @@ Canonical Qwen benchmark variants use explicit quant suffixes. Unsuffixed Qwen f
 
 ### Small Coders (fit 12 GB VRAM)
 
-Qwen 3.6's smallest GGUF is 27B (offloads on a 12 GB card), so these use the **Qwen 3.5** dense line, which fits fully GPU-resident. Both run the same precise-coding profile as the Qwen 3.6 coders.
+Qwen 3.6's smallest GGUF is 27B (offloads on a 12 GB card), so these use the **Qwen 3.5** dense line, which fits fully GPU-resident. All three run the same precise-coding profile as the Qwen 3.6 coders.
 
 | Modelfile | Base Model | Mode | Quantization | Approx. Size |
 |---|---|---|---|
 | `Modelfile.qwen3.5-9b-coding-q4-k-m` | Qwen 3.5 9B | Precise coding | Q4_K_M | ~6.6 GB |
+| `Modelfile.qwen3.5-9b-mtp-coding-ud-q4-k-xl` | Qwen 3.5 9B MTP | Precise coding + MTP self-draft | UD-Q4_K_XL | ~7.1 GB |
 | `Modelfile.qwopus3.5-9b-coder-q4-k-m` | Qwopus3.5-9B-Coder (Qwen3.5-9B finetune) | Precise coding | Q4_K_M | ~5.6 GB |
 
 Qwopus is an experimental community finetune (Claude-Opus trace-inversion distill); its coding edge over the base 9B is self-reported, which is what the `benchmark-9b-coders` suite tests.
