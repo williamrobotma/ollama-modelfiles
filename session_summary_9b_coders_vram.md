@@ -12,6 +12,15 @@ Qwen3.5 dense ladder (0.8/2/4/9/27B); 9B fits ~6 GB; KV-at-131072 forces offload
 so capping `num_ctx` is the real lever; UD-Q4_K_XL is the quant sweet spot;
 correctly refused to invent "Qwopus 3.6" until given the real Jackrong HF repo.
 
+**Update 2026-06-30:** the canonical Qwen3.5-9B Modelfile was switched from
+`hf.co/unsloth/Qwen3.5-9B-GGUF:UD-Q4_K_XL` to the Ollama official
+`qwen3.5:9b` (Q4_K_M, 6.6 GB) because the unsloth repo's HF OCI config-blob
+endpoint started hanging indefinitely (repo-wide, every tag, 7+ days). UD-
+Dynamic 2.0 is Unsloth-only; ~1-2% quality loss vs UD-Q4_K_XL is the cost
+of durable re-pulls. VRAM fit math below is unchanged (sizes ~6 GB either
+way). Recheck unsloth periodically -- see memory
+`unsloth_qwen3.5_oci_bridge_broken.md`.
+
 **Quality numbers are untrustworthy — not a clean re-ranking:** Sonnet's scores
 came from SEO aggregators, not model cards. A primary-source spot-check of the
 one staged model disagrees by ~10 pts: Sonnet cited **Qwen3.5-9B LiveCodeBench
