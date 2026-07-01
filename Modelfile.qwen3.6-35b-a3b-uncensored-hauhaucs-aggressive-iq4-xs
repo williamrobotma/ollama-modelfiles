@@ -1,0 +1,28 @@
+FROM hf.co/HauhauCS/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive:IQ4_XS
+# HauhauCS "Aggressive" abliteration of Qwen3.6-35B-A3B (IQ4_XS).
+# Replaces the earlier HauhauCS variant that 400'd in Claude Code due to a broken
+# "system must be first" Jinja guard in the GGUF chat_template; this release uses
+# the standard Qwen3.6 template per HauhauCS notes. MoE (~3B active), fast offloaded.
+# Reasoning/agentic use; Qwen 3.6 thinking on by default.
+# TODO: verify with 3-system-message smoke test before using as Claude Code target:
+#   ollama show --template qwen3.6-35b-a3b-uncensored-hauhaucs-aggressive-iq4-xs \
+#     | grep -i 'system message must be at the beginning'
+
+# --- CONTEXT CALIBRATION ---
+PARAMETER num_ctx 131072
+PARAMETER num_predict 65536
+
+
+# --- OFFICIAL UNSLOTH "GENERAL TASKS / THINKING" PROFILE ---
+# Reasoning/research/agentic use, not coding; Qwen 3.6 thinking is on by default.
+PARAMETER temperature 1.0
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+
+# --- LOGIC PROTECTION ---
+# Mandated by Unsloth docs: repeat_penalty must be exactly 1.0 for Qwen 3.6.
+PARAMETER repeat_penalty 1.0
+
+# --- SAMPLING FIDELITY ---
+PARAMETER min_p 0.0
+PARAMETER presence_penalty 0.0

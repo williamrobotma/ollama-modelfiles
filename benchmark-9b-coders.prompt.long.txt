@@ -1,0 +1,20 @@
+Write a single-file TypeScript module for Node 22 named `repo_audit.ts` that
+scans a source tree and prints a concise technical report.
+
+Requirements:
+- Use only Node built-in modules.
+- Export pure functions for directory walking, file filtering, simple language
+  detection, line counting, TODO extraction, and report rendering.
+- Provide a CLI using `node:util.parseArgs` with flags for `--root`, `--max-file-size`,
+  `--include-hidden`, and `--json`.
+- Detect at least TypeScript, JavaScript, Python, Markdown, and shell files.
+- Ignore binary files and common dependency/build folders.
+- Collect per-language file counts, line counts, largest files, and TODO/FIXME notes.
+- Print deterministic output ordering.
+- Include robust error handling for unreadable paths.
+- Keep the implementation clean and readable rather than compressed.
+
+Output constraints:
+- Return only code.
+- Keep the file between 220 and 320 lines.
+- Do not include markdown fences or explanatory prose.

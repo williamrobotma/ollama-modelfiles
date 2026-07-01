@@ -1,0 +1,17 @@
+FROM hf.co/OBLITERATUS/Gemma-4-12B-OBLITERATED:Q4_K_M
+# OBLITERATUS (Pliny the Liberator) CoT-aware abliteration of google/gemma-4-12B-it;
+# card reports MMLU-Pro delta 0.0pp vs stock. Comparison candidate against the resident
+# DuoNeural gemma4-12b-it-uncensored - same Gemma-4 thinking profile for a fair A/B.
+# Ollama's built-in RENDERER gemma4 handles the Gemma 4 chat template.
+
+PARAMETER num_ctx 200000
+PARAMETER num_predict 65536
+
+PARAMETER temperature 1.0
+PARAMETER top_p 0.95
+PARAMETER top_k 64
+
+PARAMETER repeat_penalty 1.0
+
+# Gemma 4 thinking: activate with <|think|> at the start of the system prompt.
+SYSTEM <|think|>

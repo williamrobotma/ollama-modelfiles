@@ -35,6 +35,16 @@ graphs-on benchmark run, a CUDA-graphs failure diagnosis, the new
   12 GB VRAM); the MTP variants roughly double that.
 
 ### CUDA-graphs crash (claude-local + 27b-mtp)
+> **CORRECTION 2026-07-01:** two claims in this section were later falsified -
+> see `session_summary_mtp_graphs_crash.md`. (1) "serial single-slot graphs-on
+> does NOT error" is WRONG: a 30-run hammer on graphs-on + qwen3.5-9b-mtp
+> crashed ~1 in 8 (12.5%), same `ggml_backend_cuda_synchronize` illegal-memory
+> signature - it is intermittent, so the earlier clean run was luck, not proof.
+> (2) "prod runs GGML_CUDA_DISABLE_GRAPHS=1" is WRONG: the systemd override had
+> that line commented out, so prod was running graphs-ON and exposed to the
+> crash. The verdict below (keep graphs-off) is still right; its evidence and
+> the assumed prod state were not.
+
 - The benchmark proves serial, single-slot graphs-on runs of the *exact* 27b-mtp
   model do NOT error (`USE_GRAPHS=1`, thousands of graph reuses, exit 0).
 - claude-local's traffic is the opposite: all-streaming, huge/growing context,
@@ -45,6 +55,9 @@ graphs-on benchmark run, a CUDA-graphs failure diagnosis, the new
   `OLLAMA_NUM_PARALLEL` *unset* (→ Ollama auto-default, ~1 on this box),
   KV `q8_0`, flash-attn on, ctx 131072. `journalctl` shows no current CUDA
   errors — expected, since prod runs graphs-off.
+  > **CORRECTION 2026-07-01:** the disable line was actually commented out in
+  > the override, so prod ran graphs-ON. `OLLAMA_NUM_PARALLEL=1` *is* set
+  > explicitly. See `session_summary_mtp_graphs_crash.md` for the fix.
 - **Verdict:** keep `GGML_CUDA_DISABLE_GRAPHS=1` (benchmark-proven safe here,
   community-standard fix; throughput cost negligible on this offloaded setup).
   If `NUM_PARALLEL` is ever >1, that both confirms the trigger and is

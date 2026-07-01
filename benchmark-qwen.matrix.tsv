@@ -1,9 +1,5 @@
 # model	family	mode	quant	approx_size
 qwen3.6-27b-coding-ud-q4-k-xl	qwen3.6-27b	coding	UD-Q4_K_XL	~17.6 GB
-qwen3.6-27b-coding-iq4-xs	qwen3.6-27b	coding	IQ4_XS	~15.4 GB
 qwen3.6-27b-mtp-coding-ud-q4-k-xl	qwen3.6-27b	coding-mtp	UD-Q4_K_XL	~17.9 GB
-qwen3.6-27b-mtp-coding-iq4-xs	qwen3.6-27b	coding-mtp	IQ4_XS	~15.7 GB
-qwen3.6-35b-a3b-coding-ud-iq4-xs	qwen3.6-35b-a3b	coding	UD-IQ4_XS	~17.7 GB
 qwen3.6-35b-a3b-coding-ud-q4-k-xl	qwen3.6-35b-a3b	coding	UD-Q4_K_XL	~22.4 GB
-qwen3.6-35b-a3b-mtp-coding-ud-iq4-xs	qwen3.6-35b-a3b	coding-mtp	UD-IQ4_XS	~18.2 GB
 qwen3.6-35b-a3b-mtp-coding-ud-q4-k-xl	qwen3.6-35b-a3b	coding-mtp	UD-Q4_K_XL	~22.9 GB

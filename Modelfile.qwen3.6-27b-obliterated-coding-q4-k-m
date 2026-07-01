@@ -1,13 +1,10 @@
-FROM hf.co/unsloth/Qwen3.6-27B-MTP-GGUF:IQ4_XS
+FROM hf.co/OBLITERATUS/Qwen3.6-27B-OBLITERATED:Q4_K_M
+# OBLITERATUS CoT-aware abliteration of Qwen3.6-27B. Precise-coding profile.
 
 # --- CONTEXT CALIBRATION ---
 PARAMETER num_ctx 131072
 PARAMETER num_predict 65536
 
-# --- SPECULATIVE DECODING (MTP) ---
-# GGUF has embedded MTP tensors; Ollama auto-detects and self-drafts.
-# Unsloth's recommended starting value for Qwen3.6 MTP (--spec-draft-n-max 2).
-PARAMETER draft_num_predict 2
 
 # --- OFFICIAL UNSLOTH "PRECISE CODING" PROFILE ---
 PARAMETER temperature 0.6
