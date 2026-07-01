@@ -46,6 +46,7 @@ benchmark-9b-coders.prompt.*.txt     — Fixed coding prompts (copies of the Qwe
 benchmark-all.sh                     — Runs all suites sequentially: qwen, gemma, 9b-coders
 benchmark-common.sh                  — Shared harness body sourced by both benchmark-*.sh wrappers
 benchmark-report.py                  — Post-run report: per-prompt throughput mean/stdev + coarse sanity flags
+repro-mtp-graphs.sh                   — Dry-run-by-default 3-cell repro for the MTP x CUDA-graphs crash (MTP@on vs MTP@off vs base@on)
 pyproject.toml                       — Python floor (>=3.10) and deps (none) for the helper scripts
 ollama-create.sh                     — Bash script to build one or all models
 session_summary_diffusiongemma.md    — Research log for DiffusionGemma work
