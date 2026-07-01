@@ -1,56 +1,46 @@
 #!/usr/bin/env bash
-# Reproduce and characterize the Qwen3.5-9B-MTP + CUDA-graphs crash.
+# Characterize the intermittent Qwen3.5-9B-MTP + CUDA-graphs crash.
 #
 # Background: the 2026-06-30 9B-coders benchmark crashed once on graphs-on +
-# qwen3.5-9b-mtp-coding (ggml-cuda.cu:104 illegal memory access, ~1289 tokens
-# in).  That is N=1 - not yet a characterized failure.  This script settles it
-# with a 3-cell experiment that isolates the interaction:
+# qwen3.5-9b-mtp (ggml-cuda.cu:104 illegal memory access, ~1289 tokens in).
+# A 3-cell isolation re-run on 2026-07-01 found MTP@graphs-on ran 4/4 clean
+# (two full 65536-token, ~10 min each) - so the crash is NOT deterministic.
+# The open question is its *rate*, so this hammers the exact suspect
+# combination on one warm serve and counts crashes over N runs.
 #
-#   1. MTP     @ graphs-on   the suspect combination
-#   2. MTP     @ graphs-off  control: MTP alone (known-good on 2026-06-30)
-#   3. non-MTP @ graphs-on   control: graphs alone (known-good on 2026-06-30)
+# Each run is bounded to `num_predict` tokens (3x past the observed 1289-token
+# crash point) via the /api/generate options, so a rep is ~40 s not ~10 min -
+# many reps in bounded time.  If this comes back clean, the trigger is likely
+# NOT the warm MTP x graphs pair itself but yesterday's differing conditions
+# (serve churn / 4-model swaps); the complementary experiment is then
+# restart-the-serve-per-run, not more warm reps.
 #
-# If cell 1 crashes while 2 and 3 stay clean, the crash is the MTP x graphs
-# interaction, not either factor alone.  Each cell runs on its own isolated
-# `ollama serve` (alternate port, invoking user, systemd store) so the live
-# systemd instance is never mutated - same pattern as benchmark-common.sh.
-#
-# Dry-run by default (prints the plan); pass --execute to actually serve+run.
+# Runs on an isolated alternate-port serve (never mutates the systemd
+# instance), same pattern as benchmark-common.sh.  Dry-run by default; pass
+# --execute to serve + run.
 set -uo pipefail
 
 # --- config ---
 host="127.0.0.1:11437"                 # free: systemd=11434, harness=11435/11436
 models_dir="/usr/share/ollama/.ollama/models"
 prompt_file="$(dirname -- "${BASH_SOURCE[0]}")/benchmark-9b-coders.prompt.long.txt"
-runs=3                                  # reps per cell
-run_timeout=900                         # per-generation wall-clock cap (s)
+model="qwen3.5-9b-mtp-coding-ud-q4-k-xl"
+runs=30                                 # reps against the one warm serve
+num_predict=4096                        # per-run token cap (> the 1289 crash point)
+run_timeout=180                         # per-run wall-clock cap (s)
 ready_timeout=60                        # serve readiness cap (s)
-
-mtp_model="qwen3.5-9b-mtp-coding-ud-q4-k-xl"
-base_model="qwen3.5-9b-coding-q4-k-m"
-
-# cell = "<model>|<graphs>"; graphs in {on,off}
-cells=(
-    "$mtp_model|on"
-    "$mtp_model|off"
-    "$base_model|on"
-)
 
 execute=0
 [[ "${1:-}" == "--execute" ]] && execute=1
 
 die() { echo "ERROR: $*" >&2; exit 1; }
-
 [[ -f "$prompt_file" ]] || die "prompt file not found: $prompt_file"
 
 if (( ! execute )); then
     echo "DRY RUN (pass --execute to serve + run). Plan:"
-    echo "  host=$host  models_dir=$models_dir  runs=$runs/cell"
+    echo "  $model @ graphs-on, x$runs runs on one warm serve"
+    echo "  host=$host  num_predict=$num_predict/run  models_dir=$models_dir"
     echo "  prompt=$prompt_file"
-    for cell in "${cells[@]}"; do
-        IFS='|' read -r model graphs <<<"$cell"
-        echo "  - $model @ graphs-$graphs  (x$runs)"
-    done
     exit 0
 fi
 
@@ -58,63 +48,73 @@ fi
 outdir="$(dirname -- "${BASH_SOURCE[0]}")/benchmark-results/repro-mtp-graphs-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$outdir"
 results="$outdir/results.txt"
+serve_log="$outdir/serve.log"
 prompt="$(cat "$prompt_file")"
-echo "output: $outdir"
+echo "output: $outdir" | tee "$results"
+echo "config: $model @ graphs-on, $runs runs, num_predict=$num_predict" | tee -a "$results"
 
-for cell in "${cells[@]}"; do
-    IFS='|' read -r model graphs <<<"$cell"
-    tag="${model}__graphs-${graphs}"
-    celldir="$outdir/$tag"
-    mkdir -p "$celldir"
-    echo "=== cell: $model @ graphs-$graphs ===" | tee -a "$results"
+# Isolated graphs-on serve (GGML_CUDA_DISABLE_GRAPHS deliberately unset).
+env \
+    "OLLAMA_HOST=$host" \
+    "OLLAMA_MODELS=$models_dir" \
+    "OLLAMA_CONTEXT_LENGTH=131072" \
+    "OLLAMA_KEEP_ALIVE=24h" \
+    "OLLAMA_FLASH_ATTENTION=1" \
+    "OLLAMA_KV_CACHE_TYPE=q8_0" \
+    "OLLAMA_NUM_PARALLEL=1" \
+    ollama serve >"$serve_log" 2>&1 &
+serve_pid=$!
+# Kill the serve by PID on any exit (NOT by PGID - the backgrounded serve
+# shares this non-interactive script's process group, so a PGID kill would
+# also kill this wrapper, as it did in the 3-cell version).
+trap 'kill "$serve_pid" 2>/dev/null; wait "$serve_pid" 2>/dev/null' EXIT
 
-    # Isolated serve; graphs-off adds the disable env, graphs-on leaves it unset.
-    serve_env=(
-        env
-        "OLLAMA_HOST=$host"
-        "OLLAMA_MODELS=$models_dir"
-        "OLLAMA_CONTEXT_LENGTH=131072"
-        "OLLAMA_KEEP_ALIVE=24h"
-        "OLLAMA_FLASH_ATTENTION=1"
-        "OLLAMA_KV_CACHE_TYPE=q8_0"
-        "OLLAMA_NUM_PARALLEL=1"
-    )
-    [[ "$graphs" == "off" ]] && serve_env+=("GGML_CUDA_DISABLE_GRAPHS=1")
+# Wait for ready, aborting if the serve dies first.
+ready=0
+for (( i=0; i<ready_timeout; i++ )); do
+    if env "OLLAMA_HOST=$host" ollama ps >/dev/null 2>&1; then ready=1; break; fi
+    kill -0 "$serve_pid" 2>/dev/null || die "serve died before ready; see $serve_log"
+    sleep 1
+done
+(( ready )) || die "serve not ready in ${ready_timeout}s; see $serve_log"
 
-    "${serve_env[@]}" ollama serve >"$celldir/serve.log" 2>&1 &
-    serve_pid=$!
+# Warmup: load weights + confirm 100% GPU (a CPU-offloaded load would make any
+# later OOM a VRAM-contention artifact, not the MTP x graphs interaction).
+curl -sf "http://$host/api/generate" \
+    -d "{\"model\":\"$model\",\"prompt\":\"warmup\",\"stream\":false,\"options\":{\"num_predict\":8}}" \
+    >/dev/null 2>&1
+echo "warmup placement:" | tee -a "$results"
+env "OLLAMA_HOST=$host" ollama ps 2>&1 | tee -a "$results"
 
-    # Wait for ready, aborting if the serve dies first.
-    ready=0
-    for (( i=0; i<ready_timeout; i++ )); do
-        if env "OLLAMA_HOST=$host" ollama ps >/dev/null 2>&1; then ready=1; break; fi
-        kill -0 "$serve_pid" 2>/dev/null || { echo "  serve died before ready" | tee -a "$results"; break; }
-        sleep 1
-    done
+# Hammer: N bounded runs, count crashes via serve.log delta + API failure.
+crashes=0
+first_crash=""
+req="$(python3 -c "
+import json,sys
+print(json.dumps({'model':'$model','prompt':sys.stdin.read(),
+                  'stream':False,'options':{'num_predict':$num_predict}}))
+" <<<"$prompt")"
 
-    if (( ready )); then
-        # Warmup (loads weights; not scored).
-        env "OLLAMA_HOST=$host" timeout "$run_timeout" ollama run --verbose --keepalive 30m \
-            "$model" "$prompt" >"$celldir/warmup.log" 2>&1
-        echo "  warmup exit=$?" | tee -a "$results"
+for (( r=1; r<=runs; r++ )); do
+    before="$(grep -c 'illegal memory access\|CUDA error' "$serve_log" 2>/dev/null || echo 0)"
+    body="$(curl -s --max-time "$run_timeout" "http://$host/api/generate" -d "$req" 2>&1)"
+    api_ok=0
+    echo "$body" | grep -q '"done":true' && api_ok=1
+    after="$(grep -c 'illegal memory access\|CUDA error' "$serve_log" 2>/dev/null || echo 0)"
 
-        for (( r=1; r<=runs; r++ )); do
-            env "OLLAMA_HOST=$host" timeout "$run_timeout" ollama run --verbose --keepalive 30m \
-                "$model" "$prompt" >"$celldir/run-$r.log" 2>&1
-            echo "  run $r exit=$?" | tee -a "$results"
-            if ! kill -0 "$serve_pid" 2>/dev/null; then
-                echo "  SERVE DIED after run $r" | tee -a "$results"
-                break
-            fi
-        done
+    evc="$(echo "$body" | python3 -c "import json,sys;print(json.load(sys.stdin).get('eval_count','?'))" 2>/dev/null || echo '?')"
+
+    if (( after > before )) || (( ! api_ok )); then
+        (( crashes++ ))
+        [[ -z "$first_crash" ]] && first_crash="$r"
+        echo "  run $r: CRASH (api_ok=$api_ok, crash_lines +$((after-before)), eval_count=$evc)" | tee -a "$results"
+        # A crash kills the model runner; the serve parent may survive but is
+        # in an unknown state, so stop here rather than measure a poisoned rate.
+        kill -0 "$serve_pid" 2>/dev/null || { echo "  serve parent also died" | tee -a "$results"; break; }
+        echo "  (serve parent alive; stopping to avoid a poisoned rate)" | tee -a "$results"
+        break
     fi
-
-    # Tear down this cell's serve by PGID (avoids killing this wrapper).
-    pgid="$(ps -o pgid= -p "$serve_pid" 2>/dev/null | tr -d ' ')"
-    [[ -n "$pgid" ]] && kill -KILL "-$pgid" 2>/dev/null
-    wait "$serve_pid" 2>/dev/null
-    sleep 2   # let VRAM release before the next cell
+    echo "  run $r: ok (eval_count=$evc)" | tee -a "$results"
 done
 
-echo "=== DONE ===" | tee -a "$results"
-echo "grep -c 'illegal memory access' $outdir/*/*.log  # crash count"
+echo "=== SUMMARY: $crashes crash(es) in up to $runs runs; first at run ${first_crash:-none} ===" | tee -a "$results"

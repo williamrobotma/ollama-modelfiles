@@ -53,6 +53,7 @@ session_summary_diffusiongemma.md    — Research log for DiffusionGemma work
 session_summary_runtime_ab.md        — Research log: graphs A/B run, CUDA-graphs diagnosis, analysis tool
 session_summary_9b_coders_vram.md    — Research log: 9B-coders VRAM fit + validation of prior Sonnet research
 session_summary_qwen3.5_9b_mtp_bench.md — Research log: Qwen3.5-9B-MTP staging, ~1.65x speedup, MTP+graphs CUDA crash
+session_summary_mtp_graphs_crash.md  — Research log: MTP x CUDA-graphs crash reproduced (~12.5%/run), keep GGML_CUDA_DISABLE_GRAPHS=1
 .task_plan.md                        — Active task plan
 ```
 
