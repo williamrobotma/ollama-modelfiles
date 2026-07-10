@@ -53,8 +53,17 @@ benchmarks/report.py) and retired .task_plan.md (below).
 
 ## Phase 5 - lint + link + validate
 
-- [ ] rumdl check clean
-- [ ] ASCII sweep clean
-- [ ] Link check clean
-- [ ] ollama-create dry parity; benchmark dry parity; ollama list unchanged
-- [ ] Commit series + push
+Fixes: added repo-local `.rumdl.toml` (excludes `docs/history/*.md`; repeats
+the global MD013 disable, since a repo-local config file replaces rather than
+merges with `~/.config/rumdl/rumdl.toml`) and corrected one stale
+pre-restructure filename + quant reference in a Modelfile comment
+(`modelfiles/qwen3.5/9b-mtp-coding-ud-q4-k-xl/Modelfile`). `ollama-create.sh`
+has no dry-run mode, so parity was verified by rebuilding the cheapest alias
+(`qwen3.5-9b-mtp-coding`, plus its canonical dependency) and diffing `ollama
+list` IDs before/after (identical).
+
+- [x] rumdl check clean
+- [x] ASCII sweep clean
+- [x] Link check clean
+- [x] ollama-create dry parity; benchmark dry parity; ollama list unchanged
+- [x] Commit series + push

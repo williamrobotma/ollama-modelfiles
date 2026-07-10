@@ -1,0 +1,10 @@
+# Repo-local rumdl config. A repo-local file REPLACES (does not merge with)
+# ~/.config/rumdl/rumdl.toml, so MD013 (line-length; disabled globally for the
+# never-hard-wrap soft-wrap style - see that file's header) is repeated here.
+#
+# docs/history/*.md are immutable session logs (verbatim past research notes);
+# do not reflow or fix their markdown lint issues (trailing spaces, missing
+# blank lines, bare URLs, etc.) - exclude them from rumdl entirely.
+[global]
+disable = ["MD013"]
+exclude = ["docs/history/*.md"]
