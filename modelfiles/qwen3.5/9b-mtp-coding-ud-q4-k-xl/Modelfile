@@ -11,7 +11,7 @@ FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.5-9B-MTP-GGUF/snaps
 # unsloth_qwen3.5_oci_bridge_broken.md.
 
 # --- CONTEXT CALIBRATION ---
-# Native context is 256K (262144), so 131072 stays within native — no YaRN.
+# Native context is 256K (262144), so 131072 stays within native - no YaRN.
 # Gated-DeltaNet hybrid (24 linear + 8 full-attn layers) keeps the KV cache
 # small, easing the 12 GB RTX 4070 budget at long ctx.
 PARAMETER num_ctx 131072
