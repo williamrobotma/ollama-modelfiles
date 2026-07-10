@@ -1,0 +1,13 @@
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--gemma-4-31B-it-qat-GGUF/snapshots/365d657136993b4d7c40d868dd45ecb7a48e7ebf/gemma-4-31B-it-qat-UD-Q4_K_XL.gguf
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--gemma-4-31B-it-qat-GGUF/snapshots/365d657136993b4d7c40d868dd45ecb7a48e7ebf/mmproj-BF16.gguf
+
+PARAMETER num_ctx 200000
+PARAMETER num_predict 65536
+
+PARAMETER temperature 1.0
+PARAMETER top_p 0.95
+PARAMETER top_k 64
+
+PARAMETER repeat_penalty 1.0
+
+SYSTEM <|think|>

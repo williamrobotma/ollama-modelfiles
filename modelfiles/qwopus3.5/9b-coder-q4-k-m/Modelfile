@@ -1,0 +1,24 @@
+# Jackrong/Qwopus3.5-9B-Coder: experimental Qwen3.5-9B finetune, trace-inversion
+# distilled on Claude-Opus 4.x outputs (emits <think> tags; self-reported
+# benchmarks only). Uses Qwen3.5 base precise-coding params; native context 256K.
+FROM /home/wma/.cache/huggingface/hub/models--Jackrong--Qwopus3.5-9B-Coder-GGUF/snapshots/0a758aadac96f341f2f6554a615040e5d39a6e38/Qwopus3.5-9B-coder-Exp-Q4_K_M.gguf
+FROM /home/wma/.cache/huggingface/hub/models--Jackrong--Qwopus3.5-9B-Coder-GGUF/snapshots/0a758aadac96f341f2f6554a615040e5d39a6e38/mmproj-F32.gguf
+
+# --- CONTEXT CALIBRATION ---
+# Inherits Qwen3.5-9B's 256K native context; 131072 needs no YaRN.
+PARAMETER num_ctx 131072
+PARAMETER num_predict 65536
+
+
+# --- "PRECISE CODING" PROFILE (inherits Qwen 3.5 base; thinking mode) ---
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+
+# --- LOGIC PROTECTION ---
+# Qwen base: repeat_penalty must stay 1.0 or code output degrades.
+PARAMETER repeat_penalty 1.0
+
+# --- SAMPLING FIDELITY ---
+PARAMETER min_p 0.0
+PARAMETER presence_penalty 0.0

@@ -1,0 +1,10 @@
+FROM gemma4-26b-a4b-it-qat
+# Gemma 4 MTP = separate drafter GGUF (unlike Qwen's embedded MTP tensors).
+# Ollama 0.31.1+ runs DRAFT on the CUDA/llama.cpp runner (verified on-box
+# 2026-07-08: draft-mtp init in serve logs, acceptance ~0.74, ~1.67x decode
+# on the 12B pair). Stock llama.cpp still fails to load gemma4-assistant
+# drafters (ggml-org/llama.cpp#24795), so Ollama is the working CUDA path.
+DRAFT /home/wma/.cache/huggingface/hub/models--unsloth--gemma-4-26B-A4B-it-qat-GGUF/snapshots/02749a7b272109255a4c559a80894d3d9777574c/mtp-gemma-4-26B-A4B-it.gguf
+
+# Unsloth's recommended starting value (--spec-draft-n-max 2).
+PARAMETER draft_num_predict 2

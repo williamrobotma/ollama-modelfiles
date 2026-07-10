@@ -1,0 +1,24 @@
+FROM /home/wma/.cache/huggingface/hub/models--mradermacher--gemma-4-31B-it-heretic-i1-GGUF/snapshots/5cb948779db7e1b8f279ecc88e53d48693aa9521/gemma-4-31B-it-heretic.i1-Q4_K_M.gguf
+# mradermacher imatrix (i1) Q4_K_M requant of the Heretic-abliterated dense
+# Gemma-4-31B-it (sibling of the 26B-A4B heretic daily driver; per-variant
+# refusal/KL stats not verified for 31B - check the source card). Dense 31B at
+# ~18.7 GB offloads heavily on 12 GB VRAM; imatrix narrows the quality gap vs
+# the Q5 tier. Ollama's built-in gemma4 RENDERER handles the chat template
+# (Claude-Code-safe); confirm with the 3-system-message smoke test before
+# trusting.
+
+# --- CONTEXT CALIBRATION (Gemma 4 31B max is 262144) ---
+PARAMETER num_ctx 200000
+PARAMETER num_predict 65536
+
+# --- GOOGLE/UNSLOTH RECOMMENDED GEMMA 4 PARAMETERS ---
+# Verified against unsloth.ai/docs/models/gemma-4: temp 1.0, top_p 0.95, top_k 64.
+PARAMETER temperature 1.0
+PARAMETER top_p 0.95
+PARAMETER top_k 64
+
+# Neutral; Gemma 4 needs no repeat penalty (not specified upstream).
+PARAMETER repeat_penalty 1.0
+
+# Gemma 4 thinking: activate with <|think|> at the start of the system prompt.
+SYSTEM <|think|>

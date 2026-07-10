@@ -220,6 +220,9 @@ flycheck_*.el
 ollama-models/
 *.gguf
 
+# Migration working data (baselines, HF inventories, helper scripts) — machine-local
+.migration-artifacts/
+
 # =============================================================================
 # Secrets / credentials
 # =============================================================================

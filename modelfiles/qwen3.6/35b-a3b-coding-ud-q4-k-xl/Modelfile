@@ -1,0 +1,22 @@
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.6-35B-A3B-GGUF/snapshots/a483e9e6cbd595906af30beda3187c2663a1118c/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.6-35B-A3B-GGUF/snapshots/a483e9e6cbd595906af30beda3187c2663a1118c/mmproj-BF16.gguf
+
+# --- CONTEXT CALIBRATION ---
+PARAMETER num_ctx 131072
+PARAMETER num_predict 65536
+
+
+# --- OFFICIAL UNSLOTH "PRECISE CODING" PROFILE ---
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+
+# --- LOGIC PROTECTION ---
+# Mandated by Unsloth docs: Any value other than 1.0 will cause the
+# model's logical code-generation paths to output structural garbage.
+PARAMETER repeat_penalty 1.0
+
+# --- SAMPLING FIDELITY ---
+# Recommended by Unsloth for precise coding (Qwen 3.6)
+PARAMETER min_p 0.0
+PARAMETER presence_penalty 0.0

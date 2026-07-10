@@ -1,4 +1,4 @@
-# Python floor for the repo's helper scripts (currently benchmark-report.py).
+# Python floor for the repo's helper scripts (currently benchmarks/report.py).
 # The Modelfiles and the *.sh benchmark harness need no Python; this pins only
 # the analysis tooling. ruff/uv/pip read `requires-python` directly, so no
 # separate tool config is needed.

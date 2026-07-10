@@ -1,0 +1,22 @@
+FROM /home/wma/.cache/huggingface/hub/models--OBLITERATUS--Qwen3.6-27B-OBLITERATED/snapshots/b85c6304150be44ee02ab130a733f65bc562bbc6/gguf/qwen3.6-27b-obliteratus-Q4_K_M.gguf
+# OBLITERATUS CoT-aware abliteration of Qwen3.6-27B. General/reasoning use;
+# Qwen 3.6 thinking on by default.
+
+# --- CONTEXT CALIBRATION ---
+PARAMETER num_ctx 131072
+PARAMETER num_predict 65536
+
+
+# --- UNSLOTH "GENERAL TASKS / THINKING" PROFILE ---
+# Verified vs unsloth.ai/docs/models/qwen3.6; reasoning/agentic, thinking on by default.
+PARAMETER temperature 1.0
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+
+# --- LOGIC PROTECTION ---
+# Unsloth: repeat_penalty disabled or 1.0 for Qwen 3.6.
+PARAMETER repeat_penalty 1.0
+
+# --- SAMPLING FIDELITY ---
+PARAMETER min_p 0.0
+PARAMETER presence_penalty 0.0
