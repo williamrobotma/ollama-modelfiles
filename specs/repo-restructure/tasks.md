@@ -47,8 +47,8 @@ benchmarks/report.py) and retired .task_plan.md (below).
 
 ## Phase 4 - specs for next work
 
-- [ ] specs/llamacpp-serving/{spec,plan,tasks}.md (options analysis; user picks at review)
-- [ ] specs/openwebui-wrapup/{spec,tasks}.md
+- [x] specs/llamacpp-serving/{spec,plan,tasks}.md (options analysis; user picks at review)
+- [x] specs/openwebui-wrapup/{spec,tasks}.md
 - [x] Retire .task_plan.md (done in Phase 3; live content -> history log + docs topics)
 
 ## Phase 5 - lint + link + validate
