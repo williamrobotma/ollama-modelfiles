@@ -1,13 +1,10 @@
-FROM qwen3.5:9b
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.5-9B-GGUF/snapshots/3885219b6810b007914f3a7950a8d1b469d598a5/Qwen3.5-9B-UD-Q4_K_XL.gguf
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.5-9B-GGUF/snapshots/3885219b6810b007914f3a7950a8d1b469d598a5/mmproj-BF16.gguf
 
-# Source: Ollama official library (registry.ollama.ai/library/qwen3.5:9b),
-# Q4_K_M, ~6.6 GB.  Previously sourced from
-# hf.co/unsloth/Qwen3.5-9B-GGUF:UD-Q4_K_XL until HF's OCI config blob
-# endpoint started hanging indefinitely for that repo (verified repo-wide,
-# every tag, 7+ days persistent).  Switched to the Ollama registry for
-# durable re-pulls; ~1-2% quality drop vs Unsloth Dynamic 2.0 (UD-Q4_K_XL).
-# Recheck Unsloth periodically — see memory
-# unsloth_qwen3.5_oci_bridge_broken.md.
+# Back on Unsloth UD-Q4_K_XL (~6.0 GB): the 2026-06-30 hang was Ollama's OCI
+# config-blob bridge, not HF itself - direct `hf download` verified working
+# 2026-07-07. Replaces the interim Ollama-official qwen3.5:9b Q4_K_M
+# (memory unsloth_qwen3.5_oci_bridge_broken.md is obsolete for this path).
 
 # --- CONTEXT CALIBRATION ---
 # Native context is 256K (262144), so 131072 stays within native — no YaRN.

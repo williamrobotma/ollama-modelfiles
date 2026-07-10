@@ -1,4 +1,9 @@
-FROM hf.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL
+# Local GGUFs from `hf download unsloth/gemma-4-26B-A4B-it-qat-GGUF` (HF cache),
+# migrated off the `hf.co/...:UD-Q4_K_XL` OCI pull.  Second FROM = the vision
+# projector (mmproj-BF16), which the OCI pull had auto-bundled; a bare main-only
+# FROM would silently drop the `vision` capability.
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--gemma-4-26B-A4B-it-qat-GGUF/snapshots/02749a7b272109255a4c559a80894d3d9777574c/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--gemma-4-26B-A4B-it-qat-GGUF/snapshots/02749a7b272109255a4c559a80894d3d9777574c/mmproj-BF16.gguf
 
 PARAMETER num_ctx 131072
 PARAMETER num_predict 65536

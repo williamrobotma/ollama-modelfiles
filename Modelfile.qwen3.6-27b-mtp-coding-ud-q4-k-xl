@@ -1,4 +1,5 @@
-FROM hf.co/unsloth/Qwen3.6-27B-MTP-GGUF:UD-Q4_K_XL
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.6-27B-MTP-GGUF/snapshots/5cb35eb3dcbf52dbce5f87dbc64df6aaffadcace/Qwen3.6-27B-UD-Q4_K_XL.gguf
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.6-27B-MTP-GGUF/snapshots/5cb35eb3dcbf52dbce5f87dbc64df6aaffadcace/mmproj-BF16.gguf
 
 # --- CONTEXT CALIBRATION ---
 PARAMETER num_ctx 131072

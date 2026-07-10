@@ -1,7 +1,8 @@
 # Jackrong/Qwopus3.5-9B-Coder: experimental Qwen3.5-9B finetune, trace-inversion
 # distilled on Claude-Opus 4.x outputs (emits <think> tags; self-reported
 # benchmarks only). Uses Qwen3.5 base precise-coding params; native context 256K.
-FROM hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Q4_K_M
+FROM /home/wma/.cache/huggingface/hub/models--Jackrong--Qwopus3.5-9B-Coder-GGUF/snapshots/0a758aadac96f341f2f6554a615040e5d39a6e38/Qwopus3.5-9B-coder-Exp-Q4_K_M.gguf
+FROM /home/wma/.cache/huggingface/hub/models--Jackrong--Qwopus3.5-9B-Coder-GGUF/snapshots/0a758aadac96f341f2f6554a615040e5d39a6e38/mmproj-F32.gguf
 
 # --- CONTEXT CALIBRATION ---
 # Inherits Qwen3.5-9B's 256K native context; 131072 needs no YaRN.

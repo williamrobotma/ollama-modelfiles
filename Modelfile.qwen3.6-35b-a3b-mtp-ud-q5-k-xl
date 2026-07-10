@@ -1,0 +1,29 @@
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.6-35B-A3B-MTP-GGUF/snapshots/5bc3e238d916f48a861bac2f8a1990a0e9b7e98d/Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf
+FROM /home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.6-35B-A3B-MTP-GGUF/snapshots/5bc3e238d916f48a861bac2f8a1990a0e9b7e98d/mmproj-BF16.gguf
+
+# NOTE: Thinking/reasoning must be disabled for Instruct mode.
+#TODO: figure out how to automate/enforce/display whether think=true
+
+# --- CONTEXT CALIBRATION ---
+PARAMETER num_ctx 262144
+PARAMETER num_predict 65536
+
+# --- SPECULATIVE DECODING (MTP) ---
+# GGUF has embedded MTP tensors; Ollama auto-detects and self-drafts.
+# Unsloth's recommended starting value for Qwen3.6 MTP (--spec-draft-n-max 2).
+PARAMETER draft_num_predict 2
+
+# --- OFFICIAL QWEN "INSTRUCT" PROFILE ---
+PARAMETER temperature 0.7
+PARAMETER top_p 0.80
+PARAMETER top_k 20
+
+# --- LOGIC PROTECTION ---
+# Mandated by Qwen docs: Any value other than 1.0 will cause the
+# model's logical code-generation paths to output structural garbage.
+PARAMETER repeat_penalty 1.0
+
+# --- SAMPLING FIDELITY ---
+# Recommended by Qwen for Instruct (Qwen 3.6)
+PARAMETER min_p 0.0
+PARAMETER presence_penalty 1.5

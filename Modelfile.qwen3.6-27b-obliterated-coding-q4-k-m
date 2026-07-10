@@ -1,4 +1,4 @@
-FROM hf.co/OBLITERATUS/Qwen3.6-27B-OBLITERATED:Q4_K_M
+FROM /home/wma/.cache/huggingface/hub/models--OBLITERATUS--Qwen3.6-27B-OBLITERATED/snapshots/b85c6304150be44ee02ab130a733f65bc562bbc6/gguf/qwen3.6-27b-obliteratus-Q4_K_M.gguf
 # OBLITERATUS CoT-aware abliteration of Qwen3.6-27B. Precise-coding profile.
 
 # --- CONTEXT CALIBRATION ---

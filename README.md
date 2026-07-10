@@ -1,6 +1,6 @@
 # ollama-modelfiles
 
-Custom Ollama Modelfile configurations for local LLM inference, organized by model and use profile. Canonical models source [Unsloth](https://unsloth.ai) GGUF builds from HuggingFace, and unsuffixed Qwen aliases wrap the current canonical default for that family.
+Custom Ollama Modelfile configurations for local LLM inference, organized by model and use profile. Canonical models reference **local GGUFs in the Hugging Face cache** (downloaded with `hf download`, pinned to snapshot paths — mostly [Unsloth](https://unsloth.ai) builds), and unsuffixed aliases wrap the current canonical default for that family. The same cached GGUFs can be loaded directly by llama.cpp (`--model` / `--model-draft`).
 
 ## Models
 
@@ -32,7 +32,7 @@ Qwen 3.6's smallest GGUF is 27B (offloads on a 12 GB card), so these use the **Q
 
 | Modelfile | Base Model | Mode | Quantization | Approx. Size |
 |---|---|---|---|
-| `Modelfile.qwen3.5-9b-coding-q4-k-m` | Qwen 3.5 9B | Precise coding | Q4_K_M | ~6.6 GB |
+| `Modelfile.qwen3.5-9b-coding-ud-q4-k-xl` | Qwen 3.5 9B | Precise coding | UD-Q4_K_XL | ~6.9 GB |
 | `Modelfile.qwen3.5-9b-mtp-coding-ud-q4-k-xl` | Qwen 3.5 9B MTP | Precise coding + MTP self-draft | UD-Q4_K_XL | ~7.1 GB |
 | `Modelfile.qwopus3.5-9b-coder-q4-k-m` | Qwopus3.5-9B-Coder (Qwen3.5-9B finetune) | Precise coding | Q4_K_M | ~5.6 GB |
 
@@ -62,7 +62,7 @@ For research, open-ended reasoning, and exploration.
 | `top_p` | 0.95 | |
 | `top_k` | 64 | |
 | `repeat_penalty` | 1.0 | |
-| `num_ctx` | 131072 | 256K max for 12B/26B-A4B/31B variants |
+| `num_ctx` | 131072-200000 | 256K max; 12B/31B dense run 200000, 26B-A4B 131072 |
 | `num_predict` | 65536 | |
 | System trigger | `<|think|>` | Required at start of system prompt to activate reasoning |
 
@@ -80,7 +80,7 @@ For code generation, debugging, and structured technical work.
 | `min_p` | 0.0 | |
 | `presence_penalty` | 0.0 | |
 | `repeat_penalty` | 1.0 | Mandated by Unsloth — deviating causes structural garbage in code output |
-| `num_ctx` | 131072 | 256K max (expandable to 1M via YaRN) |
+| `num_ctx` | 131072-262144 | 256K max (expandable to 1M via YaRN); 27B/9B coders 131072, 35B-A3B MTP tiers 200000-262144 |
 | `num_predict` | 65536 | |
 
 Qwen 3.6 has **thinking enabled by default**. To disable: `--chat-template-kwargs '{"enable_thinking":false}'` (llama.cpp) or `/no_think` in the prompt.
@@ -131,7 +131,7 @@ DiffusionGemma uses **discrete block diffusion**, not autoregressive token gener
 ./ollama-create.sh
 ```
 
-Canonical Modelfiles reference their source on HuggingFace via Unsloth's GGUF builds. Qwen alias Modelfiles reference a canonical local model name so the unsuffixed defaults can be repointed later without renaming the model family.
+Canonical Modelfiles reference local GGUFs in the Hugging Face cache (`hf download`, pinned snapshot paths). Alias Modelfiles reference a canonical local model name so the unsuffixed defaults can be repointed later without renaming the model family.
 
 ## Benchmarking
 
@@ -154,7 +154,7 @@ When executed, each harness starts temporary isolated `ollama serve` instances o
 
 The Qwen, Gemma, and 9B-coders runtime TSVs reuse the same alternate hosts (`127.0.0.1:11435` and `127.0.0.1:11436`). Run one harness at a time unless you intentionally change the host assignments; `benchmark-all.sh` runs them sequentially, which is safe.
 
-Gemma benchmarking is intentionally narrower than Qwen benchmarking in this repo. The current Gemma harness covers only the existing Ollama QAT models, uses text-only prompts, and does not assume Gemma MTP support through Ollama because Unsloth documents Gemma MTP for `llama.cpp` and Unsloth Studio, not for Ollama's `hf.co/...` loading path.
+Gemma benchmarking is intentionally narrower than Qwen benchmarking in this repo. The current Gemma harness covers only the existing Ollama QAT models and uses text-only prompts. Gemma MTP (separate drafter GGUF + `DRAFT` directive) works through Ollama's CUDA runner as of 0.31.1 — measured ~1.5-1.7x decode on-box — and is staged as `gemma4-26b-a4b-it-qat-mtp`; note that stock llama.cpp currently cannot load the gemma4-assistant drafters (upstream issue #24795), so Ollama is the working CUDA path.
 
 ```bash
 # Inspect the benchmark plan without running anything

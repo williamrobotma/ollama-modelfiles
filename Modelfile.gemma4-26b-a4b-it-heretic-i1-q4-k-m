@@ -1,4 +1,4 @@
-FROM hf.co/mradermacher/gemma-4-26B-A4B-it-ultra-uncensored-heretic-i1-GGUF:i1-Q4_K_M
+FROM /home/wma/.cache/huggingface/hub/models--mradermacher--gemma-4-26B-A4B-it-ultra-uncensored-heretic-i1-GGUF/snapshots/9cada68ea11a8f361e4b16a7a97e53d99b0918c0/gemma-4-26B-A4B-it-ultra-uncensored-heretic.i1-Q4_K_M.gguf
 # mradermacher imatrix (i1) Q4_K_M requant of llmfan46's "ultra-uncensored-heretic"
 # (Heretic 1.2.0 + ARA on attn.o_proj L11-22; reported 3/100 refusals, KL 0.1237,
 # MMLU 79.99 vs 82.48 base). Gemma-4-26B-A4B MoE: 25.2B total / ~3.8B active -> fast

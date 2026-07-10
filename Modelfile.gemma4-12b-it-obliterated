@@ -1,4 +1,4 @@
-FROM hf.co/OBLITERATUS/Gemma-4-12B-OBLITERATED:Q4_K_M
+FROM /home/wma/.cache/huggingface/hub/models--OBLITERATUS--Gemma-4-12B-OBLITERATED/snapshots/f81b0cbd28a3650138635823bc101adb56a0bc4a/Gemma-4-12B-OBLITERATED-Q4_K_M.gguf
 # OBLITERATUS (Pliny the Liberator) CoT-aware abliteration of google/gemma-4-12B-it;
 # card reports MMLU-Pro delta 0.0pp vs stock. Comparison candidate against the resident
 # DuoNeural gemma4-12b-it-uncensored - same Gemma-4 thinking profile for a fair A/B.
