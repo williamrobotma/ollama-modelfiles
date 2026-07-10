@@ -1,202 +1,133 @@
 # ollama-modelfiles
 
-Custom Ollama Modelfile configurations for local LLM inference, organized by model and use profile. Canonical models reference **local GGUFs in the Hugging Face cache** (downloaded with `hf download`, pinned to snapshot paths — mostly [Unsloth](https://unsloth.ai) builds), and unsuffixed aliases wrap the current canonical default for that family. The same cached GGUFs can be loaded directly by llama.cpp (`--model` / `--model-draft`).
+Ollama Modelfile configurations for local LLM inference on a single 12 GB GPU, organized by model family and use profile. Every Modelfile references a local GGUF in the Hugging Face cache (downloaded with `hf download`, pinned to a snapshot path - mostly [Unsloth](https://unsloth.ai) builds). The same cached GGUFs can be loaded directly by llama.cpp. Agents should read [AGENTS.md](AGENTS.md) first.
 
-## Models
+## Requirements
 
-Canonical Qwen benchmark variants use explicit quant suffixes. Unsuffixed Qwen filenames remain as compatibility aliases so existing model names continue to work.
+- Ollama 0.31.1 or newer (the `DRAFT` MTP directive runs on the CUDA runner as of 0.31.1).
+- The Hugging Face CLI (`hf`, from `huggingface_hub`) to provision GGUFs.
+- An NVIDIA CUDA GPU. The reference box is an RTX 4070 (12 GB, WSL2); models larger than ~12 GB partial-offload to CPU. Use CUDA 13.1 or 13.3 - 13.2 corrupts Gemma 4 output.
 
-### Canonical Modelfiles
+## Quickstart
 
-| Modelfile | Base Model | Mode | Quantization | Approx. Size |
-|---|---|---|---|
-| `Modelfile.gemma4-12b-it-qat` | Gemma 4 12B IT QAT | Thinking | UD-Q4_K_XL | ~7 GB |
-| `Modelfile.gemma4-26b-a4b-it-qat` | Gemma 4 26B A4B IT QAT | Thinking | UD-Q4_K_XL | ~15 GB |
-| `Modelfile.qwen3.6-27b-coding-ud-q4-k-xl` | Qwen 3.6 27B | Precise coding | UD-Q4_K_XL | ~17.6 GB |
-| `Modelfile.qwen3.6-27b-mtp-coding-ud-q4-k-xl` | Qwen 3.6 27B MTP | Precise coding + MTP | UD-Q4_K_XL | ~17.9 GB |
-| `Modelfile.qwen3.6-35b-a3b-coding-ud-q4-k-xl` | Qwen 3.6 35B-A3B | Precise coding | UD-Q4_K_XL | ~22.4 GB |
-| `Modelfile.qwen3.6-35b-a3b-mtp-coding-ud-q4-k-xl` | Qwen 3.6 35B-A3B MTP | Precise coding + MTP | UD-Q4_K_XL | ~22.9 GB |
+```bash
+# 1. Clone
+git clone <this repo> && cd ollama-modelfiles
 
-### Compatibility Aliases
+# 2. Download one model's GGUFs into the HF cache (weights + vision projector)
+hf download unsloth/gemma-4-12B-it-qat-GGUF \
+    gemma-4-12B-it-qat-UD-Q4_K_XL.gguf mmproj-BF16.gguf
 
-| Alias Modelfile | Current Canonical Target |
+# 3. Build the Ollama model from its Modelfile directory
+scripts/ollama-create.sh modelfiles/gemma4/12b-it-qat
+
+# 4. Run it
+ollama run gemma4-12b-it-qat
+```
+
+The model name is always `<family>-<stem>` from `modelfiles/<family>/<stem>/`. `FROM` paths are pinned to a specific snapshot commit; if `hf download` fetches a newer commit, update the `FROM` line in the Modelfile to the new snapshot path (deliberate pinning - see [AGENTS.md](AGENTS.md#gguf-sourcing-convention)). Run `scripts/ollama-create.sh` with no argument to build every model.
+
+## Model catalog
+
+Model name = `<family>-<stem>`. Sizes are the Ollama store size on the reference box.
+
+### Gemma 4 (thinking; vision via mmproj)
+
+| Model | Family | What it is | Quant | Size |
+|---|---|---|---|---|
+| `gemma4-12b-it-qat` | gemma4 | 12B IT QAT, thinking + vision, resident | UD-Q4_K_XL | 6.9 GB |
+| `gemma4-26b-a4b-it-qat` | gemma4 | 26B-A4B MoE IT QAT, thinking + vision | UD-Q4_K_XL | 15 GB |
+| `gemma4-26b-a4b-it-qat-mtp` | gemma4 | 26B-A4B + separate MTP drafter (`DRAFT`) | UD-Q4_K_XL | 15 GB |
+| `gemma4-31b-it-qat` | gemma4 | 31B dense IT QAT, thinking + vision, offloads | UD-Q4_K_XL | 18 GB |
+
+### Qwen 3.6 coders (precise coding)
+
+| Model | Family | What it is | Quant | Size |
+|---|---|---|---|---|
+| `qwen3.6-27b-coding-ud-q4-k-xl` | qwen3.6 | 27B dense precise coding | UD-Q4_K_XL | 18 GB |
+| `qwen3.6-27b-mtp-coding-ud-q4-k-xl` | qwen3.6 | 27B MTP self-draft coding | UD-Q4_K_XL | 18 GB |
+| `qwen3.6-35b-a3b-coding-ud-q4-k-xl` | qwen3.6 | 35B-A3B MoE precise coding | UD-Q4_K_XL | 23 GB |
+| `qwen3.6-35b-a3b-mtp-ud-q4-k-xl` | qwen3.6 | 35B-A3B MTP base (instruct profile) | UD-Q4_K_XL | 23 GB |
+| `qwen3.6-35b-a3b-mtp-ud-q5-k-xl` | qwen3.6 | 35B-A3B MTP base (instruct profile) | UD-Q5_K_XL | 28 GB |
+| `qwen3.6-35b-a3b-mtp-coding-ud-q4-k-xl` | qwen3.6 | 35B-A3B MTP coding profile | UD-Q4_K_XL | 23 GB |
+| `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` | qwen3.6 | 35B-A3B MTP coding profile | UD-Q5_K_XL | 28 GB |
+| `qwen3.6-35b-a3b-mtp-reasoning-ud-q5-k-xl` | qwen3.6 | 35B-A3B MTP reasoning profile | UD-Q5_K_XL | 28 GB |
+
+### Small coders (fit 12 GB VRAM)
+
+Qwen 3.6's smallest GGUF is 27B (offloads), so these use the Qwen 3.5 dense line, which fits fully resident and runs the same precise-coding profile.
+
+| Model | Family | What it is | Quant | Size |
+|---|---|---|---|---|
+| `qwen3.5-9b-coding-ud-q4-k-xl` | qwen3.5 | 9B precise coding, resident | UD-Q4_K_XL | 6.9 GB |
+| `qwen3.5-9b-mtp-coding-ud-q4-k-xl` | qwen3.5 | 9B MTP self-draft coding | UD-Q4_K_XL | 7.1 GB |
+| `qwopus3.5-9b-coder-q4-k-m` | qwopus3.5 | Community Qwen3.5-9B finetune (experimental), coding | Q4_K_M | 6.6 GB |
+| `qwen3.5-queen-27b-coding-q4-k-m` | qwen3.5 | Queen-27B community model, coding (verify claims + gate) | i1-Q4_K_M | 16 GB |
+
+### Uncensored (reasoning / research / agentic track)
+
+Community abliterated builds (plain Q4/i1-Q4, not UD-*). Abliteration can dent reasoning/tool-calling - verify on-task; all must pass the [chat-template gate](AGENTS.md#chat-template-gate-for-community-ggufs).
+
+| Model | Family | What it is | Quant | Size |
+|---|---|---|---|---|
+| `gemma4-12b-it-obliterated` | gemma4 | Uncensored 12B (OBLITERATUS CoT-aware), resident thinking | Q4_K_M | 7.4 GB |
+| `gemma4-26b-a4b-it-heretic-i1-q4-k-m` | gemma4 | Uncensored 26B-A4B MoE (Heretic/ARA), reasoning daily driver, offload | i1-Q4_K_M | 16 GB |
+| `gemma4-31b-it-heretic-i1-q4-k-m` | gemma4 | Uncensored 31B dense (Heretic), offload | i1-Q4_K_M | 18 GB |
+| `qwen3.6-27b-obliterated-q4-k-m` | qwen3.6 | Uncensored 27B (OBLITERATUS), general/thinking | Q4_K_M | 16 GB |
+| `qwen3.6-27b-obliterated-coding-q4-k-m` | qwen3.6 | Uncensored 27B (OBLITERATUS), precise coding | Q4_K_M | 16 GB |
+
+### Compatibility aliases
+
+Thin one-line Modelfiles that repoint an unsuffixed default at the current canonical quant, so model names stay stable when the default changes.
+
+| Alias | Current target |
 |---|---|
-| `Modelfile.qwen3.6-27b-coding` | `qwen3.6-27b-coding-ud-q4-k-xl` |
-| `Modelfile.qwen3.6-27b-mtp-coding` | `qwen3.6-27b-mtp-coding-ud-q4-k-xl` |
-| `Modelfile.qwen3.6-35b-a3b-coding` | `qwen3.6-35b-a3b-coding-ud-q4-k-xl` |
-| `Modelfile.qwen3.6-35b-a3b-mtp-coding` | `qwen3.6-35b-a3b-mtp-coding-ud-q4-k-xl` |
-
-### Small Coders (fit 12 GB VRAM)
-
-Qwen 3.6's smallest GGUF is 27B (offloads on a 12 GB card), so these use the **Qwen 3.5** dense line, which fits fully GPU-resident. All three run the same precise-coding profile as the Qwen 3.6 coders.
-
-| Modelfile | Base Model | Mode | Quantization | Approx. Size |
-|---|---|---|---|
-| `Modelfile.qwen3.5-9b-coding-ud-q4-k-xl` | Qwen 3.5 9B | Precise coding | UD-Q4_K_XL | ~6.9 GB |
-| `Modelfile.qwen3.5-9b-mtp-coding-ud-q4-k-xl` | Qwen 3.5 9B MTP | Precise coding + MTP self-draft | UD-Q4_K_XL | ~7.1 GB |
-| `Modelfile.qwopus3.5-9b-coder-q4-k-m` | Qwopus3.5-9B-Coder (Qwen3.5-9B finetune) | Precise coding | Q4_K_M | ~5.6 GB |
-
-Qwopus is an experimental community finetune (Claude-Opus trace-inversion distill); its coding edge over the base 9B is self-reported, which is what the `benchmark-9b-coders` suite tests.
+| `qwen3.6-27b-coding` | `qwen3.6-27b-coding-ud-q4-k-xl` |
+| `qwen3.6-27b-mtp-coding` | `qwen3.6-27b-mtp-coding-ud-q4-k-xl` |
+| `qwen3.6-35b-a3b-coding` | `qwen3.6-35b-a3b-coding-ud-q4-k-xl` |
+| `qwen3.6-35b-a3b-mtp-coding` | `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` |
+| `qwen3.6-35b-a3b-mtp-reasoning` | `qwen3.6-35b-a3b-mtp-reasoning-ud-q5-k-xl` |
+| `qwen3.6-27b-obliterated-coding` | `qwen3.6-27b-obliterated-coding-q4-k-m` |
+| `qwen3.5-9b-mtp-coding` | `qwen3.5-9b-mtp-coding-ud-q4-k-xl` |
 
 ## Quantization
 
-Canonical models use an **Unsloth Dynamic ("UD-")** quant. This is not standard llama.cpp Q4_0:
+Canonical Unsloth models use an Unsloth Dynamic ("UD-") quant, which is not standard llama.cpp Q4_0:
 
-- **UD-** prefix = Unsloth Dynamic — every layer gets a custom quantization type based on a 1.5M+ token calibration dataset
-- **Q4_K_XL** = standard llama.cpp base; **XL** suffix means embedding and output weights are kept at Q8_0 for better accuracy
-- Qwen canonical filenames mirror upstream quant tags verbatim
-- For Gemma 4 QAT models, standard Q4_0 degrades accuracy from ~89% to ~74% Top-1% and is actually *larger* (6.98 GB vs 6.72 GB for UD-Q4_K_XL)
-- See [Unsloth Dynamic 2.0 GGUFs](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs)
+- **UD-** = Unsloth Dynamic: every layer gets a custom quant type based on a 1.5M+ token calibration set.
+- **Q4_K_XL / Q5_K_XL** = the **XL** suffix keeps embedding and output weights at Q8_0 for better accuracy.
+- Gemma 4 QAT repos publish only UD-Q4_K_XL (QAT already targets ~Q4); standard Q4_0 degrades Top-1 from ~89% to ~74% and is larger.
+- Community abliterated models are not Unsloth, so their tags are plain Q4_K_M or i1-Q4_K_M, not UD-*.
+- See [Unsloth Dynamic 2.0 GGUFs](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs).
 
-## Profiles
+Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in [docs/parameters.md](docs/parameters.md).
 
-Two tuning profiles, each suited to a different mode of use.
+## Repo map
 
-### Thinking (Gemma 4)
-
-For research, open-ended reasoning, and exploration.
-
-| Parameter | Value | Source |
-|---|---|---|
-| `temperature` | 1.0 | [Unsloth Gemma 4 docs](https://unsloth.ai/docs/models/gemma-4) |
-| `top_p` | 0.95 | |
-| `top_k` | 64 | |
-| `repeat_penalty` | 1.0 | |
-| `num_ctx` | 131072-200000 | 256K max; 12B/31B dense run 200000, 26B-A4B 131072 |
-| `num_predict` | 65536 | |
-| System trigger | `<|think|>` | Required at start of system prompt to activate reasoning |
-
-**Note:** CUDA 13.2 produces corrupted outputs. Use CUDA 13.1 or 13.3.
-
-### Precise Coding (Qwen 3.6)
-
-For code generation, debugging, and structured technical work.
-
-| Parameter | Value | Source |
-|---|---|---|
-| `temperature` | 0.6 | [Unsloth Qwen 3.6 docs](https://unsloth.ai/docs/models/qwen3.6) |
-| `top_p` | 0.95 | |
-| `top_k` | 20 | |
-| `min_p` | 0.0 | |
-| `presence_penalty` | 0.0 | |
-| `repeat_penalty` | 1.0 | Mandated by Unsloth — deviating causes structural garbage in code output |
-| `num_ctx` | 131072-262144 | 256K max (expandable to 1M via YaRN); 27B/9B coders 131072, 35B-A3B MTP tiers 200000-262144 |
-| `num_predict` | 65536 | |
-
-Qwen 3.6 has **thinking enabled by default**. To disable: `--chat-template-kwargs '{"enable_thinking":false}'` (llama.cpp) or `/no_think` in the prompt.
-
-### General Tasks (Qwen 3.6)
-
-For non-coding use with thinking mode:
-
-| Parameter | Value |
+| Path | What |
 |---|---|
-| `temperature` | 1.0 |
-| `top_p` | 0.95 |
-| `top_k` | 20 |
-| `min_p` | 0.0 |
-| `presence_penalty` | 0.0 |
-| `repeat_penalty` | 1.0 |
-
-### Instruct Mode (Qwen 3.6, non-thinking)
-
-For direct responses without reasoning traces:
-
-| Parameter | Value |
-|---|---|
-| `temperature` | 0.7 |
-| `top_p` | 0.8 |
-| `top_k` | 20 |
-| `min_p` | 0.0 |
-| `presence_penalty` | 1.5 |
-| `repeat_penalty` | 1.0 |
-
-### DiffusionGemma
-
-DiffusionGemma uses **discrete block diffusion**, not autoregressive token generation. It generates 256-token canvases simultaneously through iterative denoising. Standard autoregressive parameters (temperature, top_k, top_p) are explicitly noted as insufficient — the model requires a diffusion sampler with a temperature schedule (0.8→0.4 decay) and entropy-bound adaptive stopping. See [DiffusionGemma docs](https://unsloth.ai/docs/models/diffusiongemma).
-
-## Usage
-
-```bash
-# Create a single canonical model from its Modelfile
-./ollama-create.sh Modelfile.gemma4-12b-it-qat
-
-# Create a single Qwen benchmark variant
-./ollama-create.sh Modelfile.qwen3.6-35b-a3b-coding-ud-q4-k-xl
-
-# Create a compatibility alias; the script builds its canonical dependency first
-./ollama-create.sh Modelfile.qwen3.6-35b-a3b-coding
-
-# Create all models at once
-./ollama-create.sh
-```
-
-Canonical Modelfiles reference local GGUFs in the Hugging Face cache (`hf download`, pinned snapshot paths). Alias Modelfiles reference a canonical local model name so the unsuffixed defaults can be repointed later without renaming the model family.
+| `modelfiles/<family>/<stem>/Modelfile` | The models; name = `<family>-<stem>`. |
+| `scripts/` | `ollama-create.sh` (build), `repro-mtp-graphs.sh` (crash repro). |
+| `benchmarks/` | Three dry-run-by-default suites plus shared `common.sh`, `report.py`, `all.sh`. |
+| `docs/` | Topic docs; `docs/history/` holds immutable dated session logs. |
+| `specs/<feature>/` | Spec + plan + tasks for in-flight work. |
+| `AGENTS.md` / `CLAUDE.md` | Canonical agent instructions; thin Claude-specific shim. |
 
 ## Benchmarking
 
-The repo includes dry-run-by-default benchmark harnesses for the Qwen, Gemma, and 9B-coders suites:
-
-- `benchmark-qwen.sh` prints the benchmark plan and exact `ollama run --verbose` commands for the canonical Qwen coding variants.
-- `benchmark-qwen.matrix.tsv` defines the canonical Qwen variants to compare.
-- `benchmark-qwen.runtime.tsv` defines the Qwen runtime A/B profiles, including the current `GGML_CUDA_DISABLE_GRAPHS=1` configuration and a graphs-enabled comparison run.
-- `benchmark-qwen.prompt.medium.txt` and `benchmark-qwen.prompt.long.txt` provide fixed coding prompts for repeatable Qwen runs.
-- `benchmark-gemma.sh` prints the benchmark plan and exact `ollama run --verbose` commands for the current Gemma thinking profiles.
-- `benchmark-gemma.matrix.tsv` defines the first-pass Gemma benchmark set: `gemma4-12b-it-qat` and `gemma4-26b-a4b-it-qat`.
-- `benchmark-gemma.runtime.tsv` defines the Gemma runtime A/B profiles. It mirrors the same graphs-off versus graphs-on setup as the Qwen harness.
-- `benchmark-gemma.prompt.reasoning.txt` and `benchmark-gemma.prompt.analysis.txt` provide fixed text-only prompts for repeatable Gemma runs.
-- `benchmark-9b-coders.sh` prints the plan for the VRAM-fit small coders (Qwen3.5-9B, the Qwopus3.5-9B-Coder finetune, and the `gemma4-12b-it-qat` baseline); `benchmark-9b-coders.matrix.tsv` lists them and `benchmark-9b-coders.prompt.*.txt` reuses the Qwen coding prompts.
-- `benchmark-all.sh` runs the Qwen, Gemma, and 9B-coders suites sequentially.
-
-Nothing runs unless you pass `--execute`.
-
-When executed, each harness starts temporary isolated `ollama serve` instances on the hosts defined in its runtime TSV so the graphs-off and graphs-on runs stay separate without editing systemd in place. For the cleanest results, stop or idle the systemd Ollama service before running a benchmark.
-
-The Qwen, Gemma, and 9B-coders runtime TSVs reuse the same alternate hosts (`127.0.0.1:11435` and `127.0.0.1:11436`). Run one harness at a time unless you intentionally change the host assignments; `benchmark-all.sh` runs them sequentially, which is safe.
-
-Gemma benchmarking is intentionally narrower than Qwen benchmarking in this repo. The current Gemma harness covers only the existing Ollama QAT models and uses text-only prompts. Gemma MTP (separate drafter GGUF + `DRAFT` directive) works through Ollama's CUDA runner as of 0.31.1 — measured ~1.5-1.7x decode on-box — and is staged as `gemma4-26b-a4b-it-qat-mtp`; note that stock llama.cpp currently cannot load the gemma4-assistant drafters (upstream issue #24795), so Ollama is the working CUDA path.
+Three dry-run-by-default suites (`qwen`, `gemma`, `9b-coders`) time decode throughput and A/B CUDA graphs off vs on. Nothing runs without `--execute`.
 
 ```bash
-# Inspect the benchmark plan without running anything
-./benchmark-qwen.sh
-
-# List the configured models and prompts
-./benchmark-qwen.sh --list
-
-# When ready later, execute the benchmark matrix
-./benchmark-qwen.sh --execute
-
-# Inspect the Gemma benchmark plan without running anything
-./benchmark-gemma.sh
-
-# List the configured Gemma models and prompts
-./benchmark-gemma.sh --list
-
-# When ready later, execute the Gemma benchmark matrix
-./benchmark-gemma.sh --execute
+benchmarks/qwen/run.sh            # print the plan (dry-run)
+benchmarks/qwen/run.sh --execute  # run it
 ```
 
-Executed runs write raw logs and timing metadata under `benchmark-results/<timestamp>/` so you can parse or compare them later without rerunning the models immediately.
+Ports, isolated serves, and distilled findings (MTP speedups, the CUDA-graphs crash, throughput costs): [docs/benchmarking.md](docs/benchmarking.md).
 
-## Files
+## More
 
-| File | Description |
-|---|---|
-| `benchmark-gemma.sh` | Dry-run-by-default benchmark harness for the current Gemma QAT Ollama models |
-| `benchmark-gemma.matrix.tsv` | Benchmark matrix listing the current Gemma model IDs to compare |
-| `benchmark-gemma.prompt.*.txt` | Fixed text-only prompt fixtures for repeatable Gemma runs |
-| `benchmark-gemma.runtime.tsv` | Runtime A/B matrix for Gemma graphs disabled versus enabled |
-| `benchmark-qwen.sh` | Dry-run-by-default benchmark harness for the Qwen canonical variants |
-| `benchmark-qwen.matrix.tsv` | Benchmark matrix listing the canonical Qwen model IDs to compare |
-| `benchmark-qwen.prompt.*.txt` | Fixed coding prompt fixtures for repeatable Qwen runs |
-| `benchmark-qwen.runtime.tsv` | Runtime A/B matrix for CUDA graphs disabled versus enabled |
-| `benchmark-common.sh` | Shared harness body sourced by the `benchmark-qwen.sh`, `benchmark-gemma.sh`, and `benchmark-9b-coders.sh` wrappers |
-| `benchmark-9b-coders.sh` | Dry-run-by-default harness for small coders that fit 12 GB VRAM |
-| `benchmark-9b-coders.matrix.tsv` | Matrix: Qwen3.5-9B, Qwopus3.5-9B-Coder, Gemma baseline |
-| `benchmark-9b-coders.runtime.tsv` | Runtime A/B matrix (graphs off vs on) |
-| `benchmark-9b-coders.prompt.*.txt` | Fixed coding prompts (copies of the Qwen suite prompts) |
-| `benchmark-all.sh` | Runs the Qwen, Gemma, and 9B-coders suites sequentially |
-| `ollama-create.sh` | Build script — creates canonical models directly and resolves alias dependencies automatically |
-| `session_summary_diffusiongemma.md` | Engineering log: research, iteration, and self-critique for DiffusionGemma configuration |
-| `session_summary_9b_coders_vram.md` | Research log: 9B-coders VRAM fit + validation of prior Sonnet research |
-| `.task_plan.md` | Active task plan for the current work |
+- [AGENTS.md](AGENTS.md) - conventions and commands for any coding agent.
+- [docs/architecture.md](docs/architecture.md) - how the stack fits together.
+- [docs/parameters.md](docs/parameters.md) - sampling profiles and mandates.
+- [docs/openwebui.md](docs/openwebui.md) - the browser frontend.
+- [docs/history/index.md](docs/history/index.md) - the research trail.
