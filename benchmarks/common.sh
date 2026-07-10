@@ -1,42 +1,45 @@
 #!/usr/bin/env bash
-# Shared benchmark harness body. Sourced by benchmark-qwen.sh and
-# benchmark-gemma.sh, which set $suite to select the matrix/runtime/prompt
-# files (benchmark-$suite.*). Not meant to be run directly.
+# Shared benchmark harness body. Sourced by benchmarks/<suite>/run.sh
+# wrappers, which set $suite and $suite_dir to select that directory's
+# matrix.tsv, runtime.tsv, and prompts/*.txt. Not meant to be run directly.
 set -euo pipefail
 
-: "${suite:?benchmark-common.sh must be sourced from a benchmark-<suite>.sh wrapper}"
+: "${suite:?common.sh must be sourced from a benchmarks/<suite>/run.sh wrapper}"
+: "${suite_dir:?common.sh must be sourced from a benchmarks/<suite>/run.sh wrapper}"
 
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-matrix_file="$script_dir/benchmark-$suite.matrix.tsv"
-runtime_file="$script_dir/benchmark-$suite.runtime.tsv"
-output_root="$script_dir/benchmark-results"
+common_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "$common_dir/.." && pwd)"
+matrix_file="$suite_dir/matrix.tsv"
+runtime_file="$suite_dir/runtime.tsv"
+output_root="$repo_root/benchmark-results"
 keepalive="30m"
-server_keepalive="24h"
+readonly server_keepalive="24h"  # server-side OLLAMA_KEEP_ALIVE: stay resident across all reps in a profile
+readonly timestamp_format="%Y%m%dT%H%M%SZ"  # UTC compact-ISO; sorts lexicographically as a results-dir name
 server_context_length="131072"
 server_flash_attention="1"
 server_kv_cache_type="q8_0"
 # Isolated serve runs as the invoking user; point it at the systemd `ollama`
 # user's store so models built via `ollama create` are visible (needs the
 # invoking user in the `ollama` group for read access).
-server_models_dir="/usr/share/ollama/.ollama/models"
+readonly server_models_dir="/usr/share/ollama/.ollama/models"
 time_format=$'wall_clock_seconds=%e\nmax_rss_kb=%M\nexit_status=%x'
 repetitions=2
 warmup=1
 execute=0
 list_only=0
-server_start_timeout=60
+readonly server_start_timeout=60  # serve readiness timeout (s)
 active_server_pid=""
 
 declare -a server_env_args=()
 
 usage() {
     cat <<EOF
-Usage: ./benchmark-$suite.sh [options]
+Usage: benchmarks/$suite/run.sh [options]
 
 Set up or run a fixed ${suite^} benchmark matrix against Ollama models.
 
 The benchmark matrix is evaluated across isolated runtime profiles defined in
-benchmark-$suite.runtime.tsv. The default profiles A/B the current
+this suite's runtime.tsv. The default profiles A/B the current
 GGML_CUDA_DISABLE_GRAPHS=1 setting against a graphs-enabled run on a separate
 Ollama host.
 
@@ -54,13 +57,13 @@ Options:
   --no-warmup               Skip the warmup run for each model/prompt pair.
   -h, --help                Show this help text.
 
-Output layout when executed:
+Output layout when executed (under the repo root):
   benchmark-results/<timestamp>/
     manifest.txt
     system.txt
-    benchmark-$suite.matrix.tsv
-    benchmark-$suite.runtime.tsv
-    prompts/benchmark-$suite.prompt.*.txt
+    matrix.tsv
+    runtime.tsv
+    prompts/*.txt
     <runtime-profile>/profile.txt
     <runtime-profile>/ollama-serve.log
     <runtime-profile>/server-state.txt
@@ -88,7 +91,7 @@ trap cleanup_server EXIT
 prompt_files() {
     local prompt
     shopt -s nullglob
-    for prompt in "$script_dir"/benchmark-$suite.prompt.*.txt; do
+    for prompt in "$suite_dir"/prompts/*.txt; do
         printf '%s\n' "$prompt"
     done | sort
     shopt -u nullglob
@@ -98,7 +101,6 @@ prompt_name() {
     local prompt_file="$1"
     local base
     base="${prompt_file##*/}"
-    base="${base#benchmark-$suite.prompt.}"
     printf '%s\n' "${base%.txt}"
 }
 
@@ -235,7 +237,7 @@ done
 [[ "$repetitions" =~ ^[1-9][0-9]*$ ]] || die "--repetitions must be a positive integer"
 
 mapfile -t prompts < <(prompt_files)
-[[ ${#prompts[@]} -gt 0 ]] || die "no benchmark prompt files found in $script_dir"
+[[ ${#prompts[@]} -gt 0 ]] || die "no benchmark prompt files found in $suite_dir/prompts"
 
 mapfile -t matrix_rows < <(awk 'BEGIN { FS="\t" } $0 !~ /^#/ && NF >= 4 { print $0 }' "$matrix_file")
 [[ ${#matrix_rows[@]} -gt 0 ]] || die "no benchmark rows found in $matrix_file"
@@ -259,7 +261,7 @@ if [[ "$list_only" -eq 1 ]]; then
     exit 0
 fi
 
-timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+timestamp="$(date -u +"$timestamp_format")"
 output_dir="$output_root/$timestamp"
 
 echo "Benchmark plan"
@@ -280,8 +282,8 @@ if [[ "$execute" -eq 0 ]]; then
     echo
 else
     mkdir -p "$output_dir/prompts"
-    cp "$matrix_file" "$output_dir/benchmark-$suite.matrix.tsv"
-    cp "$runtime_file" "$output_dir/benchmark-$suite.runtime.tsv"
+    cp "$matrix_file" "$output_dir/matrix.tsv"
+    cp "$runtime_file" "$output_dir/runtime.tsv"
     for prompt_file in "${prompts[@]}"; do
         cp "$prompt_file" "$output_dir/prompts/"
     done

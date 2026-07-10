@@ -16,19 +16,22 @@
 # restart-the-serve-per-run, not more warm reps.
 #
 # Runs on an isolated alternate-port serve (never mutates the systemd
-# instance), same pattern as benchmark-common.sh.  Dry-run by default; pass
+# instance), same pattern as benchmarks/common.sh.  Dry-run by default; pass
 # --execute to serve + run.
 set -uo pipefail
 
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+
 # --- config ---
-host="127.0.0.1:11437"                 # free: systemd=11434, harness=11435/11436
-models_dir="/usr/share/ollama/.ollama/models"
-prompt_file="$(dirname -- "${BASH_SOURCE[0]}")/benchmark-9b-coders.prompt.long.txt"
+readonly host="127.0.0.1:11437"        # free alternate port; systemd=11434, harness=11435/11436
+readonly models_dir="/usr/share/ollama/.ollama/models"
+prompt_file="$repo_root/benchmarks/9b-coders/prompts/long.txt"
 model="qwen3.5-9b-mtp-coding-ud-q4-k-xl"
-runs=30                                 # reps against the one warm serve
-num_predict=4096                        # per-run token cap (> the 1289 crash point)
+readonly runs=30                        # reps against the one warm serve
+readonly num_predict=4096               # per-run token cap (> the 1289 crash point)
 run_timeout=180                         # per-run wall-clock cap (s)
 ready_timeout=60                        # serve readiness cap (s)
+readonly keep_alive="24h"               # OLLAMA_KEEP_ALIVE; same as benchmarks/common.sh's server_keepalive
 
 execute=0
 [[ "${1:-}" == "--execute" ]] && execute=1
@@ -45,7 +48,7 @@ if (( ! execute )); then
 fi
 
 # --- execute ---
-outdir="$(dirname -- "${BASH_SOURCE[0]}")/benchmark-results/repro-mtp-graphs-$(date -u +%Y%m%dT%H%M%SZ)"
+outdir="$repo_root/benchmark-results/repro-mtp-graphs-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$outdir"
 results="$outdir/results.txt"
 serve_log="$outdir/serve.log"
@@ -58,7 +61,7 @@ env \
     "OLLAMA_HOST=$host" \
     "OLLAMA_MODELS=$models_dir" \
     "OLLAMA_CONTEXT_LENGTH=131072" \
-    "OLLAMA_KEEP_ALIVE=24h" \
+    "OLLAMA_KEEP_ALIVE=$keep_alive" \
     "OLLAMA_FLASH_ATTENTION=1" \
     "OLLAMA_KV_CACHE_TYPE=q8_0" \
     "OLLAMA_NUM_PARALLEL=1" \

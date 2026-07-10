@@ -1,3 +1,3 @@
 # profile	host	cuda_graphs	description
-graphs-off	127.0.0.1:11435	disabled	Prod target: GGML_CUDA_DISABLE_GRAPHS=1 (avoids the ~12.5% MTP graphs crash; see session_summary_mtp_graphs_crash.md)
+graphs-off	127.0.0.1:11435	disabled	Prod target: GGML_CUDA_DISABLE_GRAPHS=1 (avoids the ~12.5% MTP graphs crash; see docs/history/2026-07-01-mtp-graphs-crash.md)
 graphs-on	127.0.0.1:11436	enabled	Leave GGML_CUDA_DISABLE_GRAPHS unset to A/B CUDA graph capture

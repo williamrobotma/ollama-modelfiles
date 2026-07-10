@@ -2,18 +2,20 @@
 # Runs the Qwen, Gemma, and 9B-coders benchmark suites sequentially; a failing
 # suite is reported and the rest still run. Dry-run by default (prints each
 # suite's plan); pass --execute to run. All per-suite options live on the suite
-# scripts -- see ./benchmark-qwen.sh --help.
+# scripts -- see benchmarks/qwen/run.sh --help.
 set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
     cat <<EOF
-Usage: ./benchmark-all.sh [--execute]
+Usage: benchmarks/all.sh [--execute]
 
 Run the Qwen, Gemma, and 9B-coders benchmark suites sequentially. Dry-run by
 default (prints each suite's plan); pass --execute to run them.
 
 Per-suite options (--matrix, --keepalive, --repetitions, ...) are not accepted
-here; run the individual suite directly. See ./benchmark-qwen.sh --help.
+here; run the individual suite directly. See benchmarks/qwen/run.sh --help.
 
 Options:
   --execute     Run the benchmarks instead of printing the plans.
@@ -44,6 +46,6 @@ if [[ -z "$execute_flag" ]]; then
     echo
 fi
 
-run_suite ./benchmark-qwen.sh
-run_suite ./benchmark-gemma.sh
-run_suite ./benchmark-9b-coders.sh
+run_suite "$script_dir/qwen/run.sh"
+run_suite "$script_dir/gemma/run.sh"
+run_suite "$script_dir/9b-coders/run.sh"
