@@ -2,7 +2,7 @@
 
 ## Why
 
-`26b-a4b-it-qat-mtp` exists; `12b-it-qat` and `31b-it-qat` do not. All three stock QAT
+`26b-a4b-it-qat-mtp` exists; `12b-it-qat-mtp` and `31b-it-qat-mtp` do not. All three stock QAT
 gemma4 repos have MTP drafters cached locally. This brings parity.
 
 ## What
