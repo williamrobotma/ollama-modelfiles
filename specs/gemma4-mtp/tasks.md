@@ -23,6 +23,6 @@ Deferred 2026-07-11. Create MTP versions of the remaining stock QAT gemma4 model
 
 ## Not in scope
 
-- `12b-it-obliterated` — ablated model; stock drafter mismatch
-- `26b-a4b-it-heretic-i1-q4-k-m` — heretic variant; stock drafter mismatch
-- `31b-it-heretic-i1-q4-k-m` — heretic variant; stock drafter mismatch
+- `12b-it-obliterated` - ablated model; stock drafter mismatch
+- `26b-a4b-it-heretic-i1-q4-k-m` - heretic variant; stock drafter mismatch
+- `31b-it-heretic-i1-q4-k-m` - heretic variant; stock drafter mismatch

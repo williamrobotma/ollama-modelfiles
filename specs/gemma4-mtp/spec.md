@@ -12,7 +12,7 @@ Create two Modelfiles that pair each stock QAT model with its Unsloth MTP drafte
 
 ## Constraints
 
-- Stock QAT only — heretic/obliterated variants use ablated models; stock drafters mismatch.
+- Stock QAT only - heretic/obliterated variants use ablated models; stock drafters mismatch.
 - Parameters inherit from parent (num_ctx, temperature, top_p, top_k, repeat_penalty, SYSTEM).
 - `draft_num_predict 2` (Unsloth's recommended starting value for gemma4 MTP).
 - Local GGUF paths from HF cache (consistent with existing gemma4 modelfiles).
