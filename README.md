@@ -110,7 +110,7 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in
 | `scripts/` | `ollama-create.sh` (build), `repro-mtp-graphs.sh` (crash repro). |
 | `benchmarks/` | Three dry-run-by-default suites plus shared `common.sh`, `report.py`, `all.sh`. |
 | `docs/` | Topic docs; `docs/history/` holds immutable dated session logs. |
-| `specs/<feature>/` | Spec + plan + tasks for in-flight work. |
+| `specs/<feature>/` | Spec + plan + tasks for in-flight work; executed by the run-spec skill. |
 | `AGENTS.md` / `CLAUDE.md` | Canonical agent instructions; thin Claude-specific shim. |
 
 ## Benchmarking
