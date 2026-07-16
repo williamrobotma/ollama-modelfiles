@@ -1,0 +1,25 @@
+FROM /home/wma/.cache/huggingface/hub/models--mradermacher--Qwen3.5-Queen-27B-i1-GGUF/snapshots/eec7aa31044810411ffc8dd7d733c628f2e4f794/Qwen3.5-Queen-27B.i1-Q4_K_M.gguf
+# mradermacher imatrix (i1) Q4_K_M of Qwen3.5-Queen-27B (community model,
+# ~16.6 GB - offloads on 12 GB VRAM). Uses the Qwen3.5 reasoning profile;
+# verify the source card's claims and the Claude-Code template gate before
+# relying on it.
+
+# --- CONTEXT CALIBRATION ---
+# Qwen3.5 native context is 256K (262144), so 262144 needs no YaRN.
+PARAMETER num_ctx 262144
+PARAMETER num_predict 65536
+
+
+# --- QWEN 3.5 "REASONING" PROFILE (thinking mode) ---
+PARAMETER temperature 1.0
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+
+# --- LOGIC PROTECTION ---
+# Qwen 3.5/3.6 docs mandate repeat_penalty 1.0; any other value causes
+# structural garbage in code output.
+PARAMETER repeat_penalty 1.0
+
+# --- SAMPLING FIDELITY ---
+PARAMETER min_p 0.0
+PARAMETER presence_penalty 0.0
