@@ -1,6 +1,6 @@
 # Session log index
 
-Immutable evidence logs, dated by first commit. They are kept verbatim as the primary-source record - do not edit their content. Where a later log corrects an earlier one, the correction lives inline in the older file. Superseded or distilled facts live in the topic docs (`../architecture.md`, `../parameters.md`, `../benchmarking.md`, `../openwebui.md`); read those for current state, these for the evidence trail.
+Posterity archive: dated session-evidence logs that are stale or superseded but must not be deleted - the primary-source record. Kept verbatim, immutable - do not edit their content. Where a later log corrects an earlier one, the correction lives inline in the older file. This is not a home for active work: current state lives in the topic docs (`../architecture.md`, `../parameters.md`, `../benchmarking.md`, `../openwebui.md`), and research or findings feeding an in-flight feature live in that feature's `specs/<feature>/` bundle until the work wraps. Read the topic docs for current state, these for the evidence trail.
 
 | Date | File | Abstract | Headline finding |
 |---|---|---|---|
