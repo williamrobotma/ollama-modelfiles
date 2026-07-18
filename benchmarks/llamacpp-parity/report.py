@@ -12,19 +12,27 @@ import statistics
 import sys
 from pathlib import Path
 
-EVAL_RATE = re.compile(r"^eval rate:\s+([0-9.]+) tokens/s", re.M)
-EVAL_COUNT = re.compile(r"^eval count:\s+([0-9]+) token", re.M)
+# The logs are `ollama run --verbose` TTY output; strip escape codes before
+# matching the footer, same as benchmarks/report.py:_footer.
+ANSI = re.compile(r"\x1b\[[0-9;?]*[a-zA-Z]")
 
 
 def ollama_run(log: Path):
-    text = log.read_text(errors="replace")
-    rates = EVAL_RATE.findall(text)
-    counts = EVAL_COUNT.findall(text)
-    if not rates:
+    rate = tokens = None
+    for raw in log.read_text(errors="replace").splitlines():
+        line = ANSI.sub("", raw).strip()
+        if line.startswith("eval rate:"):
+            m = re.search(r"([\d.]+)\s*tokens/s", line)
+            rate = float(m.group(1)) if m else rate
+        elif line.startswith("eval count:"):
+            m = re.search(r"(\d+)", line)
+            tokens = int(m.group(1)) if m else tokens
+    if rate is None:
         return None
     return {
-        "rate": float(rates[-1]),
-        "tokens": int(counts[-1]) if counts else None,
+        "engine": "ollama",
+        "rate": rate,
+        "tokens": tokens,
         "draft_n": None,
         "draft_accepted": None,
     }
@@ -39,6 +47,7 @@ def llama_run(js: Path):
     if t.get("predicted_per_second") is None:
         return None
     return {
+        "engine": "llamacpp",
         "rate": t["predicted_per_second"],
         "tokens": t.get("predicted_n"),
         "draft_n": t.get("draft_n"),
@@ -47,23 +56,19 @@ def llama_run(js: Path):
 
 
 def collect(results_dir: Path):
-    """-> {(profile, label, prompt): [run dicts]}"""
+    """-> {(profile, label, prompt): [run dicts, each tagged with its engine]}"""
     out = {}
     for profile_dir in sorted(p for p in results_dir.iterdir() if p.is_dir() and p.name != "prompts"):
         for label_dir in sorted(p for p in profile_dir.iterdir() if p.is_dir()):
             for prompt_dir in sorted(p for p in label_dir.iterdir() if p.is_dir()):
-                runs = []
-                for n in range(1, 100):
-                    js = prompt_dir / f"run-{n}.json"
-                    log = prompt_dir / f"run-{n}.log"
-                    if js.exists():
-                        run = llama_run(js)
-                    elif log.exists():
-                        run = ollama_run(log)
-                    else:
-                        break
-                    if run:
-                        runs.append(run)
+                # llamacpp runs leave run-<n>.json (plus a derived .log);
+                # ollama runs leave only run-<n>.log.
+                jsons = sorted(prompt_dir.glob("run-*.json"))
+                if jsons:
+                    runs = [llama_run(js) for js in jsons]
+                else:
+                    runs = [ollama_run(log) for log in sorted(prompt_dir.glob("run-*.log"))]
+                runs = [r for r in runs if r]
                 if runs:
                     out[(profile_dir.name, label_dir.name, prompt_dir.name)] = runs
     return out
@@ -97,14 +102,14 @@ def main():
 
     profiles = sorted({k[0] for k in data})
     print("\nllamacpp vs ollama (same model+prompt, ratio of mean decode tok/s):")
-    for (profile, label, prompt) in sorted(data):
-        if "llamacpp" not in profile:
+    for (profile, label, prompt), runs in sorted(data.items()):
+        if runs[0]["engine"] != "llamacpp":
             continue
         for other in profiles:
             base = data.get((other, label, prompt))
-            if other == profile or base is None or "llamacpp" in other:
+            if base is None or base[0]["engine"] != "ollama":
                 continue
-            ratio = mean_rate(data[(profile, label, prompt)]) / mean_rate(base)
+            ratio = mean_rate(runs) / mean_rate(base)
             print(f"  {label:<14} {prompt:<10} {profile} / {other} = {ratio:.2f}x")
 
     print("\nmtp vs plain (same engine+prompt, ratio of mean decode tok/s):")

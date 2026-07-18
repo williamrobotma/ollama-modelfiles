@@ -1,7 +1,12 @@
-# Parity matrix: each row is one model benched on BOTH engines (skip with '-').
-# sampling_flags MUST mirror the model's docs/parameters.md profile (and its
-# Modelfile PARAMETER block); ctx mirrors the Modelfile num_ctx. GGUF paths are
-# the same pinned HF-cache snapshots the Modelfiles FROM.
+# Parity matrix: each row is one model benched on BOTH engines (skip a side by
+# setting ollama_model or gguf to '-').
+# sampling_flags is MANDATORY (no '-' sentinel, unlike draft_gguf/system/
+# spec_flags): it must mirror the model's docs/parameters.md profile (and its
+# Modelfile PARAMETER block) in full, because GGUF sampling metadata silently
+# overrides llama-server defaults for any flag not given (see the eval log).
+# ctx and system apply to the llamacpp engine only; the Ollama side inherits
+# both from the Modelfile (num_ctx, SYSTEM). GGUF paths are the same pinned
+# HF-cache snapshots the Modelfiles FROM.
 # label	ollama_model	gguf	draft_gguf	ctx	system	sampling_flags	spec_flags
 qwen9b	qwen3.5-9b-coding-ud-q4-k-xl	/home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.5-9B-GGUF/snapshots/3885219b6810b007914f3a7950a8d1b469d598a5/Qwen3.5-9B-UD-Q4_K_XL.gguf	-	131072	-	--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.0 --repeat-penalty 1.0 --presence-penalty 0.0	-
 qwen9b-mtp	qwen3.5-9b-mtp-coding-ud-q4-k-xl	/home/wma/.cache/huggingface/hub/models--unsloth--Qwen3.5-9B-MTP-GGUF/snapshots/9716a636ee4bddc3fed678220b7a33dd2a4160ae/Qwen3.5-9B-UD-Q4_K_XL.gguf	-	131072	-	--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.0 --repeat-penalty 1.0 --presence-penalty 0.0	--spec-type draft-mtp --spec-draft-n-max 2

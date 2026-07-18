@@ -12,7 +12,6 @@ runtime_file="$suite_dir/runtime.tsv"
 output_root="$repo_root/benchmark-results"
 llama_bin="${LLAMA_SERVER_BIN:-$HOME/Developer/llama.cpp/build/bin/llama-server}"
 
-keepalive="30m"
 readonly server_keepalive="24h"
 readonly timestamp_format="%Y%m%dT%H%M%SZ"
 readonly server_models_dir="/usr/share/ollama/.ollama/models"
@@ -188,6 +187,10 @@ mapfile -t matrix_rows < <(awk 'BEGIN { FS="\t" } $0 !~ /^#/ && NF >= 8 { print 
 mapfile -t runtime_rows < <(awk 'BEGIN { FS="\t" } $0 !~ /^#/ && NF >= 4 { print }' "$runtime_file")
 [[ ${#runtime_rows[@]} -gt 0 ]] || die "no rows in $runtime_file"
 
+runs=()
+[[ "$warmup" -eq 1 ]] && runs+=(warmup)
+for n in $(seq 1 "$repetitions"); do runs+=("run-$n"); done
+
 if [[ "$list_only" -eq 1 ]]; then
     echo "Runtime profiles:"
     for runtime_row in "${runtime_rows[@]}"; do
@@ -243,9 +246,8 @@ else
 fi
 
 for runtime_row in "${runtime_rows[@]}"; do
-    IFS=$'\t' read -r profile host engine description <<<"$runtime_row"
+    IFS=$'\t' read -r profile host engine _ <<<"$runtime_row"
     profile_dir="$output_dir/$profile"
-    port="${host##*:}"
     echo "Runtime profile: $profile (engine=$engine, host=$host)"
 
     case "$engine" in
@@ -254,6 +256,9 @@ for runtime_row in "${runtime_rows[@]}"; do
             env
             "OLLAMA_HOST=$host"
             "OLLAMA_MODELS=$server_models_dir"
+            # Mirrors the shared prod-target serve env; harmless even for the
+            # 200k rows because Modelfile num_ctx outranks it (AGENTS.md) -
+            # the matrix ctx column drives the llamacpp side only.
             "OLLAMA_CONTEXT_LENGTH=131072"
             "OLLAMA_KEEP_ALIVE=$server_keepalive"
             "OLLAMA_FLASH_ATTENTION=1"
@@ -275,7 +280,7 @@ for runtime_row in "${runtime_rows[@]}"; do
             done
         fi
         for row in "${matrix_rows[@]}"; do
-            IFS=$'\t' read -r label ollama_model gguf draft_gguf ctx system sampling_flags spec_flags <<<"$row"
+            IFS=$'\t' read -r label ollama_model _ <<<"$row"
             if [[ "$ollama_model" == "-" ]]; then
                 echo "  Model: $label - SKIP (no ollama model)"
                 continue
@@ -285,16 +290,13 @@ for runtime_row in "${runtime_rows[@]}"; do
                 prompt_label="$(prompt_name "$prompt_file")"
                 run_dir="$profile_dir/$label/$prompt_label"
                 [[ "$execute" -eq 1 ]] && { mkdir -p "$run_dir"; prompt_text="$(<"$prompt_file")"; }
-                runs=()
-                [[ "$warmup" -eq 1 ]] && runs+=(warmup)
-                for n in $(seq 1 "$repetitions"); do runs+=("run-$n"); done
                 for run_name in "${runs[@]}"; do
                     echo "    $run_name: $prompt_label"
-                    printf 'PROMPT_FILE=%q; /usr/bin/time -f %q -o %q env OLLAMA_HOST=%q ollama run --verbose --keepalive %q %q "$(< \"$PROMPT_FILE\")"\n' \
-                        "$prompt_file" "$time_format" "$run_dir/$run_name.time" "$host" "$keepalive" "$ollama_model"
+                    printf 'PROMPT_FILE=%q; /usr/bin/time -f %q -o %q env OLLAMA_HOST=%q ollama run --verbose %q "$(< \"$PROMPT_FILE\")"\n' \
+                        "$prompt_file" "$time_format" "$run_dir/$run_name.time" "$host" "$ollama_model"
                     if [[ "$execute" -eq 1 ]]; then
                         /usr/bin/time -f "$time_format" -o "$run_dir/$run_name.time" \
-                            env "OLLAMA_HOST=$host" ollama run --verbose --keepalive "$keepalive" \
+                            env "OLLAMA_HOST=$host" ollama run --verbose \
                             "$ollama_model" "$prompt_text" > "$run_dir/$run_name.log" 2>&1 \
                             || echo "$profile/$label/$prompt_label/$run_name exit=$? (runner crash? see .log)" \
                                 >> "$output_dir/failed-runs.txt"
@@ -305,6 +307,7 @@ for runtime_row in "${runtime_rows[@]}"; do
         [[ "$execute" -eq 1 ]] && cleanup_server
         ;;
     llamacpp)
+        port="${host##*:}"
         for row in "${matrix_rows[@]}"; do
             IFS=$'\t' read -r label ollama_model gguf draft_gguf ctx system sampling_flags spec_flags <<<"$row"
             if [[ "$gguf" == "-" ]]; then
@@ -334,23 +337,19 @@ for runtime_row in "${runtime_rows[@]}"; do
                 prompt_label="$(prompt_name "$prompt_file")"
                 run_dir="$profile_dir/$label/$prompt_label"
                 req_json="$run_dir/request.json"
-                runs=()
-                [[ "$warmup" -eq 1 ]] && runs+=(warmup)
-                for n in $(seq 1 "$repetitions"); do runs+=("run-$n"); done
                 if [[ "$execute" -eq 1 ]]; then
                     mkdir -p "$run_dir"
                     build_request_json "$prompt_file" "$system" "$req_json"
                 fi
                 for run_name in "${runs[@]}"; do
                     echo "    $run_name: $prompt_label"
-                    printf '/usr/bin/time -f %q -o %q curl -sf --max-time 3600 http://%s/v1/chat/completions -H %q -d @%q -o %q\n' \
-                        "$time_format" "$run_dir/$run_name.time" "$host" "Content-Type: application/json" \
-                        "$req_json" "$run_dir/$run_name.json"
+                    run_cmd=(/usr/bin/time -f "$time_format" -o "$run_dir/$run_name.time"
+                             curl -sf --max-time 3600 "http://$host/v1/chat/completions"
+                             -H 'Content-Type: application/json'
+                             -d @"$req_json" -o "$run_dir/$run_name.json")
+                    print_quoted_command "${run_cmd[@]}"
                     if [[ "$execute" -eq 1 ]]; then
-                        if /usr/bin/time -f "$time_format" -o "$run_dir/$run_name.time" \
-                            curl -sf --max-time 3600 "http://$host/v1/chat/completions" \
-                            -H 'Content-Type: application/json' \
-                            -d @"$req_json" -o "$run_dir/$run_name.json"; then
+                        if "${run_cmd[@]}"; then
                             extract_timings "$run_dir/$run_name.json" "$run_dir/$run_name.log"
                         else
                             echo "$profile/$label/$prompt_label/$run_name curl_failed (see server.log)" \
