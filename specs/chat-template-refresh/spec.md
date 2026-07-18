@@ -1,52 +1,61 @@
 # Chat-template refresh: Gemma 4 & Qwen 3.5/3.6
 
-- **Status:** RESEARCH COMPLETE - actions ready, not yet executed. Captured 2026-07-17.
-- **Depends on:** PR #9 (`feat/llamacpp-serving`) - `docs/history/2026-07-17-llamacpp-eval.md` and `specs/stack-upkeep/` are cited here but land on that branch. Merge #9 first, or these references dangle; the doc-fix tasks are runnable only post-#9.
-- **Scope:** recently fixed/updated chat templates for the `gemma4`, `qwen3.5`, `qwen3.6` families, mapped to serving-stack actions.
-- **Goal frame:** complete the stock-llama.cpp migration, drop Ollama (`specs/llamacpp-serving`; eval verdict = option B). llama.cpp lane first.
-- **Method:** templates + commits read live from Hugging Face; fleet gate state read on-box, read-only (`ollama show --template`, GGUF-header `grep`); **no inference run**.
-- **Author ladder (which fix to prefer):** official (Google, Qwen team) -> third-party (unsloth, ggml-org) -> community (froggeric, OBLITERATUS, mradermacher, Jackrong). Do not stop at official.
+## Status and framing
 
-## TL;DR
+- Status: research complete, actions ready, not yet executed. Captured 2026-07-17.
+- Prerequisite (met): PR #9 (`feat/llamacpp-serving`) merged 2026-07-18. The files this spec cites - `docs/history/2026-07-17-llamacpp-eval.md` and `specs/stack-upkeep/` - are now on `main`, so the references resolve once this bundle merges.
+- Scope: chat templates that were recently fixed or updated for the `gemma4`, `qwen3.5`, and `qwen3.6` model families, and the concrete serving actions they imply.
+- Goal it serves: finishing the move from Ollama to stock llama-server. That migration is planned in `specs/llamacpp-migration` (the "option B" execution bundle, following the 2026-07-17 eval verdict). Recommendations here target the llama-server path first.
+- How the facts were gathered: templates and commit history read live from Hugging Face; each installed model's template read on-box, read-only, with `ollama show --template` and by grepping the GGUF file headers. No model was loaded and no inference was run.
+- Preference order for whose fix to adopt when more than one exists: the model's own authors first (Google, the Qwen team), then the packager (unsloth, or llama.cpp itself), then community authors (froggeric, OBLITERATUS, mradermacher, Jackrong). Do not stop at the official source - a community fix is sometimes the only one.
 
-- **Gemma 4:** official template fix shipped 2026-07-15; unsloth re-quantized all 3 QAT repos 2026-07-17. Repo pins a Jun-10 snapshot -> **re-pull + re-pin**. No gate impact (Gemma has no guard).
-- **Qwen:** the `System message must be at the beginning` guard is the **official Qwen default** (corrects AGENTS.md:52), so every current *and future* Qwen pull carries it -> the fix is a **family-wide rule**, not a per-model patch.
-- **Lane decides urgency:** the Anthropic `/v1/messages` lane is **immune** (structural, a per-build property); only the **OpenAI / Open WebUI lane 400s**.
-- **`froggeric/Qwen-Fixed-Chat-Templates`** removes the guard + adds agentic/KV-cache/Anthropic-thinking fixes; drop-in via `--chat-template-file`. Quality + OpenAI-lane compat, not a hotfix.
-- **Vetting gate** (`ollama show --template`) is unreliable and Ollama-specific -> replace for the llama.cpp lane.
+## Terms used below
 
-## Lane model (which client path executes which template)
+- The guard: a line inside some chat templates that raises an error whenever a `system` message is not the first message. On the OpenAI endpoint this returns HTTP 400, so the request fails.
+- The two endpoints llama-server exposes:
+  - Anthropic endpoint, `/v1/messages` - the one a claude-local (Claude Code) replacement uses.
+  - OpenAI endpoint, `/v1/chat/completions` - the one Open WebUI and other OpenAI-style clients use.
+- GGUF: the model file. It carries its own chat template embedded inside it.
+- `merged_system`: the name of unsloth's edited template that combines the leading system messages instead of rejecting a later one.
 
-| Lane | System reaches template as | Guard fires? | Used by |
-|---|---|---|---|
-| Anthropic `/v1/messages` (stock llama-server) | conversion layer folds system to a single leading turn; `messages[]` cannot hold system roles | **No** - immune *regardless of GGUF template* (a build property, on-box: 2-block system accepted) | claude-local replacement |
-| OpenAI `/v1/chat/completions` (stock llama-server `--jinja`) | passed through; a non-first system triggers the guard | **Yes** - 400 (verified on-box) | Open WebUI, OpenAI clients |
-| Ollama `/v1` (legacy, retiring) | Ollama does not execute the GGUF Jinja (see Corrections + Caveats) | Contested - moot | today's claude-local + Open WebUI |
+## Which endpoint the guard affects
 
-Source (rows 1-2): on-box, `docs/history/2026-07-17-llamacpp-eval.md` s4.
+- Anthropic endpoint (`/v1/messages`, stock llama-server):
+  - The server combines all system content into one system message at the front before the template runs, and its `messages` list cannot contain `system` entries.
+  - So a non-first system message never reaches the template, and the guard never fires.
+  - This holds no matter which template the GGUF carries - it is a property of the llama-server build, not of the model. Confirmed on-box by sending a system value made of two blocks.
+- OpenAI endpoint (`/v1/chat/completions`, stock llama-server run with `--jinja`):
+  - System messages are passed to the template as-is.
+  - A guarded template raises on the first system message that is not at the front, returning HTTP 400. Confirmed on-box.
+- Ollama's endpoint (the path being retired):
+  - Ollama does not run the GGUF's own Jinja template at all; it converts it to a Go template. So the guard does not fire there. (See Corrections and Caveats - this contradicts the current AGENTS.md.)
+- Source for the first two points: on-box testing in `docs/history/2026-07-17-llamacpp-eval.md`, section 4.
+- Consequence: the guard only breaks the OpenAI endpoint (Open WebUI and similar). A claude-local replacement on the Anthropic endpoint is unaffected.
 
-## Gemma 4 - state and action
+## Gemma 4: re-pull the updated template
 
-| Item | Value |
-|---|---|
-| Official fix | Google, 2026-07-15 (tool-calling patched, smoother formatting, "less laziness"); `google/gemma-4-12B-it/chat_template.jinja` header `Published: 2026-07-09`, latest commit `#35` (~07-15) |
-| Packaged (third-party) | unsloth QAT re-uploaded 2026-07-17 - 12B `980b060` "Added Gemma official chat template update"; `26B-A4B` + `31B` show same-day update |
-| Repo pin | `7102bde` (Jun-10) - **stale** (predates the fix; currency read from commit dates, not header text - GGUF templates are comment-stripped) |
-| Guard | none - Gemma `<|turn>` format renders repeated/non-first system with no `raise_exception` |
-| Gate status | safe on both lanes |
-| Not applicable | FA4 (Hopper-only; box is Ada RTX 4070); vision `max_soft_tokens` 280->1120 is a `parameters.md` concern, not a template one |
+What changed:
 
-**Actions:**
+- Google published a fixed Gemma 4 chat template on 2026-07-15: tool-calling bugs fixed, "smoother" conversational formatting, and fewer truncated answers ("less laziness"). The file `google/gemma-4-12B-it/chat_template.jinja` carries the header date `Published: 2026-07-09`, and its latest change is commit `#35` (around 07-15).
+- unsloth re-quantized all three QAT GGUF repos on 2026-07-17 to include it: the 12B repo's commit `980b060` is titled "Added Gemma official chat template update", and the `26B-A4B` and `31B` repos show a same-day update.
 
-- Confirm first (cheap, no download): read the 2026-07-17 HF commit metadata for all 3 QAT repos (12B `980b060` = template update; verify `26B-A4B` + `31B` carry the same) *before* the multi-GB pulls.
-- Then re-pull + re-pin each `FROM` to the confirmed 2026-07-17 snapshot (AGENTS.md two-step: `hf download`, then edit `FROM`).
-- Re-run the Gemma MTP drafter (`mtp-gemma-4-*.gguf`) load check after re-pull (pin-and-recheck rule); a re-quant can move the drafter file. Which engine serves the Gemma MTP lane (stock vs Ollama) is `specs/llamacpp-serving`'s call (eval: stock) - the template re-pull applies either way.
+Where this repo stands:
 
-## Qwen 3.5/3.6 - the guard is the official default
+- The Modelfiles pin the `7102bde` snapshot from Jun-10, which predates the fix, so it is stale. (Judge currency by the commit date, not by the template's header comment - the header comment is stripped out of the embedded GGUF template.)
+- Gemma has no guard: its `<|turn>` template format renders repeated or non-first system messages with no error. So Gemma is safe on both endpoints regardless.
 
-### Correction to AGENTS.md:52
+Actions:
 
-Present verbatim in official `Qwen/Qwen3.6-27B/chat_template.jinja` (only commit: Apr-22 upload):
+- Confirm before downloading (this is free): read the 2026-07-17 commit metadata for all three QAT repos. The 12B commit `980b060` is the template update; check that the `26B-A4B` and `31B` commits are the same kind of change before spending the multi-gigabyte download.
+- Then re-pull and re-pin: `hf download` each repo, then edit each `FROM` line to the confirmed 2026-07-17 snapshot path (the two-step in AGENTS.md).
+- After re-pulling, re-run the Gemma MTP drafter (`mtp-gemma-4-*.gguf`) load check - a re-quantization can move the drafter file. Which engine actually serves the Gemma MTP models (stock llama-server vs Ollama) is decided in `specs/llamacpp-migration` (its "Do now" step: serve them from stock llama-server); the template re-pull is needed either way.
+- Not relevant here: FA4 (it is for Hopper GPUs; this box is an Ada RTX 4070), and the vision `max_soft_tokens` change (280 to 1120) is a sampling/parameters concern, not a chat-template one.
+
+## Qwen 3.5 / 3.6: the guard is Qwen's own default
+
+The guard is in the official template, not a community mistake:
+
+- It is present verbatim in the official `Qwen/Qwen3.6-27B/chat_template.jinja` (whose only commit is the Apr-22 upload):
 
 ```jinja
 {%- if message.role == "system" %}
@@ -54,81 +63,77 @@ Present verbatim in official `Qwen/Qwen3.6-27B/chat_template.jinja` (only commit
         {{- raise_exception('System message must be at the beginning.') }}
 ```
 
-`unsloth`'s Qwen3.6-27B / 3.5-9B-MTP GGUFs patched it out (`merged_system`: merges up to 2 leading system messages, skips the rest). Because the guard is the *official* default, every future Qwen pull re-inherits it - so the fix is a rule, not a one-off.
+- unsloth's Qwen3.6-27B and Qwen3.5-9B-MTP GGUFs are the exception: they replaced it with a `merged_system` block that merges up to two leading system messages and skips any others.
+- Because the guard is the official default, every future Qwen pull will carry it again. So the fix has to be a standing rule, not a one-time patch of specific files.
 
-### Fleet gate state (on-box `ollama show --template`; guard = literal `System message must be at the beginning`)
+Which installed models have the guard (from `ollama show --template`; "the guard" = the literal string `System message must be at the beginning`):
 
-| Served model(s) | Tier | Template state | OpenAI-lane multi-system |
-|---|---|---|---|
-| unsloth Qwen3.6-27B + 35B-A3B (all), Qwen3.5-9B-MTP | third-party | `merged_system` patch | passes; **silently drops** 3rd+/mid-convo system |
-| unsloth Qwen3.5-9B-coding-ud (non-MTP) | third-party | **guard** | **400** |
-| OBLITERATUS Qwen3.6-27B (`obliterated`, `-coding`) | community | **guard (GGUF-embedded-confirmed)** | **400** |
-| mradermacher Queen-27B (`coding`, `reasoning`) | community | **guard (GGUF-embedded-confirmed)** | **400** |
-| Jackrong qwopus3.5-9B | community | Go template (consolidated `.System`) | passes |
+- Has the guard, so returns 400 on the OpenAI endpoint:
+  - `qwen3.5-9b-coding-ud` (non-MTP) - unsloth, a third-party build.
+  - `qwen3.6-27b-obliterated` and `qwen3.6-27b-obliterated-coding` - OBLITERATUS, community. Confirmed present inside the GGUF file.
+  - `qwen3.5-queen-27b-coding` and `qwen3.5-queen-27b-reasoning` - mradermacher, community. Confirmed present inside the GGUF file.
+- No guard, passes:
+  - All unsloth Qwen3.6-27B and Qwen3.6-35B-A3B models, and unsloth Qwen3.5-9B-MTP - they use the `merged_system` template. It avoids the 400 but silently drops a third or a mid-conversation system message.
+  - `qwopus3.5-9b-coder` - Jackrong, community. Ollama serves it with a Go template that merges the system text.
+- This extends the eval's finding (`docs/history/2026-07-17-llamacpp-eval.md`, section 4): that scan checked the coding/MTP and Gemma models (Qwen3.5-9B-MTP, Gemma 12B and 26B, Qwen3.6-27B plain and MTP, Qwen3.6-35B-A3B) and found them clean, but it did not scan the uncensored community models - OBLITERATUS-27B and Queen-27B also carry the guard.
 
-Extends `2026-07-17-llamacpp-eval.md` s4: that guard scan covered the served coding/MTP + Gemma fleet (Qwen3.5-9B-MTP, Gemma 12B/26B, Qwen3.6-27B plain+MTP, 35B-A3B) and found them clean, but did not scan the uncensored community track - OBLITERATUS-27B and Queen-27B carry the guard.
+The standing rule (the durable fix):
 
-### The family-wide rule (durable fix)
+- Rule: any Qwen 3.5 or 3.6 GGUF served to an OpenAI-style client (Open WebUI, or any `/v1/chat/completions` caller) must run under a guard-free template - `--chat-template-file` pointing at froggeric's template, or any template that accepts system messages anywhere. Do not wait for an official Qwen fix: the official template is the guard.
+- The Anthropic endpoint needs no rule (the guard cannot fire there).
+- First application of the rule: the guarded models listed above.
+- This extends step 3 of `specs/llamacpp-migration`, which scopes the multi-system fix to only the single unsloth Qwen3.5-9B (because it inherited the eval's coding/MTP-only scan). The guarded set is larger than that, and the fix is this family-wide rule.
+- The `merged_system` models (unsloth 3.6 and 3.5-MTP) already satisfy the rule, but at the cost of silently dropping the extra system messages - acceptable for avoiding the 400, worth knowing when fidelity matters.
 
-- **Rule:** any Qwen 3.5/3.6 GGUF served to an OpenAI-protocol client (Open WebUI, `/v1/chat/completions`) runs under a guard-free template - `--chat-template-file froggeric` (or equivalent with arbitrary-system-message support). Do not wait for an official Qwen fix; official *is* the guard.
-- **Anthropic lane:** no rule needed (immune).
-- **First application:** the guarded rows in the fleet table above.
-- `merged_system` (unsloth 3.6 / 3.5-MTP) already satisfies the rule, at the cost of silently dropping extra system turns (fidelity caveat).
+The fix to adopt - `froggeric/Qwen-Fixed-Chat-Templates` (version 21.3, Apache-2.0, dated 07-02). What it fixes that matters here:
 
-### The fix: `froggeric/Qwen-Fixed-Chat-Templates` (v21.3, Apache-2.0, 07-02)
+- Adds "native support for arbitrary system messages" - this is what removes the guard and lets the OpenAI endpoint accept more than one system message.
+- Adds support for Anthropic `message.thinking` payloads - relevant to Claude Code's reasoning content.
+- Is written to be safe on minijinja / C++ engines - llama.cpp, LM Studio, and MLX (it avoids Python-only Jinja features).
+- Also carries quality fixes for agentic use on the Qwen coders: a 100% prefix-KV-cache hit rate, a two-tier agentic error-escalation, and tool-response payload truncation.
+- How to use it (on the llama-server path): `llama-server --jinja --chat-template-file chat_template.jinja`. It is one file that covers all Qwen 3.5 and 3.6 variants, and it needs no editing of the GGUF. The repo ships `scripts/minify_jinja.py` and `scripts/test_v21.py`.
+- Validate it once per (template, build) pair, not once per model: run `test_v21.py` plus one request that has more than one system message and a tool loop, on the exact llama.cpp build you serve with (minijinja behaves differently from Python's Jinja). After that passes, adding a new model is just launching it and sending one request.
 
-| Fix | Relevance here |
-|---|---|
-| "native support for arbitrary system messages" (removes guard) | OpenAI-lane multi-system compat |
-| Anthropic `message.thinking` support | Claude Code reasoning payloads |
-| minijinja / C++-safe | llama.cpp, LM Studio, MLX |
-| 100% prefix-KV-cache, two-tier agentic error escalation, payload truncation | agentic-loop quality on Qwen coders |
+## Vetting a template: replace `ollama show --template`
 
-- Install (target lane): `llama-server --jinja --chat-template-file chat_template.jinja` - one file for all Qwen 3.5/3.6 variants, no GGUF surgery. Ships `scripts/minify_jinja.py` + `scripts/test_v21.py`.
-- **Validate once per (template, build)** - not per model: run `test_v21.py` + a multi-system + tool-loop smoke on the target llama.cpp build (minijinja != Python Jinja). Per-model is then just launch + one smoke.
+Why the current check (`ollama show --template <model>`, per AGENTS.md) is not reliable:
 
-## Vetting gate - replace `ollama show --template`
+- It is blind for Gemma: it returns a 13-byte `{{ .Prompt }}` stub for every Gemma model, which tells you nothing about the real template.
+- It shows a template that is not the one that runs: the eval found Ollama does not execute the GGUF's Jinja at all; `ollama show` prints Jinja for some models and a converted Go template for others.
+- It is specific to Ollama, which is being retired anyway.
 
-| Problem | Evidence |
-|---|---|
-| Blind for Gemma | returns 13-byte `{{ .Prompt }}` stub for every Gemma model |
-| Shows non-executing template | eval: Ollama does not execute the GGUF Jinja; prints Jinja for some, Go for others |
-| Ollama-specific | irrelevant post-migration |
+The replacement (on the llama-server path), in order of cost, cheapest first:
 
-**Replacement (llama.cpp lane), cheapest-first:**
+- Static, once per GGUF: grep the GGUF's `tokenizer.chat_template` metadata for the `raise_exception` guard (the same check this research used). Do not bother diffing against the source template - the embedded copy is comment-stripped, so a diff is noisy, and the behavioural test below supersedes it.
+- Behavioural, once per GGUF: send one request that has more than one system message to `/v1/chat/completions` and see whether it 400s (this records the OpenAI-endpoint exposure). Use an already-loaded model - never cold-load a model for this while other work holds the GPU.
+- Once per llama-server build, not per model: send one multi-system request to `/v1/messages` to confirm the Anthropic endpoint stays immune. That immunity is a property of the build, so it does not need repeating for each model.
+- Record this procedure under `specs/stack-upkeep` (its planning item "the check each component must pass before an update is trusted").
 
-- **Static, per GGUF:** `grep` the GGUF `tokenizer.chat_template` metadata for the `raise_exception` guard (the check this research used). Skip a full source diff - comment-stripping makes it noisy and the smoke supersedes it.
-- **Behavioural, per GGUF:** one multi-system `/v1/chat/completions` smoke (records OpenAI-lane exposure), against an already-resident model - never cold-load under VRAM pressure.
-- **Once per llama-server build:** one `/v1/messages` multi-system smoke - Anthropic immunity is a build property, not per-GGUF, so it need not repeat per model.
-- Reference from `specs/stack-upkeep` ("template gate for new GGUFs").
+## Corrections these findings imply for existing docs
 
-## Corrections to existing docs
+- `AGENTS.md` line 52 says the guard is a non-standard thing that "canonical Qwen3.6 lacks" and only two HauhauCS builds added. Correct version: the guard is the official Qwen default; unsloth's 3.6 and 3.5-MTP builds are the exceptions that removed it.
+- `AGENTS.md` line 52 also says Ollama's `/v1` path executes the GGUF's Jinja, so the guard "can only be fixed by patching the GGUF metadata". Correct version: the eval found Ollama does not execute the GGUF Jinja; on the target llama-server path the fix is a `--chat-template-file` flag, with no metadata patching.
+- `AGENTS.md` line 54 (and the matching CLAUDE.md claude-local note) says to vet a template with `ollama show --template`. Correct version: that is blind for Gemma and shows a non-executing template - replace it with the procedure above.
+- `docs/history/2026-07-17-llamacpp-eval.md`, section 4, says "no other fleet GGUF has the guard". Correct version: that scan covered only the coding/MTP and Gemma models; the uncensored community models OBLITERATUS-27B and Queen-27B also carry the guard (confirmed inside the GGUF files).
 
-| Doc | Says | Reality (this pass) |
-|---|---|---|
-| AGENTS.md:52 | canonical Qwen3.6 lacks the guard; only HauhauCS added it | guard is the **official** Qwen default; unsloth 3.6 / 3.5-MTP are the patched exceptions |
-| AGENTS.md:52 | Ollama `/v1` executes GGUF Jinja; fix only by patching metadata | eval: Ollama does **not** execute GGUF Jinja; target-lane fix is `--chat-template-file` |
-| AGENTS.md:54 (+ CLAUDE.md claude-local note) | vet with `ollama show --template` | blind for Gemma; shows non-executing template -> replace |
-| llamacpp-eval s4 | no other fleet GGUF has the guard | scan covered the coding/MTP + Gemma fleet only; OBLITERATUS-27B + Queen-27B (uncensored track) also carry it (embedded-confirmed) |
+## Acceptance (done when)
 
-## Acceptance
-
-- [ ] All 3 Gemma QAT Modelfiles `FROM` a confirmed 2026-07-17 snapshot; MTP drafter load check re-run and passing.
-- [ ] Family-wide OpenAI-lane rule in force: each guarded Qwen GGUF facing an OpenAI-protocol client runs a guard-free template (validated froggeric or `merged_system`), or is documented Anthropic-lane-only.
-- [ ] `ollama show --template` removed from the vetting rule; replaced by the grep + dual-path smoke above, referenced from `specs/stack-upkeep`.
-- [ ] AGENTS.md gate section (:48-54) rewritten per the Corrections table; a dated correction note appended to `2026-07-17-llamacpp-eval.md` s4 narrowing the scan scope (log left otherwise intact).
+- All three Gemma QAT Modelfiles have a `FROM` line pointing at a confirmed 2026-07-17 snapshot, and the Gemma MTP drafter load check has been re-run and passes.
+- The standing rule is in force: every guarded Qwen GGUF that faces an OpenAI-style client is served under a guard-free template (validated froggeric, or `merged_system`), or is documented as Anthropic-endpoint-only.
+- `ollama show --template` is removed from the vetting rule and replaced by the grep-plus-two-endpoint-smoke procedure above, referenced from `specs/stack-upkeep`.
+- The `AGENTS.md` gate section (lines 48-54) is rewritten to match the corrections above, and a dated correction note is appended to section 4 of the eval log to narrow its scan-scope claim (the log's original text is left intact - the note is appended, not edited in place).
 
 ## Sources
 
-- Repo: `AGENTS.md` (:48-54), `README.md`, `docs/history/2026-07-17-llamacpp-eval.md` (s4 lane immunity + guard scan), `docs/history/2026-06-23-uncensored-models.md` (gate origin).
-- Official: [`google/gemma-4-12B-it`](https://huggingface.co/google/gemma-4-12B-it), [`Qwen/Qwen3.6-27B`](https://huggingface.co/Qwen/Qwen3.6-27B); Google Gemma 4 update announcement (@googlegemma, 2026-07-15).
-- Third-party: [`unsloth/gemma-4-12B-it-qat-GGUF`](https://huggingface.co/unsloth/gemma-4-12B-it-qat-GGUF) (`980b060`), `-26B-A4B-`, `-31B-`; [Unsloth changelog](https://unsloth.ai/docs/new/changelog).
+- In-repo: `AGENTS.md` (lines 48-54); `README.md`; `docs/history/2026-07-17-llamacpp-eval.md` (section 4: the endpoint immunity and the guard scan); `docs/history/2026-06-23-uncensored-models.md` (where the gate was first found).
+- Official: [`google/gemma-4-12B-it`](https://huggingface.co/google/gemma-4-12B-it); [`Qwen/Qwen3.6-27B`](https://huggingface.co/Qwen/Qwen3.6-27B); the Google Gemma 4 update announcement (@googlegemma, 2026-07-15).
+- Third-party: [`unsloth/gemma-4-12B-it-qat-GGUF`](https://huggingface.co/unsloth/gemma-4-12B-it-qat-GGUF) (commit `980b060`), and the `-26B-A4B-` and `-31B-` repos; the [Unsloth changelog](https://unsloth.ai/docs/new/changelog).
 - Community fix: [`froggeric/Qwen-Fixed-Chat-Templates`](https://huggingface.co/froggeric/Qwen-Fixed-Chat-Templates).
-- Ollama template mechanism: [`ollama/ollama#10222`](https://github.com/ollama/ollama/issues/10222).
-- On-box: `ollama show --template` fleet scan; `head -c 25MB | grep` of OBLITERATUS-27B + Queen-27B GGUF headers (guard embedded-confirmed).
+- Ollama template handling: [`ollama/ollama` issue #10222](https://github.com/ollama/ollama/issues/10222).
+- On-box, this session: the `ollama show --template` scan across the installed models, and a `head -c 25MB | grep` of the OBLITERATUS-27B and Queen-27B GGUF headers (which confirmed the guard is inside those files).
 
-## Caveats (validity)
+## Caveats
 
-- **Ollama-lane guard behaviour is contested, unconfirmed here:** the 2026-06-23 HauhauCS log says it fired; the eval says Ollama does not execute the GGUF Jinja (so it should not). Not smoked this session (live multi-system request abandoned - cold-loading under VRAM pressure is the host-crash exposure). Moot once Ollama is dropped.
-- **26B-A4B / 31B re-pull assumes** their 2026-07-17 commit is the template update - the Gemma action confirms this before re-pinning (12B confirmed).
-- **froggeric is large/complex** - the per-(template, build) validation above is the gate; do not adopt blind.
+- Whether the guard ever actually fired under Ollama is unresolved, and was not tested this session. The 2026-06-23 HauhauCS log says it did; the eval says Ollama does not run the GGUF Jinja, so it should not. A live multi-system request was deliberately not sent, because cold-loading a model while llama.cpp holds the GPU is the documented host-crash risk. This is moot once Ollama is dropped.
+- The 26B-A4B and 31B re-pull assumes their 2026-07-17 commit is the template update; the Gemma actions confirm this before re-pinning (only 12B is confirmed so far).
+- froggeric's template is large and complex. The per-(template, build) validation above is the safeguard - do not adopt it blind.
