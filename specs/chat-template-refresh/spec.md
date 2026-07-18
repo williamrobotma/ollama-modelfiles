@@ -39,7 +39,7 @@ Source for the first two rows: on-box, `docs/history/2026-07-17-llamacpp-eval.md
 
 - Re-pull + re-pin all 3 Gemma QAT repos (`12B`, `26B-A4B`, `31B`) to their 2026-07-17 snapshots (AGENTS.md two-step: `hf download`, then edit `FROM`). Confirm the `26B-A4B`/`31B` commits carry the template update before re-pinning.
 - Re-run the Gemma MTP drafter (`mtp-gemma-4-*.gguf`) load check after re-pull (pin-and-recheck rule); a re-quant can move the drafter file.
-- Per the eval, serve the Gemma MTP lane on stock llama-server (graphs-on, capped ctx), not Ollama's crashing `DRAFT` lane - record in `specs/llamacpp-serving`, which owns the lane decision.
+- Per the eval, serve the Gemma MTP lane on stock llama-server (graphs-on, capped ctx), not Ollama's crashing `DRAFT` lane.
 
 ## Qwen 3.5/3.6 - state and action
 
@@ -59,13 +59,13 @@ Present verbatim in official `Qwen/Qwen3.6-27B/chat_template.jinja` (only commit
 
 | Served model(s) | Tier | Template state | OpenAI-lane multi-system |
 |---|---|---|---|
-| unsloth Qwen3.6-27B + 35B-A3B (all), Qwen3.5-9B-MTP | third-party | `merged_system` patch | passes; **silently drops** 3rd+/mid-convo system (fidelity, not a gate issue) |
+| unsloth Qwen3.6-27B + 35B-A3B (all), Qwen3.5-9B-MTP | third-party | `merged_system` patch | passes; **silently drops** 3rd+/mid-convo system |
 | unsloth Qwen3.5-9B-coding-ud (non-MTP) | third-party | **guard** | **400** |
 | OBLITERATUS Qwen3.6-27B (`obliterated`, `-coding`) | community | **guard (GGUF-embedded-confirmed)** | **400** |
 | mradermacher Queen-27B (`coding`, `reasoning`) | community | **guard (GGUF-embedded-confirmed)** | **400** |
 | Jackrong qwopus3.5-9B | community | Go template (consolidated `.System`) | passes |
 
-Corrects `llamacpp-eval` s5 scope - see Corrections.
+Extends `llamacpp-eval` s5 ("no other fleet GGUF has the guard") - that scan covered only the coding/MTP set, not the uncensored community track.
 
 ### Community fix: `froggeric/Qwen-Fixed-Chat-Templates` (v21.3, Apache-2.0, 07-02)
 
@@ -81,22 +81,23 @@ Corrects `llamacpp-eval` s5 scope - see Corrections.
 
 **Actions (lane-aware):**
 
-- **Anthropic lane (claude-local replacement):** no guard action needed. Optional: adopt froggeric for the agentic/KV-cache/thinking wins on Qwen coders.
-- **OpenAI lane (Open WebUI + other `/v1/chat/completions` clients):** front every guarded model (current set: fleet-gate table; the guard is the family default, so future Qwen pulls inherit this rule) with `--jinja --chat-template-file froggeric`. Validate once per (template, llama.cpp build) pair - `test_v21.py` + a multi-system + tool-loop smoke (minijinja differs from Python Jinja); per-model check is then just launch + one request.
+- **Anthropic lane (claude-local replacement):** no action for the guard (immune). Optional: adopt froggeric for the agentic/KV-cache/thinking wins on Qwen coders.
+- **OpenAI lane (Open WebUI + other `/v1/chat/completions` clients):** for each guarded model (unsloth Qwen3.5-9B non-MTP, OBLITERATUS-27B, Queen-27B) launch with `--jinja --chat-template-file froggeric`. Validate on the target llama.cpp build first: run `test_v21.py` + a multi-system + tool-loop smoke (minijinja differs from Python Jinja).
+- Do not wait for an official Qwen fix - official *is* the guard.
 
 ## Vetting gate - replace `ollama show --template`
 
 | Problem | Evidence |
 |---|---|
 | Blind for Gemma | returns 13-byte `{{ .Prompt }}` stub for every Gemma model |
-| Shows non-executing template | prints Jinja for some, Go for others; none of it executes (see lane model) |
+| Shows non-executing template | eval: Ollama does not execute the GGUF Jinja; prints Jinja for some, Go for others |
 | Ollama-specific | irrelevant post-migration |
 
 **Replacement (llama.cpp lane):**
 
-- Read the shipped template directly: dump the GGUF `tokenizer.chat_template` metadata and `grep` for `raise_exception` (the method used for this scan); diff vs the source `chat_template.jinja` only when debugging (comment-stripping makes the diff noisy).
-- Gate by behaviour on the served build: one multi-system request on `/v1/chat/completions` per new GGUF (records OpenAI-lane exposure), against an already-resident model - never cold-load under VRAM pressure. Check `/v1/messages` immunity once per llama-server build upgrade, not per model (it is structural, not per-GGUF).
-- Home: the rewritten AGENTS.md chat-template-gate section (one edit together with the Corrections below); `specs/stack-upkeep` references it.
+- Read the shipped template directly: dump the GGUF `tokenizer.chat_template` metadata (or `grep` the header), diff vs the source `chat_template.jinja`.
+- Gate by behaviour on the served build: one multi-system request on **both** `/v1/messages` (must pass) and `/v1/chat/completions` (records OpenAI-lane exposure), against an already-resident model - never cold-load under VRAM pressure.
+- Fold into `specs/stack-upkeep` ("template gate for new GGUFs").
 
 ## Corrections to existing docs
 
@@ -111,8 +112,8 @@ Corrects `llamacpp-eval` s5 scope - see Corrections.
 
 - [ ] All 3 Gemma QAT Modelfiles `FROM` a 2026-07-17 snapshot; MTP drafter load check re-run and passing.
 - [ ] Each guarded Qwen model that faces an OpenAI-protocol client is either fronted by a validated froggeric template or documented as Anthropic-lane-only.
-- [ ] AGENTS.md chat-template-gate section (currently :52/:54) rewritten in one pass: `ollama show --template` dropped, GGUF-`chat_template` dump/grep + OpenAI-lane smoke in its place, Corrections folded in; referenced from `specs/stack-upkeep`.
-- [ ] `llamacpp-eval` s5 scope corrected by a dated appended note (history logs are immutable - no inline edits).
+- [ ] `ollama show --template` removed from the vetting rule; replaced by GGUF-`chat_template` dump + dual-path smoke, referenced from `specs/stack-upkeep`.
+- [ ] AGENTS.md:52/:54 corrected; `llamacpp-eval` s5 scope narrowed inline.
 
 ## Sources
 
@@ -126,3 +127,6 @@ Corrects `llamacpp-eval` s5 scope - see Corrections.
 ## Caveats
 
 - **Ollama-lane guard behaviour is contested, unconfirmed here:** 2026-06-23 HauhauCS log says it fired; the eval says Ollama does not execute the Jinja. Not smoked this session (live multi-system request abandoned - cold-loading under VRAM pressure is the host-crash exposure). Moot once Ollama is dropped.
+- **froggeric is large/complex** - adopt behind its test suite + a per-build smoke, not blind.
+- **`merged_system` silent-drop** (unsloth Qwen 3.6 / 3.5-MTP) is a fidelity, not a gate, issue - flagged so it is not rediscovered as a bug.
+- **26B-A4B / 31B** re-pull assumes their 2026-07-17 commit is the template update - confirm each commit message before re-pinning (12B confirmed).
