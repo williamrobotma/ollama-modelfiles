@@ -1,0 +1,20 @@
+Write a single-file Python 3.12 program named `bench_task.py` that implements a
+CLI for processing newline-delimited JSON event logs.
+
+Requirements:
+- Use only the Python standard library.
+- Support subcommands `ingest`, `stats`, and `export`.
+- Use `argparse` for the CLI.
+- Define dataclasses for `Event`, `IngestResult`, and `Summary`.
+- Parse JSONL from either stdin or a file path.
+- Normalize timestamps to UTC ISO-8601 strings.
+- Track per-user and per-event-type counts.
+- Compute rolling summary statistics for event latency.
+- Handle malformed input gracefully with structured error messages.
+- Keep core logic in testable pure functions where practical.
+- Include a small `if __name__ == "__main__":` entrypoint.
+
+Output constraints:
+- Return only code.
+- Keep the file between 120 and 180 lines.
+- Do not include markdown fences or explanatory prose.
