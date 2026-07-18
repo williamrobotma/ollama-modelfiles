@@ -1,0 +1,9 @@
+# Engine profiles for the parity run. The Ollama side is the graphs-off prod
+# target (same stance as the other suites; GGML_CUDA_DISABLE_GRAPHS=1 avoids
+# the ~12.5% MTP graphs crash, docs/history/2026-07-01-mtp-graphs-crash.md).
+# The llama.cpp side runs stock defaults (CUDA graphs ON) - it is benched as
+# it would actually be run; if MTP rows crash there, rerun that profile with
+# GGML_CUDA_DISABLE_GRAPHS=1 and record the delta.
+# profile	host	engine	description
+ollama-graphs-off	127.0.0.1:11435	ollama	Isolated ollama serve, prod-target env (graphs off, FA+q8_0 KV, systemd model store)
+llamacpp-stock	127.0.0.1:11438	llamacpp	Stock llama-server (LLAMA_SERVER_BIN or ~/Developer/llama.cpp/build/bin), defaults incl. CUDA graphs, FA+q8_0 KV

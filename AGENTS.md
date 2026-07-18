@@ -36,7 +36,7 @@ Speculative decoding via a draft model - two different shapes:
 - **Qwen (self-contained)**: one GGUF with embedded MTP tensors; Ollama auto-detects and self-drafts. Measured ~1.65x (9B).
 - **Gemma (target + separate drafter)**: main GGUF plus a `mtp-gemma-4-*.gguf` drafter (~250 MB, shipped in the QAT repos), wired via the `DRAFT` directive in the Modelfile. Measured 1.67x (12B), 1.54x (26B).
 
-Both run on Ollama's CUDA runner (0.31.1, vendored llama.cpp b9840). Stock llama.cpp cannot load the gemma4-assistant drafters (upstream issue #24795, open; repro'd on b9553 and b9860 on-box), so Ollama is currently the only working CUDA path for Gemma MTP.
+Both historically ran on Ollama's CUDA runner (now 0.31.2, vendored llama.cpp b9840), but the 2026-07-17 eval inverted that picture on-box: Ollama's Gemma `DRAFT` lane crashes (illegal memory access on most requests), while stock llama.cpp b9860 serves the same target+drafter pair at ~1.8x - stable only with CUDA graphs ON at moderate ctx. Graphs-off reproduces the #24795 drafter load failure (the bug is config-gated, not build-gated; issue still open upstream). Until the migration spec lands, stock llama-server (graphs-on, capped ctx) is the working CUDA path for Gemma MTP; crash matrix and caveats in [docs/history/2026-07-17-llamacpp-eval.md](docs/history/2026-07-17-llamacpp-eval.md).
 
 ## Parameters
 
