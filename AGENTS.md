@@ -52,14 +52,17 @@ Some clients send multiple `system`-role messages mid-conversation (for example,
 The guard: `raise_exception('System message must be at the beginning.')`.
 
 - Official Qwen 3.5/3.6 default; every fresh Qwen pull carries it.
-- Exception: unsloth's Qwen3.6 and 3.5-MTP builds use `merged_system` (drops third-and-later system messages).
+- Exception: unsloth's Qwen3.6 and 3.5-MTP builds ship `merged_system`.
+  - It merges up to two leading system messages and silently drops all others, mid-conversation ones included.
 - It fires only on llama-server's OpenAI endpoint (`/v1/chat/completions`, `--jinja`): multi-system requests 400.
   - `/v1/messages` is immune: system folds into one message before the template runs.
-  - Ollama never runs GGUF Jinja, so it can't fire there.
+  - Under Ollama: unresolved (the eval found Jinja never runs, yet the 2026-06-23 HauhauCS 400s went through Ollama).
+    - Moot once Ollama retires.
 
 Standing rule: serve guarded Qwen GGUFs to OpenAI-style clients under a guard-free template.
 
 - Fix: `--jinja --chat-template-file` with froggeric's `chat_template.jinja`, validated once per (template, build) pair.
+  - Validated pair: v21.3 snapshot `23a40b0b` on b9860.
 - Don't wait for an official fix: Qwen says the guard is by design (re-role later system messages to user).
 
 Vetting (replaces `ollama show --template`, which shows a template that never runs):
@@ -73,7 +76,6 @@ Guarded fleet GGUFs as of 2026-07-23 ([evidence](docs/history/2026-07-23-chat-te
 
 - unsloth Qwen3.5-9B non-MTP, OBLITERATUS-27B, Queen-27B, Qwopus3.5-9B-coder.
 - All validated under froggeric on b9860.
-- The deleted HauhauCS variants (2026-06-23) carried this same official guard.
 
 ## Keep-set policy
 

@@ -1,6 +1,6 @@
 # 2026-07-23: chat-template refresh execution
 
-Executes `specs/chat-template-refresh` (research captured 2026-07-17).
+Executes the `chat-template-refresh` spec bundle (research captured 2026-07-17).
 
 - Environment: stock llama-server b9860 (fdb1db877), WSL2 + RTX 4070.
 - Spec claims re-verified live against the HF API before acting: all confirmed except qwopus (below).
@@ -9,8 +9,8 @@ Executes `specs/chat-template-refresh` (research captured 2026-07-17).
 
 Method: `head -c 30000000 <gguf> | grep -c 'System message must be at the beginning'` on every unique GGUF referenced by the qwen3.5 / qwen3.6 / qwopus3.5 Modelfiles.
 
-- Guarded: 4 GGUFs covering 6 model names.
-  - unsloth Qwen3.5-9B non-MTP (`9b-coding-ud`).
+- Guarded: 4 GGUFs covering 6 canonical model names (thin aliases excluded).
+  - unsloth Qwen3.5-9B non-MTP (`9b-coding-ud-q4-k-xl`).
   - OBLITERATUS Qwen3.6-27B (one GGUF serves both `27b-obliterated*` models).
   - mradermacher Qwen3.5-Queen-27B (one GGUF serves both `queen-27b-*` models).
   - Jackrong Qwopus3.5-9B-coder.
@@ -21,7 +21,7 @@ Method: `head -c 30000000 <gguf> | grep -c 'System message must be at the beginn
 
 Template: `froggeric/Qwen-Fixed-Chat-Templates` v21.3, snapshot `23a40b0b`, Apache-2.0.
 
-- Offline: `scripts/test_v21.py` 9/9 pass (Python jinja2 3.1.6, includes a mid-conversation system prompt test).
+- Offline: froggeric's `scripts/test_v21.py` 9/9 pass (Python jinja2 3.1.6; includes a mid-conversation system test).
 - Serving: llama-server `-ngl 0 -c 8192 --jinja`, port 11438.
 - Probes: multi-system `/v1/chat/completions`; tool loop with a mid-conversation system message; multi-block system `/v1/messages`.
 
@@ -61,7 +61,7 @@ Web/GitHub sweep for changes since the spec's 2026-07-17 capture.
 - froggeric: no version past 21.3; system-message and Anthropic-thinking handling have no open bugs.
   - Open tool-call regression reports exist (#55 / #56 / #64; #56 is on b9860); watch note filed with the deferred quality A/B in tasks.md.
 - Qwen: guard unchanged; maintainer says it is by design ("change their role to user"). No official fix coming.
-- Ollama 0.32.2 (2026-07-20) bumps its vendored llama.cpp - not our lane (being retired); relevant to stack-upkeep's next snapshot.
+- Ollama 0.32.2 (2026-07-20) bumps its vendored llama.cpp - note for stack-upkeep's next snapshot.
 
 ## Provenance and validity
 

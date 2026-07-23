@@ -2,7 +2,7 @@
 
 ## Status and framing
 
-- Status: research complete, actions ready, not yet executed. Captured 2026-07-17.
+- Status: executed 2026-07-23 (`docs/history/2026-07-23-chat-template-refresh.md`); research captured 2026-07-17.
 - Prerequisite (met): PR #9 (`feat/llamacpp-serving`) merged 2026-07-18. The files this spec cites - `docs/history/2026-07-17-llamacpp-eval.md` and `specs/stack-upkeep/` - are now on `main`, so the references resolve once this bundle merges.
 - Scope: chat templates that were recently fixed or updated for the `gemma4`, `qwen3.5`, and `qwen3.6` model families, and the concrete serving actions they imply.
 - Goal it serves: finishing the move from Ollama to stock llama-server. That migration is planned in `specs/llamacpp-migration` (the "option B" execution bundle, following the 2026-07-17 eval verdict). Recommendations here target the llama-server path first.
@@ -75,9 +75,7 @@ Which installed models have the guard (from `ollama show --template`; "the guard
 - No guard, passes:
   - All unsloth Qwen3.6-27B and Qwen3.6-35B-A3B models, and unsloth Qwen3.5-9B-MTP - they use the `merged_system` template. It avoids the 400 but silently drops a third or a mid-conversation system message.
   - `qwopus3.5-9b-coder` - Jackrong, community. Ollama serves it with a Go template that merges the system text.
-    - Correction (2026-07-23, execution): the GGUF itself carries the guard.
-      - The "clean" reading came from `ollama show --template` showing the Go conversion.
-      - Moved to the guarded set and validated under froggeric (`docs/history/2026-07-23-chat-template-refresh.md`).
+    - Correction (2026-07-23): the GGUF carries the guard; see `docs/history/2026-07-23-chat-template-refresh.md`.
 - This extends the eval's finding (`docs/history/2026-07-17-llamacpp-eval.md`, section 4): that scan checked the coding/MTP and Gemma models (Qwen3.5-9B-MTP, Gemma 12B and 26B, Qwen3.6-27B plain and MTP, Qwen3.6-35B-A3B) and found them clean, but it did not scan the uncensored community models - OBLITERATUS-27B and Queen-27B also carry the guard.
 
 The standing rule (the durable fix):
@@ -139,4 +137,5 @@ The replacement (on the llama-server path), in order of cost, cheapest first:
 
 - Whether the guard ever actually fired under Ollama is unresolved, and was not tested this session. The 2026-06-23 HauhauCS log says it did; the eval says Ollama does not run the GGUF Jinja, so it should not. A live multi-system request was deliberately not sent, because cold-loading a model while llama.cpp holds the GPU is the documented host-crash risk. This is moot once Ollama is dropped.
 - The 26B-A4B and 31B re-pull assumes their 2026-07-17 commit is the template update; the Gemma actions confirm this before re-pinning (only 12B is confirmed so far).
+  - Confirmed for all three at execution (2026-07-23).
 - froggeric's template is large and complex. The per-(template, build) validation above is the safeguard - do not adopt it blind.

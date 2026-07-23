@@ -4,7 +4,7 @@ Small side task. This spec is its own plan - no separate plan.md; tasks.md is th
 
 ## Why
 
-Open WebUI is installed (pipx 0.10.2) and wired to the migrated Ollama stack, and its config was verified at the DB level (native Ollama connection, Brave search engine+key, `openai.enable=false`) - but it has never been exercised end-to-end in a browser. See docs/openwebui.md and docs/history/2026-07-10-migration-local-ggufs.md. Three loose ends remain: an in-browser smoke pass, the chat-template gate on two never-vetted community models, and one pending host-side disk reclaim.
+Open WebUI is installed (pipx 0.10.2) and wired to the migrated Ollama stack, and its config was verified at the DB level (native Ollama connection, Brave search engine+key, `openai.enable=false`) - but it has never been exercised end-to-end in a browser. See docs/openwebui.md and docs/history/2026-07-10-migration-local-ggufs.md. Three loose ends remain: an in-browser smoke pass, the chat-template gate on one still-unvetted community model, and one pending host-side disk reclaim.
 
 ## What / acceptance
 
@@ -18,12 +18,12 @@ Launch `~/.local/bin/openwebui`, open <http://127.0.0.1:8080>. Each check either
 - Native tool calling with a tools-capable model (`qwen3.6-27b-coding`) - a tool call fires and returns.
 - Vision: drop an image on a gemma4 model (`gemma4-12b-it-qat`, has mmproj) - it reads the image. Confirms the second `FROM mmproj` line kept the `vision` capability.
 
-### 2. Chat-template gate on two community models
+### 2. Chat-template gate on community models
 
-Per AGENTS.md (multiple mid-conversation system messages must not error), probe both with `ollama show --template <model>` and a multi-system-message request:
+Vet per the AGENTS.md gate procedure (`ollama show --template` is retired - it shows a template that never runs):
 
-- `qwen3.5-queen-27b-coding-q4-k-m`
-- `gemma4-31b-it-heretic-i1-q4-k-m`
+- `qwen3.5-queen-27b-coding-q4-k-m`: done 2026-07-23 - guarded; froggeric-validated (see the 2026-07-23 history log).
+- `gemma4-31b-it-heretic-i1-q4-k-m`: still unvetted.
 
 Record pass/fail per model in the model catalog (README) or docs/openwebui.md. A model that fails the gate is unusable from multi-system clients (claude-local, and Open WebUI's own system-message stacking) - note it, do not silently keep it as such a target.
 
