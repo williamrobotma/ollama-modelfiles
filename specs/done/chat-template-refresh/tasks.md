@@ -1,6 +1,6 @@
 # Tasks: chat-template-refresh
 
-Status: `[ ]` pending, `[x]` done. The research is done (see spec.md); these are the steps to carry it out. PR #9 merged 2026-07-18, so every step below is runnable now.
+Status: `[ ]` pending, `[x]` done. Research 2026-07-17 (see spec.md); executed 2026-07-23.
 
 - [x] Research: read the live templates and commit history from Hugging Face, and scan every installed model's template on-box (read-only). Findings are in spec.md. Done 2026-07-17.
 - [x] Re-pull the Gemma templates. First read each QAT repo's 2026-07-17 commit and confirm it is the template update (free, no download). Then `hf download` each and edit its `FROM` line, for 12B, 26B-A4B, and 31B. Done when: each `FROM` points at the confirmed snapshot, and the Gemma MTP drafter still loads.

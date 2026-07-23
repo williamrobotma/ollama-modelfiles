@@ -54,7 +54,8 @@ The guard: `raise_exception('System message must be at the beginning.')`.
 - Official Qwen 3.5/3.6 default; every fresh Qwen pull carries it.
 - Exception: unsloth's Qwen3.6 and 3.5-MTP builds ship `merged_system`.
   - It merges up to two leading system messages and silently drops all others, mid-conversation ones included.
-- It fires only on llama-server's OpenAI endpoint (`/v1/chat/completions`, `--jinja`): multi-system requests 400.
+- On llama-server, the guard fires only on the OpenAI endpoint (`/v1/chat/completions` with `--jinja`).
+  - A multi-system request there returns 400.
   - `/v1/messages` is immune: system folds into one message before the template runs.
   - Under Ollama: unresolved (the eval found Jinja never runs, yet the 2026-06-23 HauhauCS 400s went through Ollama).
     - Moot once Ollama retires.

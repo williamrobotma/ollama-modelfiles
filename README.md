@@ -62,7 +62,7 @@ Qwen 3.6's smallest GGUF is 27B (offloads), so these use the Qwen 3.5 dense line
 | `qwen3.5-9b-coding-ud-q4-k-xl` | qwen3.5 | 9B precise coding, resident | UD-Q4_K_XL | 6.9 GB |
 | `qwen3.5-9b-mtp-coding-ud-q4-k-xl` | qwen3.5 | 9B MTP self-draft coding | UD-Q4_K_XL | 7.1 GB |
 | `qwopus3.5-9b-coder-q4-k-m` | qwopus3.5 | Community Qwen3.5-9B finetune (experimental), coding | Q4_K_M | 6.6 GB |
-| `qwen3.5-queen-27b-coding-q4-k-m` | qwen3.5 | Queen-27B community model, coding (verify claims + gate) | i1-Q4_K_M | 16 GB |
+| `qwen3.5-queen-27b-coding-q4-k-m` | qwen3.5 | Queen-27B community model, coding (verify claims; gate 2026-07-23: guarded, serve OpenAI clients with froggeric) | i1-Q4_K_M | 16 GB |
 
 ### Uncensored (reasoning / research / agentic track)
 
