@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# llama.cpp vs Ollama decode-throughput parity suite (specs/llamacpp-serving,
+# llama.cpp vs Ollama decode-throughput parity suite (specs/done/llamacpp-serving,
 # option C eval). Self-contained: benchmarks/common.sh is Ollama-A/B-specific,
 # so this mirrors its CLI and output conventions instead of sourcing it.
 # Dry-run by default: prints the plan and the exact commands, runs nothing.

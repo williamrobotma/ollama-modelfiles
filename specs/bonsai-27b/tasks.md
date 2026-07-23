@@ -2,11 +2,11 @@
 
 Status legend: [ ] pending, [x] done. This file is the resume point for the feature; update as phases land.
 
-DRAFT 2026-07-17 - not started. Blocked on `specs/llamacpp-serving` (Phase 2 parity + Phase 4 verdict + follow-on serving decision). Ternary is the end state; 1-bit is the interim lane. Spec review pending: the three decisions in spec.md.
+DRAFT 2026-07-17 - not started. Blocked on `specs/llamacpp-migration` (the serving lane + config home; `specs/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict). Ternary is the end state; 1-bit is the interim lane. Spec review pending: the three decisions in spec.md.
 
 ## Phase 0 - gate check + re-verify
 
-- [ ] llamacpp-serving verdict landed; serving-config home known.
+- [ ] Serving-config home known (from `specs/llamacpp-migration`). llamacpp-serving verdict has landed (B).
 - [ ] #25707 status re-checked (api.github.com); rebuild plan if merged (incl. Gemma MTP load re-check).
 - [ ] Spec review: ternary-path / sampling-profile / role decisions recorded here.
 

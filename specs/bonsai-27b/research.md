@@ -29,7 +29,7 @@ The load-bearing facts; the first column is what gates this spec.
 - Upstream ternary history: CPU PR #24448 and Metal PR #25419 merged; format fixed at group-64 after maintainer review ([discussion #22019](https://github.com/ggml-org/llama.cpp/discussions/22019)) - so `Q2_g64` is the upstream-compatible file, and the fork's g128 files never will be.
 - The model card's "requires PrismML fork" claim is stale for Q1_0; PrismML's own [formats page](https://docs.prismml.com/download/formats) says Q1_0 works out of the box upstream (CPU/Metal/CUDA/Vulkan).
 
-Consequence: Bonsai-27B cannot be a Modelfile or join the keep-set today - it lives entirely on the llama.cpp lane from `specs/llamacpp-serving`.
+Consequence: Bonsai-27B cannot be a Modelfile or join the keep-set today - it lives entirely on the llama.cpp lane built in `specs/llamacpp-migration`.
 
 ## Quality retention (vendor-reported, UNVERIFIED)
 

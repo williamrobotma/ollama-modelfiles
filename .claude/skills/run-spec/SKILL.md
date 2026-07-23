@@ -10,4 +10,5 @@ description: Execute a specs/<feature>/ bundle end to end - branch, implement, v
 3. Mirror the unchecked `tasks.md` items into the session todo list. Keep both updated as items complete, noting in `tasks.md` how each was verified.
 4. Implement per the plan, following AGENTS.md conventions.
 5. Run the Acceptance checks as written.
-6. Commit implementation and `tasks.md` together; open a PR, flagging deviations from the spec.
+6. When the Acceptance checks pass, mark the bundle done: `git mv specs/<feature>/ specs/done/<feature>/`. Fix any `../` relative links in the bundle to the new depth (or keep bundles link-free, per `specs/README.md`).
+7. Commit the implementation, `tasks.md`, and the move together; open a PR, flagging deviations from the spec.
