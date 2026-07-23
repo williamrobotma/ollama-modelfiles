@@ -87,6 +87,13 @@ Chat-template gate (the AGENTS.md concern, now llama-server-specific):
 
 Residual pre-B validation (deliberately out of this eval's scope, Phase 3 deferred): an actual claude-local session driven end-to-end against llama-server `/v1/messages` (tool loops at scale, caching behavior over long sessions), and Open WebUI rewired to an OpenAI `/v1` connection with per-model launch-flag profiles.
 
+> **Correction (2026-07-23, chat-template-refresh):**
+>
+> - The guard scan above covered only the coding/MTP and Gemma GGUFs.
+> - A full-fleet scan found the guard in three more: OBLITERATUS Qwen3.6-27B, Qwen3.5-Queen-27B, Qwopus3.5-9B-coder.
+> - Qwopus had read clean via `ollama show --template`, which shows a non-executing Go conversion.
+> - Fix validation: [2026-07-23-chat-template-refresh.md](2026-07-23-chat-template-refresh.md).
+
 ## 5. Model swap / keep-alive (research only; Phase 3 deferred)
 
 - b9860 has native router mode (source-verified, common/arg.cpp:3220-3248): `--models-dir`, `--models-preset` (INI, per-model presets incl. per-child draft flags), `--models-max` (default 4), `--models-autoload`; each model runs as a child llama-server subprocess; router CLI args overlay every preset. The router's own `/props` returns dummies; query the child (`?model=`) for real settings.

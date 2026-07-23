@@ -5,7 +5,7 @@ FROM gemma4-26b-a4b-it-qat
 # for measured throughput per size). Stock llama.cpp still fails to load
 # gemma4-assistant drafters (ggml-org/llama.cpp#24795), so Ollama is the
 # working CUDA path.
-DRAFT /home/wma/.cache/huggingface/hub/models--unsloth--gemma-4-26B-A4B-it-qat-GGUF/snapshots/02749a7b272109255a4c559a80894d3d9777574c/mtp-gemma-4-26B-A4B-it.gguf
+DRAFT /home/wma/.cache/huggingface/hub/models--unsloth--gemma-4-26B-A4B-it-qat-GGUF/snapshots/7b92b5b28818151e8669af2e45e88d6086f490dd/mtp-gemma-4-26B-A4B-it.gguf
 
 # Unsloth's recommended starting value (--spec-draft-n-max 2).
 PARAMETER draft_num_predict 2

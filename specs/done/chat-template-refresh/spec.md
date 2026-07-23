@@ -75,6 +75,9 @@ Which installed models have the guard (from `ollama show --template`; "the guard
 - No guard, passes:
   - All unsloth Qwen3.6-27B and Qwen3.6-35B-A3B models, and unsloth Qwen3.5-9B-MTP - they use the `merged_system` template. It avoids the 400 but silently drops a third or a mid-conversation system message.
   - `qwopus3.5-9b-coder` - Jackrong, community. Ollama serves it with a Go template that merges the system text.
+    - Correction (2026-07-23, execution): the GGUF itself carries the guard.
+      - The "clean" reading came from `ollama show --template` showing the Go conversion.
+      - Moved to the guarded set and validated under froggeric (`docs/history/2026-07-23-chat-template-refresh.md`).
 - This extends the eval's finding (`docs/history/2026-07-17-llamacpp-eval.md`, section 4): that scan checked the coding/MTP and Gemma models (Qwen3.5-9B-MTP, Gemma 12B and 26B, Qwen3.6-27B plain and MTP, Qwen3.6-35B-A3B) and found them clean, but it did not scan the uncensored community models - OBLITERATUS-27B and Queen-27B also carry the guard.
 
 The standing rule (the durable fix):

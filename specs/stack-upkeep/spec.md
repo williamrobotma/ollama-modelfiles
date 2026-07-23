@@ -11,6 +11,7 @@ Keep llama.cpp, Ollama, Open WebUI, and the pinned GGUFs current and tracked. To
 - What to record, and where.
 - When to update: on a schedule, or triggered by a watched fix landing.
 - The check each component must pass before an update is trusted.
+  - Decided for chat templates (2026-07-23): the AGENTS.md gate section's vetting procedure.
 - What stays pinned on purpose.
 
 ## Done when
