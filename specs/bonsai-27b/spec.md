@@ -4,7 +4,7 @@
 
 - **Ternary Bonsai-27B is the target**: the highest-retention extreme quant (94.6% vendor-claimed) of the repo's existing Qwen3.6-27B base, small enough to run fully resident on the 12 GB 4070 - the 27B class currently partial-offloads (docs/history/2026-07-17-llamacpp-eval.md section 7).
 - **1-bit Q1_0 is the stepping stone**: runnable today on the stock b9860 lane; same file layout, drafter, and template as ternary, so onboarding it builds every mechanism ternary needs while ternary's fast CUDA path is blocked upstream.
-- Ollama cannot load either variant (bundled ggml lacks type 41; verified on-box), so this feature lives entirely on the llama.cpp serving lane from `specs/llamacpp-serving`. No Modelfile, no keep-set entry.
+- Ollama cannot load either variant (bundled ggml lacks type 41; verified on-box), so this feature lives entirely on the llama.cpp serving lane built in `specs/llamacpp-migration`. No Modelfile, no keep-set entry.
 
 ## Known facts
 
@@ -17,7 +17,7 @@ See [research.md](research.md) in this bundle - verification status marked per c
 
 ## Dependencies / gates
 
-1. `specs/llamacpp-serving` completes (Phase 2 parity + Phase 4 verdict), and its follow-on serving decision fixes where non-Ollama models are configured. This spec adds a model to that lane; it creates no new serving machinery.
+1. `specs/llamacpp-migration` builds the serving lane and fixes where non-Ollama models are configured (`specs/done/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict). This spec adds a model to that lane; it creates no new serving machinery.
 2. Ternary end state: PR #25707 merged + on-box rebuild, OR the fork decision below.
 3. Watch only (not gates): [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen a Modelfile path someday.
 

@@ -1,10 +1,10 @@
 # Plan: Bonsai-27B onboarding
 
-Blocked until `specs/llamacpp-serving` lands its verdict. Re-verify research.md facts at implementation time - especially the #25707 gate, which may have cleared by then.
+Blocked until `specs/llamacpp-migration` builds the serving lane (`specs/done/llamacpp-serving` already landed its verdict). Re-verify research.md facts at implementation time - especially the #25707 gate, which may have cleared by then.
 
 ## Phase 0 - gate check + re-verify
 
-- Confirm llamacpp-serving Phase 2/4 done and where the follow-on puts per-model serving config -> verify: the config home exists and is documented.
+- Confirm `specs/llamacpp-migration` has put per-model serving config somewhere (llamacpp-serving Phase 2/4 already landed) -> verify: the config home exists and is documented.
 - Re-check #25707 via api.github.com (merged? which build?). If merged: plan the llama.cpp rebuild - a rebuild re-triggers the Gemma MTP load re-check (docs/history/2026-07-17-llamacpp-eval.md, verdict item 5).
 - Spec review: record the three decisions (ternary path / sampling profile / intended role) in tasks.md.
 
