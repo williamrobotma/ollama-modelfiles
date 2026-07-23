@@ -39,6 +39,12 @@ Unable to generate parser for this template. Automatic parser generation failed:
 Delete the HauhauCS abliteration (its broken template is a packaging defect, not an
 abliteration property) and adopt a replacement with a canonical template.
 
+> **Correction (2026-07-23, chat-template-refresh):**
+>
+> - The guard is the official Qwen 3.5/3.6 default, verbatim in Qwen's own `chat_template.jinja` - not a HauhauCS packaging defect.
+> - The "canonical Qwen3.6 does not have it" check above ran against unsloth's `qwen3.6-35b-a3b-coding`, a guard-free `merged_system` repack - not Qwen's template.
+> - Details: [2026-07-23-chat-template-refresh.md](2026-07-23-chat-template-refresh.md).
+
 Removed: alias model, `hf.co/HauhauCS/...` base pull, `Modelfile.qwen3.6-35b-a3b-uncensored-q4-k-m`.
 Kept: `gemma4-12b-it-uncensored` (DuoNeural; no guard, works).
 

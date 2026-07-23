@@ -49,9 +49,34 @@ Never change a sampling value from memory. All profiles, mandates, and the verif
 
 Some clients send multiple `system`-role messages mid-conversation (for example, Claude Code sends a top-level system message plus session-hook and skill/reminder system messages). A model's embedded Jinja `chat_template` must tolerate non-first and repeated system messages, or every such request fails.
 
-Two HauhauCS Qwen3.6 variants shipped a non-standard guard (`raise_exception('System message must be at the beginning.')`) that canonical Qwen3.6 lacks; every request from a multi-system client 400'd, and both were deleted for it. Ollama's Modelfile `TEMPLATE` directive is Go-only (legacy `/api/generate`) and cannot override the GGUF's Jinja template, so such a guard can only be fixed by patching the GGUF metadata.
+The guard: `raise_exception('System message must be at the beginning.')`.
 
-Before adding a community GGUF as a target for a multi-system client, vet its template with `ollama show --template <model>`.
+- Official Qwen 3.5/3.6 default; every fresh Qwen pull carries it.
+- Exception: unsloth's Qwen3.6 and 3.5-MTP builds ship `merged_system`.
+  - It merges up to two leading system messages and silently drops all others, mid-conversation ones included.
+- On llama-server, the guard fires only on the OpenAI endpoint (`/v1/chat/completions` with `--jinja`).
+  - A multi-system request there returns 400.
+  - `/v1/messages` is immune: system folds into one message before the template runs.
+  - Under Ollama: unresolved (the eval found Jinja never runs, yet the 2026-06-23 HauhauCS 400s went through Ollama).
+    - Moot once Ollama retires.
+
+Standing rule: serve guarded Qwen GGUFs to OpenAI-style clients under a guard-free template.
+
+- Fix: `--jinja --chat-template-file` with froggeric's `chat_template.jinja`, validated once per (template, build) pair.
+  - Validated pair: v21.3 snapshot `23a40b0b` on b9860.
+- Don't wait for an official fix: Qwen says the guard is by design (re-role later system messages to user).
+
+Vetting (replaces `ollama show --template`, which shows a template that never runs):
+
+1. Per GGUF: `head -c 30000000 <file>.gguf | grep -c 'System message must be at the beginning'`.
+2. Per GGUF: one non-first-`system` request to `/v1/chat/completions` - 400 = guarded.
+   - Never cold-load onto a busy GPU; `-ngl 0` is fine.
+3. Per build: one multi-block-`system` request to `/v1/messages` (immunity check).
+
+Guarded fleet GGUFs as of 2026-07-23 ([evidence](docs/history/2026-07-23-chat-template-refresh.md)):
+
+- unsloth Qwen3.5-9B non-MTP, OBLITERATUS-27B, Queen-27B, Qwopus3.5-9B-coder.
+- All validated under froggeric on b9860.
 
 ## Keep-set policy
 

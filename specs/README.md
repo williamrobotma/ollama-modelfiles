@@ -15,10 +15,9 @@ Spec-driven work bundles. Each `<feature>/` holds `spec.md` (its Acceptance defi
 
 ## In-flight sequence
 
-Order follows the dependencies; work top-down (stack-upkeep is planned early, run late - see step 5).
+Order follows the dependencies; work top-down (stack-upkeep is planned early, run late - see step 4).
 
-1. **chat-template-refresh** - re-pull the Gemma templates, adopt the guard-free Qwen rule, fix the AGENTS.md gate docs. Feeds migration step 3 and stack-upkeep's vetting check. Its validation overlaps into step 2 (it needs the llama-server lane).
-2. **llamacpp-migration** - the spine: retire Ollama, serve from stock llama-server. Fill plan.md first. Consumes step 1.
-3. **bonsai-27b** - add the model to the llama.cpp lane. Blocked until step 2 builds the lane and its config home; also has an upstream gate (tracked in the bundle).
-4. **openwebui-wrapup** - end-to-end Open WebUI pass. Runs after step 2 rewires Open WebUI to llama-server, so the final config is validated once.
-5. **stack-upkeep** - version tracking and per-component checks. Plan early as the home for step 1's vetting check; then run it as a recurring cadence.
+1. **llamacpp-migration** - the spine: retire Ollama, serve from stock llama-server. Fill plan.md first. Consumes chat-template-refresh (done 2026-07-23).
+2. **bonsai-27b** - add the model to the llama.cpp lane. Blocked until step 1 builds the lane and its config home; also has an upstream gate (tracked in the bundle).
+3. **openwebui-wrapup** - end-to-end Open WebUI pass. Runs after step 1 rewires Open WebUI to llama-server, so the final config is validated once.
+4. **stack-upkeep** - version tracking and per-component checks. The chat-template vetting check is already filed in its planning items; run as a recurring cadence.

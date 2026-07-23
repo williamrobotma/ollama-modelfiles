@@ -5,5 +5,8 @@
 ## claude-local
 
 - `claude-local` drives Ollama by `ollama launch claude`, routing Claude Code to Ollama's Anthropic-compatible endpoint (`127.0.0.1:11434/v1/messages`).
-- Claude Code sends multiple `system`-role messages mid-conversation (top-level system + session-hook + skills/reminders), so any community GGUF served to it must pass the chat-template gate in [AGENTS.md](AGENTS.md#chat-template-gate-for-community-ggufs). Vet with `ollama show --template <model>` before pointing claude-local at a new community model.
+- Claude Code sends multiple `system`-role messages mid-conversation.
+  - No guard risk on llama-server's `/v1/messages` (verified); under Ollama unresolved but moot (retiring).
+  - The [AGENTS.md gate](AGENTS.md#chat-template-gate-for-community-ggufs) bites OpenAI-endpoint clients.
+  - Vet new community GGUFs per that section's procedure, not `ollama show --template`.
 - The MTP models served via claude-local are the ones exposed to the CUDA-graphs crash tracked in [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash) (prod graphs-off fix is pending, needs sudo).
