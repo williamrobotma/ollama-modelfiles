@@ -2,7 +2,7 @@
 
 Status legend: [ ] pending, [x] done. This file is the resume point for the feature; update as phases land.
 
-DRAFT 2026-07-17 - not started. Blocked on `specs/llamacpp-migration` (the serving lane + config home; `specs/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict). Ternary is the end state; 1-bit is the interim lane. Spec review pending: the three decisions in spec.md.
+DRAFT 2026-07-17 - not started. Blocked on `specs/llamacpp-migration` (the serving lane + config home; `specs/done/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict). Ternary is the end state; 1-bit is the interim lane. Spec review pending: the three decisions in spec.md.
 
 ## Phase 0 - gate check + re-verify
 

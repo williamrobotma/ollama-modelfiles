@@ -107,5 +107,5 @@ This runs on WSL2; the guest disk is an `ext4.vhdx` on the Windows `F:` drive th
 - [docs/benchmarking.md](docs/benchmarking.md) - suite mechanics, ports, distilled findings.
 - [docs/openwebui.md](docs/openwebui.md) - Open WebUI setup and config-in-DB semantics.
 - [docs/history/index.md](docs/history/index.md) - dated, immutable session evidence logs.
-- `specs/<feature>/` - spec + plan + tasks for in-flight work (tasks.md is the resume point); the run-spec skill (`.claude/skills/run-spec/`) executes a bundle end to end. `specs/README.md` is the roadmap (dependency-ordered sequence).
+- `specs/<feature>/` - spec + tasks for in-flight work, plus plan when the work needs one (tasks.md is the resume point); the run-spec skill (`.claude/skills/run-spec/`) executes a bundle end to end. `specs/README.md` is the roadmap (dependency-ordered sequence).
 - `specs/done/<feature>/` - completed bundles, kept for the record. A bundle moves here once its spec.md Acceptance is met (every tasks.md item `[x]` or deferred out of scope); run-spec files it here on completion.

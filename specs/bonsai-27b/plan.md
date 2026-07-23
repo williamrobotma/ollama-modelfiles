@@ -1,6 +1,6 @@
 # Plan: Bonsai-27B onboarding
 
-Blocked until `specs/llamacpp-migration` builds the serving lane (`specs/llamacpp-serving` already landed its verdict). Re-verify research.md facts at implementation time - especially the #25707 gate, which may have cleared by then.
+Blocked until `specs/llamacpp-migration` builds the serving lane (`specs/done/llamacpp-serving` already landed its verdict). Re-verify research.md facts at implementation time - especially the #25707 gate, which may have cleared by then.
 
 ## Phase 0 - gate check + re-verify
 

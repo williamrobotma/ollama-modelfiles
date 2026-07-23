@@ -17,7 +17,7 @@ See [research.md](research.md) in this bundle - verification status marked per c
 
 ## Dependencies / gates
 
-1. `specs/llamacpp-migration` builds the serving lane and fixes where non-Ollama models are configured (`specs/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict). This spec adds a model to that lane; it creates no new serving machinery.
+1. `specs/llamacpp-migration` builds the serving lane and fixes where non-Ollama models are configured (`specs/done/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict). This spec adds a model to that lane; it creates no new serving machinery.
 2. Ternary end state: PR #25707 merged + on-box rebuild, OR the fork decision below.
 3. Watch only (not gates): [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen a Modelfile path someday.
 
