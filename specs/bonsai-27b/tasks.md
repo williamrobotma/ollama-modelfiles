@@ -9,12 +9,14 @@ DRAFT 2026-07-17 - not started. Blocked on `specs/llamacpp-migration` (the servi
 - [ ] Serving-config home known (from `specs/llamacpp-migration`). llamacpp-serving verdict has landed (B).
 - [ ] #25707 status re-checked (api.github.com); rebuild plan if merged (incl. Gemma MTP load re-check).
 - [ ] Spec review: ternary-path / sampling-profile / role decisions recorded here.
+- [ ] Ternary-path decision covers serving: "build the PrismML fork" => llama-swap adopted before Phase 1.
 
 ## Phase 1 - 1-bit lane
 
 - [ ] Download + pin `Q1_0`, dspark Q4_1, mmproj Q8_0 (~6.2 GB; check `/mnt/f` before/after).
 - [ ] Template vet: multi-system `/v1/chat/completions` probe recorded.
 - [ ] llama-server launch from pinned path; `/props` matches profile; coding smoke.
+- [ ] Q1_0 served through the router preset (first ternary-family GGUF through the router; one-gen smoke).
 
 ## Phase 2 - bench (1-bit)
 

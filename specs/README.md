@@ -21,3 +21,4 @@ Order follows the dependencies; work top-down (stack-upkeep is planned early, ru
 2. **bonsai-27b** - add the model to the llama.cpp lane. Blocked until step 1 builds the lane and its config home; also has an upstream gate (tracked in the bundle).
 3. **openwebui-wrapup** - end-to-end Open WebUI pass. Runs after step 1 rewires Open WebUI to llama-server, so the final config is validated once.
 4. **stack-upkeep** - version tracking and per-component checks. The chat-template vetting check is already filed in its planning items; run as a recurring cadence.
+5. **copilot-byok** - VS Code Copilot on the llama-server lane (BYOK Custom Endpoint); runs any time after step 1.
