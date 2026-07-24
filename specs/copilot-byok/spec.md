@@ -26,5 +26,5 @@ SCAFFOLD - research done and verified 2026-07-23; evidence: `docs/history/2026-0
 ## Done when
 
 - A Copilot agent-mode session completes edits + terminal runs against a router-served model.
-- The dummy-API-key requirement and web-search-extension behavior under BYOK are recorded.
+- Whether a keyless local endpoint needs a dummy API key, and the web-search-extension behavior under BYOK, are recorded.
 - Config documented in `llamacpp/README.md` alongside the other clients.

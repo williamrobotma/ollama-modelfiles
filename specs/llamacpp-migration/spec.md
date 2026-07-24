@@ -39,9 +39,9 @@ Executes the 2026-07-17 eval verdict (`docs/history/2026-07-17-llamacpp-eval.md`
 ## Steps (plan.md holds the task breakdown)
 
 1. Phase 0 - router smokes on 11433 with a 2-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.
-2. Phase 1 - Gemma MTP ctx probe (16k -> as high as stable, crash-matrix protocol, graphs ON); Qwen-MTP graphs-on hammer.
+2. Phase 1 - Gemma MTP ctx probe (ladder above known-stable 16k, crash matrix, graphs ON); Qwen-MTP graphs-on hammer.
 3. Phase 2 - full-fleet preset in `llamacpp/`: 21 configs, full sampling flags, `--mmproj`, drafters, froggeric where guarded.
-4. Phase 3 - client cutovers: claude-local, Codex, OpenCode, Open WebUI, Pi (best-effort).
+4. Phase 3 - client cutovers: claude-local, Open WebUI, OpenCode, Codex, Pi (best-effort).
 5. Phase 4 - staged retirement: stop + disable, docs rewrite, validation window, gated purge + prune.
 
 ## Rules

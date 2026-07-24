@@ -11,7 +11,7 @@ Every GPU-loading step is a heavy load: announce and get user confirmation befor
 
 1. Router starts; `/v1/models` lists both entries.
    - verify: curl output shows both names and no phantom `default` entry.
-2. `/v1/messages` through the router (`?model=` routing): basic, streaming, one tool loop.
+2. `/v1/messages` through the router (routed by the body's `model` field): basic, streaming, one tool loop.
    - verify: Anthropic-shaped response from the correct child; `cache_read_input_tokens` grows on turn 2.
 3. Multi-system immunity check on `/v1/messages` (chat-template-refresh procedure, once per build).
    - verify: a two-block system request does not 400.
@@ -19,9 +19,9 @@ Every GPU-loading step is a heavy load: announce and get user confirmation befor
    - verify: a multi-system request answers, no 400.
 5. `/v1/responses` minimal Codex-shaped request including one function tool.
    - verify: the tool call round-trips, no 500.
-6. Per-child `/props` reflects the preset's sampling flags (GGUF metadata must not leak through).
+6. Per-child `/props` (`?model=` selects the child) reflects the preset's sampling flags (GGUF metadata must not leak through).
    - verify: values match the docs/parameters.md profile exactly.
-7. Sleep-idle: wait past the timer, then send a request.
+7. Sleep-idle: relaunch with a short timer (e.g. 30s) for this check, wait past it, then send a request.
    - verify: unload observed, reload succeeds, response OK.
 8. models-max: request the second model while the first is loaded.
    - verify: behavior recorded (evict or coexist) for the config-home README.
