@@ -124,6 +124,11 @@ This runs on WSL2; the guest disk is an `ext4.vhdx` on the Windows `F:` drive th
 - Count hidden copies: bytes exist twice by design - the HF cache blob (source) and the Ollama re-serialized layer both hold the model. A migration that copies + downloads + rebuilds can balloon the vhdx and crash the host (it has, twice).
 - After large in-guest deletions, reclaim host space with `wsl --shutdown` then `Optimize-VHD` (Windows side).
 
+## Markdown style
+
+- rumdl enforces `.rumdl.toml`: 120-col barometer (check-only, never `--fix`); `docs/history/` excluded as immutable.
+- Soft-wrap only: never break a line mid-idea - fix long lines by cutting redundancy or splitting into real sub-bullets.
+
 ## Doc map
 
 - [README.md](README.md) - what/why, quickstart, model catalog, repo map.

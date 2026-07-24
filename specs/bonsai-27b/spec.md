@@ -24,6 +24,9 @@ See [research.md](research.md) in this bundle - verification status marked per c
 ## Decisions at spec review
 
 1. **Ternary path**: wait for #25707 (recommended - no second engine to maintain; `Q2_g64` is the compatible file) vs build the PrismML fork now (unblocks ternary immediately; adds fork maintenance; its g128 files diverge from upstream).
+   - Serving-layer gate (added 2026-07-23): router mode is single-binary (b9860 `tools/server/server-models.cpp`).
+   - So "build the PrismML fork" requires adopting llama-swap (or a second port) BEFORE ternary onboards.
+   - Decide early in Phase 0 - the migration's router INI ports to llama-swap YAML in ~half a day.
 2. **Sampling profile**: PrismML card 0.7/0.95/20 (vendor is the authority for its own requant) vs inheriting the qwen3.6 precise-coding 0.6 profile. `repeat_penalty` 1.0 stands either way (Qwen-lineage mandate, docs/parameters.md).
 3. **Intended role**: resident benchmark/general model vs coding daily-driver candidate - the vendor's agentic-retention numbers say candidate status must be earned by the Phase 2/3 bench, not assumed.
 

@@ -1,10 +1,11 @@
-# Repo-local rumdl config. A repo-local file REPLACES (does not merge with)
-# ~/.config/rumdl/rumdl.toml, so MD013 (line-length; disabled globally for the
-# never-hard-wrap soft-wrap style - see that file's header) is repeated here.
-#
-# docs/history/*.md are immutable session logs (verbatim past research notes);
-# do not reflow or fix their markdown lint issues (trailing spaces, missing
-# blank lines, bare URLs, etc.) - exclude them from rumdl entirely.
+# Repo-local rumdl config. Replaces (does not merge with) the global config,
+# so the MD013 barometer (120 cols, check-only, never --fix) is repeated here.
+# docs/history/*.md are immutable session logs; excluded entirely.
 [global]
-disable = ["MD013"]
 exclude = ["docs/history/*.md"]
+
+[MD013]
+line-length = 120
+code-blocks = false
+tables = false
+reflow = false
