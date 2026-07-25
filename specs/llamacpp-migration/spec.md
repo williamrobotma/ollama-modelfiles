@@ -36,6 +36,30 @@ Executes the 2026-07-17 eval verdict (`docs/history/2026-07-17-llamacpp-eval.md`
 - **Acceptance clients**: Claude Code, Codex CLI, OpenCode blocking; Pi best-effort.
   - VS Code Copilot is out of scope here -> `specs/copilot-byok` (scaffolded this session).
 
+## Pre-flight additions (2026-07-25)
+
+Evidence log: `docs/history/2026-07-25-llamacpp-preflight.md`. These refine the locked decisions; none reverse one.
+
+- **Pin enforcement is mechanical, not documentary.** The launcher uses the absolute `build/bin/llama-server` path and
+  asserts `--version` reports 9860 before starting.
+  - Stale b9552 binaries at the llama.cpp repo root were deleted this session; router children spawn from the router's
+    own executable, so launching the wrong one would silently run the whole fleet off-pin.
+- **Router mode cannot do per-model env.** Children inherit the router's environment verbatim, so CUDA graphs is a
+  router-wide setting.
+  - This is why a Qwen-MTP graphs-on failure is a contingency trigger rather than a per-model tuning fix.
+  - The escape hatch is a standalone process outside the router; `llamacpp/` must define where those scripts live.
+- **Gemma thinking moves from a `SYSTEM` directive to a template kwarg**, which llama.cpp defaults on. The six
+  `SYSTEM <|think|>` directives do not migrate, and Phase 0 confirms the behavior on the wire before Phase 2 relies on
+  it.
+- **Sampling stays neutral across the cutover** so any behavior change is attributable to the engine.
+  - Gemma entries pin `min_p 0.0` against llama-server's `0.05` injection.
+  - Qwen thinking-general keeps `presence_penalty 0.0` despite the 35B-A3B card's `1.5`; the A/B is a follow-up.
+  - MTP lanes keep `--spec-draft-n-max 2` despite Gemma's card recommending 4; the comparison is a follow-up.
+- **KV cache type is an open question, probed before Phase 1.** Third-party KL data suggests q8_0 hurts Gemma and not
+  Qwen; the ctx ladder must run at whichever type the probe selects.
+- **`--mmproj` and MTP are documented incompatible.** Affected GGUFs get two router entries - one MTP, one vision -
+  rather than dropping a capability, if the probe confirms the conflict.
+
 ## Steps (plan.md holds the task breakdown)
 
 1. Phase 0 - router smokes on 11433 with a 2-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.

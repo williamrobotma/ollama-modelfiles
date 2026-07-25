@@ -8,6 +8,10 @@ Every GPU-loading step is a heavy load: announce and get user confirmation befor
 
 - Skeleton first: `llamacpp/` preset INI with two models (`qwen3.5-9b-mtp-coding`, `gemma4-12b-it-qat-mtp` + drafter).
 - Launcher script runs `llama-server --models-preset ... --sleep-idle-seconds 86400` on `127.0.0.1:11433`.
+  - Absolute path to `~/Developer/llama.cpp/build/bin/llama-server`, and abort unless `--version` reports 9860.
+- Preset mechanics confirmed from source on the pin (`docs/history/2026-07-25-llamacpp-preflight.md`), so Phase 2 can
+  rely on them: sections take dash-stripped CLI flag names, `default`/`*` is the global section, and `--alias` carries
+  the 7 alias names as a comma-separated value.
 
 1. Router starts; `/v1/models` lists both entries.
    - verify: curl output shows both names and no phantom `default` entry.
@@ -25,11 +29,23 @@ Every GPU-loading step is a heavy load: announce and get user confirmation befor
    - verify: unload observed, reload succeeds, response OK.
 8. models-max: request the second model while the first is loaded.
    - verify: behavior recorded (evict or coexist) for the config-home README.
+9. Gemma thinking on the wire: one request to the Gemma child with no thinking flags set.
+   - verify: a thought channel appears, confirming llama.cpp's `enable_thinking` default reaches the template.
+   - verify: `--chat-template-kwargs '{"enable_thinking":false}'` suppresses it, and record what `-rea off` does.
+10. MTP x `--mmproj`: launch one entry carrying both against `qwen3.5-9b-mtp-coding`.
+    - verify: record whether it refuses, ignores the projector, or serves both.
+    - If it conflicts, split that GGUF into two entries (one drafter, one `--mmproj`) and confirm both load.
+11. Gemma drafter discovery: launch the Gemma pair without an explicit drafter flag.
+    - verify: whether auto-discovery works from a local snapshot path or explicit wiring is required.
 
 Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re-run this phase through it).
 
 ## Phase 1 - stability envelopes (GPU, heavy)
 
+0. KV cache type probe, before the ladder: compare f16 against q8_0 on one Gemma and one Qwen canonical.
+   - Third-party KL data (preflight log) suggests q8_0 costs Gemma quality and not Qwen, on different quants than ours.
+   - verify: a same-prompt comparison on our own QAT/UD quants, plus the VRAM delta at a fixed ctx, both recorded.
+   - The chosen type is then fixed for the ladder below, since KV type changes the VRAM the ladder is measuring.
 1. Gemma MTP ctx probe on the 12B pair, graphs ON: ladder 32k -> 64k -> 96k -> 128k -> 160k -> 200k.
    - At each rung run the crash-matrix protocol (eval log section 2b: repeated gens, N stated).
    - Stop at the first unstable rung; serve at the highest stable rung.
@@ -43,7 +59,11 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 
 1. Fill the preset INI: 21 configs (18 canonical + 6 layered - 3 pruned) and 7 alias names.
    - Full sampling flags per docs/parameters.md (GGUF metadata overrides any flag not set - eval log section 3).
+   - Serving flags too, per that doc's new section: `-fa on`, `-ctk`/`-ctv` (Phase 1's choice), `-np 1`, `--jinja`.
+   - Explicit `min_p` on every entry, Gemma included, or llama-server injects `0.05`.
+   - `--chat-template-kwargs '{"enable_thinking":false}'` on the instruct-mode entry; Gemma needs no thinking flag.
    - `--mmproj` for vision canonicals; drafter + `--spec-type draft-mtp --spec-draft-n-max 2` for MTP lanes.
+     - Where an entry wants both, split it per the Phase 0 probe: one MTP entry plus one `--mmproj` entry.
    - froggeric `--chat-template-file` on every guarded Qwen entry; per-model ctx (Gemma from Phase 1).
    - `35b-a3b-coding` alias -> the MTP-q5 coding config; pruned models get no entry.
 2. Copy froggeric v21.3 `chat_template.jinja` into `llamacpp/templates/` with its `23a40b0b` provenance noted.
@@ -90,6 +110,9 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 
 ## Deferred / follow-ups
 
+- Benchmark `presence_penalty` 1.5 vs 0.0 on `35b-a3b-mtp-reasoning-ud-q5-k-xl`, the one entry that diverges from its
+  own model card (preflight log). Held out of the migration to keep the cutover sampling-neutral.
+- Benchmark `--spec-draft-n-max` 4 vs 2 on the Gemma MTP lanes; unsloth's Gemma card recommends 4, the fleet runs 2.
 - systemd unit for the router (after the validation window).
 - `specs/copilot-byok` (scaffolded; VS Code Copilot Custom Endpoint).
 - bonsai-27b decision 1 (wait for #25707 vs build the PrismML fork) gates llama-swap adoption; early gate in that spec.
