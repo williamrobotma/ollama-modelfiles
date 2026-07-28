@@ -12,11 +12,25 @@ GPU-loading items are heavy loads: get user confirmation before starting each.
 - [x] Sampling and MTP claims verified against vendor cards; conflicts recorded in docs/parameters.md
 - [x] Findings written to docs/history/2026-07-25-llamacpp-preflight.md
 
+## Fleet reduction (2026-07-27)
+
+Keep-set narrowed at the execution review; deletion pulled forward from the Phase 4 purge (spec execution
+revisions). Fleet: 17 configs + 6 aliases.
+
+- [x] 8 Modelfiles deleted: 3 OBLITERATUS configs + `27b-obliterated-coding` alias, `qwopus3.5/` family,
+      35B q4 MTP pair, non-MTP 35B lane - verified 23 Modelfiles remain (17 + 6)
+- [x] `35b-a3b-coding` alias repointed to the MTP-q5 coding config; rebuilt under Ollama - verified 28 GB (q5
+      class; the old q4 build was 23 GB)
+- [x] 9 Ollama models removed - verified `ollama list` = 23, matching the Modelfile count
+- [x] HF cache: OBLITERATUS x2, noctrex, Jackrong Qwopus, non-MTP 35B repo, 35B q4 blob deleted - hub 285G ->
+      199G (86G freed); q4/q5 blobs confirmed distinct before deletion; all 20 kept absolute `FROM` paths resolve
+
 ## Phase 0 - router protocol smokes
 
-- [ ] `llamacpp/` skeleton: 2-model preset INI + launcher on 11433
+- [ ] `llamacpp/` skeleton: 3-model preset INI (incl. the guarded 9B non-MTP) + launcher on 11433
 - [ ] Launcher uses the absolute build/bin path and aborts unless `--version` reports 9860
-- [ ] Router up, `/v1/models` clean (no phantom `default`)
+- [ ] Router up: `/v1/models` lists only preset entries (no phantom `default`, no HF-cache auto-discovery);
+      one generation OK under the `LLAMA_CACHE` redirect
 - [ ] `/v1/messages` smoke via router: basic, streaming, tool loop, cache hits
 - [ ] Multi-system immunity check on `/v1/messages` (per-build)
 - [ ] `/v1/chat/completions` + froggeric on a guarded Qwen
@@ -29,7 +43,8 @@ GPU-loading items are heavy loads: get user confirmation before starting each.
 
 ## Phase 1 - stability envelopes
 
-- [ ] KV cache f16 vs q8_0 probed on our own quants (quality + VRAM); type fixed before the ladder
+- [ ] Gemma KV probe: llama-perplexity KL (f16 vs q8_0, one ~16k segment) + VRAM delta; type fixed before the
+      ladder; Qwen only if Gemma surprises
 - [ ] Gemma 12B MTP ctx ladder (32k..200k, crash matrix per rung, graphs ON); pick ceiling
 - [ ] 26B MTP pair checked at the chosen ceiling
 - [ ] Qwen-MTP graphs-on hammer, 30 gens, 0 crashes (crash = contingency trigger)
@@ -37,7 +52,7 @@ GPU-loading items are heavy loads: get user confirmation before starting each.
 
 ## Phase 2 - full-fleet config home
 
-- [ ] Preset INI: 21 configs + 7 aliases, full flags, mmproj, drafters, froggeric where guarded
+- [ ] Preset INI: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on the 2 guarded entries
 - [ ] Serving flags set (`-fa on`, KV type, `-np 1`, `--jinja`) and explicit `min_p` on every entry
 - [ ] froggeric template pinned into `llamacpp/templates/`
 - [ ] `llamacpp/README.md`: layout, alias policy, add-a-model procedure
@@ -59,5 +74,6 @@ GPU-loading items are heavy loads: get user confirmation before starting each.
 - [ ] ollama.service stopped + disabled (user runs sudo)
 - [ ] Docs rewritten: architecture.md, AGENTS.md, README, CLAUDE.md note, benchmarking.md pending-action dropped
 - [ ] Validation window (~2 weeks daily use) completed without rollback
-- [ ] Purge (user-confirmed): store + pruned snapshots deleted, modelfiles/ + create script retired, vhdx compacted
+- [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
+      snapshots already gone at the fleet reduction)
 - [ ] Disk numbers and final state recorded in a dated docs/history log

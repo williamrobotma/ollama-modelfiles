@@ -60,9 +60,36 @@ Evidence log: `docs/history/2026-07-25-llamacpp-preflight.md`. These refine the 
 - **`--mmproj` and MTP are documented incompatible.** Affected GGUFs get two router entries - one MTP, one vision -
   rather than dropping a capability, if the probe confirms the conflict.
 
+## Execution revisions (2026-07-27)
+
+Decided at the first execution session's review; these supersede the specific locked or pre-flight items they name.
+
+- **The preset INI is the entire served fleet.** Router mode also auto-serves every GGUF in the HF cache
+  (`load_from_cache()` unconditional at `server-models.cpp:342-345`; still unconditional on master `0e4a03622`;
+  opt-out request llama.cpp#18609 closed not-planned).
+  - Unsuppressed, every kept model is servable twice - preset name (pinned flags) vs cache name (bare defaults,
+    embedded template) - and pruning by omission would not unserve anything.
+  - Fix: `launch.sh` sets `LLAMA_CACHE` to an empty directory (first in the cache resolution order,
+    `common/hf-cache.cpp:43`). Preset entries are absolute paths and never resolve through the cache.
+  - Phase 0 verifies a preset entry loads and generates under the redirect, not just that `/v1/models` is clean.
+- **Keep-set narrowed; deletion pulled forward** (supersedes "delete at purge" for these items): OBLITERATUS
+  (3 configs + 1 alias), Qwopus (config + Jackrong repo), noctrex repo, 35B q4 MTP pair, and the non-MTP 35B lane
+  are deleted now - Modelfiles, Ollama models, and HF cache (~89G) together. Queen-27B and the heretic pair stay.
+  - Fleet becomes **17 configs + 6 alias names** (was 21 + 7).
+  - `35b-a3b-coding` alias repoints to `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` and is rebuilt under Ollama.
+  - Guarded fleet drops to 2 (unsloth 9B non-MTP, Queen-27B); froggeric applies to those two entries.
+  - Phase 4 purge shrinks to: Ollama uninstall + 232G store, `modelfiles/` + create-script retirement, vhdx compact.
+- **KV probe replaced** (supersedes the same-prompt comparison): Gemma-only `llama-perplexity` KL run, one
+  ~16k-token wikitext segment, f16-cache baseline vs q8_0; read the tool's numbers as-is, no pooling.
+  - Also record the f16-vs-q8_0 VRAM delta at fixed ctx - the input the ctx ladder actually needs.
+  - q8_0 KL small -> keep q8_0 fleet-wide; a ~0.1 signal -> Gemma entries serve f16 and the ladder runs at f16.
+  - Qwen is probed only if Gemma surprises. No f8 cache type exists on b9860; bf16 is 16-bit (no VRAM win).
+  - `llama-perplexity` must be built first; sha256 `llama-server` before and after to prove the pin untouched.
+- **`--models-max` stays stock (4) for now**; the Phase 0 smoke records actual second-model behavior on 12 GB.
+
 ## Steps (plan.md holds the task breakdown)
 
-1. Phase 0 - router smokes on 11433 with a 2-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.
+1. Phase 0 - router smokes on 11433 with a 3-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.
 2. Phase 1 - Gemma MTP ctx probe (ladder above known-stable 16k, crash matrix, graphs ON); Qwen-MTP graphs-on hammer.
 3. Phase 2 - full-fleet preset in `llamacpp/`: 21 configs, full sampling flags, `--mmproj`, drafters, froggeric where guarded.
 4. Phase 3 - client cutovers: claude-local, Open WebUI, OpenCode, Codex, Pi (best-effort).

@@ -6,15 +6,20 @@ Every GPU-loading step is a heavy load: announce and get user confirmation befor
 
 ## Phase 0 - router protocol smokes (GPU, light)
 
-- Skeleton first: `llamacpp/` preset INI with two models (`qwen3.5-9b-mtp-coding`, `gemma4-12b-it-qat-mtp` + drafter).
+- Skeleton first: `llamacpp/` preset INI with three models: `qwen3.5-9b-mtp-coding-ud-q4-k-xl`,
+  `gemma4-12b-it-qat-mtp` + drafter, and `qwen3.5-9b-coding-ud-q4-k-xl`.
+  - The third is the guarded Qwen that smoke 4 needs; both originally-named models are guard-free
+    (AGENTS.md scan: MTP GGUF 0 hits, non-MTP 9B 1 hit).
 - Launcher script runs `llama-server --models-preset ... --sleep-idle-seconds 86400` on `127.0.0.1:11433`.
   - Absolute path to `~/Developer/llama.cpp/build/bin/llama-server`, and abort unless `--version` reports 9860.
+  - `LLAMA_CACHE` pointed at an empty directory so the preset is the whole served fleet (spec execution revisions).
 - Preset mechanics confirmed from source on the pin (`docs/history/2026-07-25-llamacpp-preflight.md`), so Phase 2 can
   rely on them: sections take dash-stripped CLI flag names, `default`/`*` is the global section, and `--alias` carries
   the 7 alias names as a comma-separated value.
 
-1. Router starts; `/v1/models` lists both entries.
-   - verify: curl output shows both names and no phantom `default` entry.
+1. Router starts; `/v1/models` lists exactly the preset entries.
+   - verify: curl output shows the three names, no phantom `default`, and no auto-discovered HF-cache entries.
+   - verify: one generation against a preset entry succeeds under the `LLAMA_CACHE` redirect.
 2. `/v1/messages` through the router (routed by the body's `model` field): basic, streaming, one tool loop.
    - verify: Anthropic-shaped response from the correct child; `cache_read_input_tokens` grows on turn 2.
 3. Multi-system immunity check on `/v1/messages` (chat-template-refresh procedure, once per build).
@@ -27,8 +32,9 @@ Every GPU-loading step is a heavy load: announce and get user confirmation befor
    - verify: values match the docs/parameters.md profile exactly.
 7. Sleep-idle: relaunch with a short timer (e.g. 30s) for this check, wait past it, then send a request.
    - verify: unload observed, reload succeeds, response OK.
-8. models-max: request the second model while the first is loaded.
+8. models-max: request the second model while the first is loaded (stock `--models-max 4`, per spec revisions).
    - verify: behavior recorded (evict or coexist) for the config-home README.
+   - On 12 GB two ~9 GiB children cannot coexist: label an eviction as VRAM-forced, not router policy.
 9. Gemma thinking on the wire: one request to the Gemma child with no thinking flags set.
    - verify: a thought channel appears, confirming llama.cpp's `enable_thinking` default reaches the template.
    - verify: `--chat-template-kwargs '{"enable_thinking":false}'` suppresses it, and record what `-rea off` does.
@@ -42,10 +48,14 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 
 ## Phase 1 - stability envelopes (GPU, heavy)
 
-0. KV cache type probe, before the ladder: compare f16 against q8_0 on one Gemma and one Qwen canonical.
-   - Third-party KL data (preflight log) suggests q8_0 costs Gemma quality and not Qwen, on different quants than ours.
-   - verify: a same-prompt comparison on our own QAT/UD quants, plus the VRAM delta at a fixed ctx, both recorded.
-   - The chosen type is then fixed for the ladder below, since KV type changes the VRAM the ladder is measuring.
+0. KV cache type probe, before the ladder (Gemma-only KL, per spec execution revisions).
+   - Build `llama-perplexity` first; sha256 `llama-server` before and after to prove the pin untouched.
+   - One ~16k-token wikitext segment on the 12B QAT canonical: f16-cache baseline run (~8.6 GB base file, deleted
+     after), q8_0 comparison run with `--kl-divergence`; read the tool's numbers as-is.
+   - verify: KL numbers plus the f16-vs-q8_0 VRAM delta at fixed ctx, both recorded in the history log.
+   - Decision rule: q8_0 KL small -> q8_0 fleet-wide; a ~0.1 signal -> Gemma serves f16 and the ladder runs at f16.
+   - Qwen is probed only if Gemma surprises. The chosen type is fixed for the ladder below, since KV type changes
+     the VRAM the ladder is measuring.
 1. Gemma MTP ctx probe on the 12B pair, graphs ON: ladder 32k -> 64k -> 96k -> 128k -> 160k -> 200k.
    - At each rung run the crash-matrix protocol (eval log section 2b: repeated gens, N stated).
    - Stop at the first unstable rung; serve at the highest stable rung.
@@ -57,18 +67,23 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 
 ## Phase 2 - full-fleet config home
 
-1. Fill the preset INI: 21 configs (18 canonical + 6 layered - 3 pruned) and 7 alias names.
+1. Fill the preset INI: 17 configs and 6 alias names (2026-07-27 fleet reduction).
+   - Every key sits under a `[section]` header: a top-level key silently becomes a phantom model named `default`
+     (the upstream example's top-level `version = 1` does exactly this - do not copy it).
    - Full sampling flags per docs/parameters.md (GGUF metadata overrides any flag not set - eval log section 3).
    - Serving flags too, per that doc's new section: `-fa on`, `-ctk`/`-ctv` (Phase 1's choice), `-np 1`, `--jinja`.
    - Explicit `min_p` on every entry, Gemma included, or llama-server injects `0.05`.
    - `--chat-template-kwargs '{"enable_thinking":false}'` on the instruct-mode entry; Gemma needs no thinking flag.
    - `--mmproj` for vision canonicals; drafter + `--spec-type draft-mtp --spec-draft-n-max 2` for MTP lanes.
+     - `--spec-draft-n-max` defaults to 3 on the pin, not 2 - it must be explicit on every MTP entry.
      - Where an entry wants both, split it per the Phase 0 probe: one MTP entry plus one `--mmproj` entry.
-   - froggeric `--chat-template-file` on every guarded Qwen entry; per-model ctx (Gemma from Phase 1).
-   - `35b-a3b-coding` alias -> the MTP-q5 coding config; pruned models get no entry.
+   - froggeric `--chat-template-file` on the two guarded entries (9B non-MTP, Queen-27B); per-model ctx (Gemma from
+     Phase 1).
+   - `35b-a3b-coding` alias -> the MTP-q5 coding config (already repointed on disk at the fleet reduction).
 2. Copy froggeric v21.3 `chat_template.jinja` into `llamacpp/templates/` with its `23a40b0b` provenance noted.
 3. Write `llamacpp/README.md`: layout, alias policy, add-a-model procedure (bonsai's entry point).
-   - verify: name parity - every non-pruned `ollama list` name resolves to a router entry or alias.
+   - verify: name parity - every kept `ollama list` name resolves to a router entry id or an `aliases[]` member
+     (aliases are not top-level ids in `/v1/models`; pickers built from `.data[].id` will not show them).
 4. Spot-load 3 representative configs (one per family).
    - verify: `/props` matches the profile; one generation each.
 
@@ -81,8 +96,11 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
    - Move `OLLAMA_API_KEY` into a user-readable env file (it currently sits only in the systemd override).
    - verify: real session - tool loop completes, MCP search returns live results, WebFetch fetch + summary works.
    - verify: body log shows no `web_search_20250305` sub-request; `cache_read_input_tokens` > 0 on later turns.
+   - verify: a tool loop containing thinking blocks completes (llama-server returns them with `signature: ""`;
+     a client that validates signatures would reject them).
 2. Open WebUI: add the OpenAI connection `http://127.0.0.1:11433/v1` in the Admin UI; disable the Ollama connection.
    - Raise `AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST` only if the picker times out against a cold router.
+   - The picker will show the 17 canonical ids only - aliases are not top-level ids in `/v1/models`.
    - verify: picker lists the fleet; one chat per family; one search-enabled (Brave) chat end-to-end.
 3. OpenCode: `opencode.jsonc` provider (`@ai-sdk/openai-compatible`, `:11433/v1`) + per-model context/output limits.
    - verify: session with tool calls; record which search tool (if any) fires - see the evidence log's discrepancy note.
@@ -103,7 +121,7 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 4. Validation window: ~2 weeks of daily use; rollback is `systemctl start ollama` (nothing deleted yet).
 5. Purge (gated on the window; confirm with user - destructive):
    - `ollama rm` all, uninstall Ollama, delete the `/usr/share/ollama` store (232G).
-   - Delete pruned HF snapshots (~60G): noctrex repo, 35B q4 MTP blob, non-MTP 35B repo.
+   - (Pruned HF snapshots already deleted at the 2026-07-27 fleet reduction - nothing HF-side left to purge.)
    - Retire `modelfiles/` + `scripts/ollama-create.sh` (git rm; history preserves them).
    - User runs `wsl --shutdown` + `Optimize-VHD` host-side; budget against `df /mnt/f` before and after.
    - verify: disk numbers in a dated history log; every client unaffected in its next session.
