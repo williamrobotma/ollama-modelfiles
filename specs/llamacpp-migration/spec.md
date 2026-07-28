@@ -77,7 +77,8 @@ Decided at the first execution session's review; these supersede the specific lo
   are deleted now - Modelfiles, Ollama models, and HF cache (~89G) together. Queen-27B and the heretic pair stay.
   - Fleet becomes **17 configs + 6 alias names** (was 21 + 7).
   - `35b-a3b-coding` alias repoints to `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` and is rebuilt under Ollama.
-  - Guarded fleet drops to 2 (unsloth 9B non-MTP, Queen-27B); froggeric applies to those two entries.
+  - Guarded fleet drops to 2 GGUFs (unsloth 9B non-MTP, Queen-27B); froggeric applies to the 3 entries they back
+    (Queen-27B backs both `queen-27b-*` configs - corrected 2026-07-28, was "two entries").
   - Phase 4 purge shrinks to: Ollama uninstall + 232G store, `modelfiles/` + create-script retirement, vhdx compact.
 - **KV probe replaced** (supersedes the same-prompt comparison): Gemma-only `llama-perplexity` KL run, one
   ~16k-token wikitext segment, f16-cache baseline vs q8_0; read the tool's numbers as-is, no pooling.
@@ -87,11 +88,24 @@ Decided at the first execution session's review; these supersede the specific lo
   - `llama-perplexity` must be built first; sha256 `llama-server` before and after to prove the pin untouched.
 - **`--models-max` stays stock (4) for now**; the Phase 0 smoke records actual second-model behavior on 12 GB.
 
+## Execution decisions (2026-07-28, round 2 session)
+
+User-confirmed at the Phase 0 pre-implementation review; recorded here per the keep-docs-updated rule.
+
+- **Phase 0 serves `gemma4-12b-it-qat-mtp` at the profile's 200000 ctx**, not the known-stable 16k.
+  - The 2026-07-17 eval recorded a gen-5 crash at 200k graphs-on: a ctx-instability crash during the smokes is
+    documented behavior, NOT a "protocol smoke fails" contingency trigger. The Phase 1 ladder still bounds the ceiling.
+- **froggeric scope corrected**: the 2 guarded GGUFs back 3 preset entries; all 3 get `--chat-template-file`.
+- **froggeric template copied at Phase 0** (Phase 2 item pulled forward); byte-identical, sha256 + provenance in
+  `llamacpp/templates/README.md`.
+- **Stale counts fixed in place**: spec Steps "21 configs" -> 17 + 6; plan preamble "7 alias names" -> 6; tasks.md
+  fleet-reduction "20 FROM paths" -> 22 FROM/DRAFT paths (19 FROM + 3 DRAFT, re-verified resolving 2026-07-28).
+
 ## Steps (plan.md holds the task breakdown)
 
 1. Phase 0 - router smokes on 11433 with a 3-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.
 2. Phase 1 - Gemma MTP ctx probe (ladder above known-stable 16k, crash matrix, graphs ON); Qwen-MTP graphs-on hammer.
-3. Phase 2 - full-fleet preset in `llamacpp/`: 21 configs, full sampling flags, `--mmproj`, drafters, froggeric where guarded.
+3. Phase 2 - full-fleet `llamacpp/` preset: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on guarded.
 4. Phase 3 - client cutovers: claude-local, Open WebUI, OpenCode, Codex, Pi (best-effort).
 5. Phase 4 - staged retirement: stop + disable, docs rewrite, validation window, gated purge + prune.
 

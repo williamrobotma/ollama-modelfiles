@@ -375,3 +375,6 @@ cscope.po.out
 # =============================================================================
 
 .svn/
+
+# llama.cpp router: empty LLAMA_CACHE redirect target
+llamacpp/.cache-empty/

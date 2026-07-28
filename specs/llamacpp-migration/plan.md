@@ -14,8 +14,9 @@ Every GPU-loading step is a heavy load: announce and get user confirmation befor
   - Absolute path to `~/Developer/llama.cpp/build/bin/llama-server`, and abort unless `--version` reports 9860.
   - `LLAMA_CACHE` pointed at an empty directory so the preset is the whole served fleet (spec execution revisions).
 - Preset mechanics confirmed from source on the pin (`docs/history/2026-07-25-llamacpp-preflight.md`), so Phase 2 can
-  rely on them: sections take dash-stripped CLI flag names, `default`/`*` is the global section, and `--alias` carries
-  the 7 alias names as a comma-separated value.
+  rely on them: sections take dash-stripped CLI flag names, `[*]` is the global section, and `--alias` carries the 6
+  alias names as a comma-separated value. `default` is NOT a global: only `*` short-circuits to the global preset in
+  `common_preset_context::load_from_ini`; a `[default]` section is served as a model entry (the phantom-model trap).
 
 1. Router starts; `/v1/models` lists exactly the preset entries.
    - verify: curl output shows the three names, no phantom `default`, and no auto-discovered HF-cache entries.
@@ -77,8 +78,8 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
    - `--mmproj` for vision canonicals; drafter + `--spec-type draft-mtp --spec-draft-n-max 2` for MTP lanes.
      - `--spec-draft-n-max` defaults to 3 on the pin, not 2 - it must be explicit on every MTP entry.
      - Where an entry wants both, split it per the Phase 0 probe: one MTP entry plus one `--mmproj` entry.
-   - froggeric `--chat-template-file` on the two guarded entries (9B non-MTP, Queen-27B); per-model ctx (Gemma from
-     Phase 1).
+   - froggeric `--chat-template-file` on the 3 guarded-GGUF entries (9B non-MTP; Queen-27B coding + reasoning);
+     per-model ctx (Gemma from Phase 1).
    - `35b-a3b-coding` alias -> the MTP-q5 coding config (already repointed on disk at the fleet reduction).
 2. Copy froggeric v21.3 `chat_template.jinja` into `llamacpp/templates/` with its `23a40b0b` provenance noted.
 3. Write `llamacpp/README.md`: layout, alias policy, add-a-model procedure (bonsai's entry point).

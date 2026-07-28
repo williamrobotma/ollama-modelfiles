@@ -4,6 +4,9 @@ Planning done 2026-07-23 (spec vetted, plan.md filled). Details and verify steps
 
 GPU-loading items are heavy loads: get user confirmation before starting each.
 
+`spec.md` and `plan.md` locked 2026-07-28 (user directive): no further edits for the remainder of the task.
+Execution deviations and per-item verification notes are recorded here only.
+
 ## Pre-flight (2026-07-25)
 
 - [x] Stale b9552 binaries deleted from the llama.cpp repo root; build/bin b9860 is the only one left
@@ -23,12 +26,17 @@ revisions). Fleet: 17 configs + 6 aliases.
       class; the old q4 build was 23 GB)
 - [x] 9 Ollama models removed - verified `ollama list` = 23, matching the Modelfile count
 - [x] HF cache: OBLITERATUS x2, noctrex, Jackrong Qwopus, non-MTP 35B repo, 35B q4 blob deleted - hub 285G ->
-      199G (86G freed); q4/q5 blobs confirmed distinct before deletion; all 20 kept absolute `FROM` paths resolve
+      199G (86G freed); q4/q5 blobs confirmed distinct before deletion; all 22 kept absolute `FROM`/`DRAFT` paths
+      resolve (19 FROM + 3 DRAFT; count corrected from 20 and re-verified 2026-07-28)
 
 ## Phase 0 - router protocol smokes
 
-- [ ] `llamacpp/` skeleton: 3-model preset INI (incl. the guarded 9B non-MTP) + launcher on 11433
-- [ ] Launcher uses the absolute build/bin path and aborts unless `--version` reports 9860
+- [x] `llamacpp/` skeleton: 3-model preset INI (incl. the guarded 9B non-MTP) + launcher on 11433 - verified
+      2026-07-28: all 19 keys map to b9860 flags per `--help`, all 5 GGUF/template paths resolve, INI comment
+      and `[*]`-global mechanics source-checked in `common/preset.cpp`; froggeric copy sha256-identical
+- [x] Launcher uses the absolute build/bin path and aborts unless `--version` reports 9860 - verified: assert
+      substring matches live `--version` output on the pin; `bash -n` clean; abort branch untested (needs a
+      wrong binary on purpose - accepted)
 - [ ] Router up: `/v1/models` lists only preset entries (no phantom `default`, no HF-cache auto-discovery);
       one generation OK under the `LLAMA_CACHE` redirect
 - [ ] `/v1/messages` smoke via router: basic, streaming, tool loop, cache hits
@@ -52,7 +60,7 @@ revisions). Fleet: 17 configs + 6 aliases.
 
 ## Phase 2 - full-fleet config home
 
-- [ ] Preset INI: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on the 2 guarded entries
+- [ ] Preset INI: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on the 3 guarded-GGUF entries
 - [ ] Serving flags set (`-fa on`, KV type, `-np 1`, `--jinja`) and explicit `min_p` on every entry
 - [ ] froggeric template pinned into `llamacpp/templates/`
 - [ ] `llamacpp/README.md`: layout, alias policy, add-a-model procedure
