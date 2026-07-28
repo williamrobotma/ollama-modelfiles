@@ -26,34 +26,37 @@ revisions). Fleet: 17 configs + 6 aliases.
       class; the old q4 build was 23 GB)
 - [x] 9 Ollama models removed - verified `ollama list` = 23, matching the Modelfile count
 - [x] HF cache: OBLITERATUS x2, noctrex, Jackrong Qwopus, non-MTP 35B repo, 35B q4 blob deleted - hub 285G -> 199G
-  - 86G freed; q4/q5 blobs confirmed distinct before deletion
-  - All 22 kept `FROM`/`DRAFT` paths resolve (19 + 3; count corrected from 20, re-verified 2026-07-28)
+  - 86G freed. The q4/q5 blobs were confirmed distinct before deletion.
+  - All 22 kept `FROM`/`DRAFT` paths resolve (19 + 3, corrected from 20, re-verified 2026-07-28).
 
 ## Phase 0 - router protocol smokes
 
 Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-llamacpp-p0-smokes.md`.
 
 - [x] `llamacpp/` skeleton: 3-model preset INI (incl. the guarded 9B non-MTP) + launcher on 11433
-  - Verified: 19 keys map to b9860 flags, all paths resolve, `[*]` mechanics source-checked, copy sha256-identical
+  - Verified: all 19 keys map to b9860 flags, every referenced path resolves, and the copy is sha256-identical.
+  - The `[*]`-global and comment mechanics were source-checked in `common/preset.cpp`.
 - [x] Launcher uses the absolute build/bin path and aborts unless `--version` reports 9860
-  - Verified: assert substring matches live `--version` output; `bash -n` clean; abort branch untested (accepted)
+  - Verified: the assert substring matches live `--version` output and `bash -n` passes.
+  - The abort branch stays untested (accepted).
 - [x] Router up: `/v1/models` lists only preset entries (no phantom `default`, no HF-cache auto-discovery)
-  - One generation OK under the `LLAMA_CACHE` redirect
+  - One generation completed under the `LLAMA_CACHE` redirect.
 - [x] `/v1/messages` smoke via router: basic, streaming, tool loop, cache hits (427 cached tokens on turn 2)
-  - Streaming block-overlap quirk at the thinking->text boundary logged for the P3 claude-local validation
-- [x] Multi-system immunity check on `/v1/messages` (per-build) - two-block system 200
-- [x] `/v1/chat/completions` + froggeric on a guarded Qwen - mid-conversation system 200, template byte-identical
-- [x] `/v1/responses` Codex-shaped smoke with a function tool - round-trip completed, no 500
-- [x] Per-child `/props` matches docs/parameters.md profile - all 3 children exact
-  - `/props` `n_predict -1` is a pin display artifact; the request default is the flag value (server-schema.cpp:503)
+  - A streaming block-overlap quirk at the thinking->text boundary is logged for the P3 claude-local validation.
+- [x] Multi-system immunity check on `/v1/messages` (per-build) - a two-block system request returns 200
+- [x] `/v1/chat/completions` + froggeric on a guarded Qwen - a mid-conversation system message returns 200
+  - The served template is byte-identical to the pinned copy.
+- [x] `/v1/responses` Codex-shaped smoke with a function tool - the round-trip completes with no 500
+- [x] Per-child `/props` matches docs/parameters.md profile - all 3 children match exactly
+  - `/props` `n_predict -1` is a pin display artifact. The request default is the flag value (server-schema.cpp:503).
 - [x] Sleep-idle unload/reload observed (sleeping, VRAM released, ~3 s wake); models-max behavior recorded
-  - Two 9B children coexist full-speed at 11.5/12.3 GiB, no eviction
+  - Two 9B children coexist at full speed (11.5/12.3 GiB) with no eviction.
 - [x] Gemma thinking confirmed on the wire with no flags set; disable path and `-rea` mapping recorded
-  - `enable_thinking:false` disables per-request; `-rea off` disables at launch
-- [x] MTP x `--mmproj` behavior recorded - b9860 serves both from one entry, no conflict, loads fine unsplit
-  - Image round-trip OK with drafting active, at a ~35-40% decode penalty; P2 splits for speed
-- [x] Gemma drafter auto-discovery from a local snapshot path tested - none; explicit `model-draft` mandatory
-  - Child dies without it: `failed to create MTP context`
+  - `enable_thinking:false` disables it per-request, and `-rea off` disables it at launch.
+- [x] MTP x `--mmproj` behavior recorded - b9860 serves both from one entry with no conflict
+  - The image round-trip works with drafting active at a ~35-40% decode penalty, so P2 splits entries for speed.
+- [x] Gemma drafter auto-discovery from a local snapshot path tested - none exists
+  - The child dies without `model-draft` (`failed to create MTP context`). Explicit wiring is mandatory.
 
 ## Phase 1 - stability envelopes
 
