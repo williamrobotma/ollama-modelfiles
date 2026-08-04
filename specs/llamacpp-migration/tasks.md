@@ -37,6 +37,8 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Verified: 19 keys map to b9860 flags, all paths resolve, `[*]` mechanics source-checked, copy sha256-identical
 - [x] Launcher uses the absolute build/bin path and aborts unless `--version` reports 9860
   - Verified: assert substring matches live `--version` output; `bash -n` clean; abort branch untested (accepted)
+  - Deviation 2026-08-03 (user): abort removed after P1; the pin stays in launch.sh as a last-known-good record
+    that the spec's rebuild rule moves forward (decision record in the P1 log)
 - [x] Router up: `/v1/models` lists only preset entries (no phantom `default`, no HF-cache auto-discovery)
   - One generation OK under the `LLAMA_CACHE` redirect
 - [x] `/v1/messages` smoke via router: basic, streaming, tool loop, cache hits (427 cached tokens on turn 2)
@@ -61,10 +63,14 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       ladder; Qwen only if Gemma surprises
   - q8_0 fleet-wide (user, 2026-08-03): q8_0 KLD 0.072 == bf16's 0.070 vs the f16 base, so the tail is dtype
     noise; Gemma did not surprise (no Qwen probe); evidence: `docs/history/2026-08-03-llamacpp-p1-envelopes.md`
-- [ ] Gemma 12B MTP ctx ladder (32k..200k, crash matrix per rung, graphs ON); pick ceiling
-- [ ] 26B MTP pair checked at the chosen ceiling
-- [ ] Qwen-MTP graphs-on hammer, 30 gens, 0 crashes (crash = contingency trigger)
-- [ ] Results written to a dated docs/history log
+- [x] Gemma 12B MTP ctx ladder (32k..200k, crash matrix per rung, graphs ON); pick ceiling
+  - 36/36 gens stable across all 6 rungs; ceiling 200000; the eval's 200k crash did not reproduce (n=6)
+- [x] 26B MTP pair checked at the chosen ceiling
+  - 6/6 gens stable at 131072 (its profile ctx), 39-42 tok/s, acceptance 0.62-0.74, `-ngl auto` partial offload
+- [x] Qwen-MTP graphs-on hammer, 30 gens, 0 crashes (crash = contingency trigger)
+  - 30/30 clean against the router child, full 4096 tokens each, 98-121 tok/s; contingency not triggered
+- [x] Results written to a dated docs/history log
+  - `docs/history/2026-08-03-llamacpp-p1-envelopes.md` + index row
 
 ## Phase 2 - full-fleet config home
 
