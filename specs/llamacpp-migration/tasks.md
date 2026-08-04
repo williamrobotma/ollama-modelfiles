@@ -124,6 +124,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - MTP x graphs-on side result: 10 requests to 26.2k ctx, graphs reused to 1030, zero crashes
     - n=1; the tracked issue stays open
 - [ ] Open WebUI on OpenAI connection 11433; fleet in picker; search-enabled chat passes
+  - Prep 2026-08-04: backup `~/.open-webui/webui.db.bak-pre-0.11.0` taken, then the pending 0.11.0 first start ran
+    - 9 alembic migrations + 13 seeded config defaults; documented settings and the Brave key intact; serve up on 8080
+    - Remaining (user, browser): enable the OpenAI toggle (still false in the DB), add 11433/v1, picker + chat checks
+    - During the first chat: check the outgoing body for client-injected temperature/top_p (OpenAI-connection unknown)
 - [ ] OpenCode provider block + context limits; search-tool behavior recorded
 - [ ] Codex custom provider (Responses, fresh threads); tool loop tested or upstream-blocked documented
 - [ ] Pi best-effort config tried or explicitly deferred
