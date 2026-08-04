@@ -99,12 +99,20 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Source: drafter GGUF `gemma4-assistant.context_length = 131072`; load warns "possible training context overflow"
     - 12B's drafter is trained at 262144 (fine at 200000); the 26B pair serves exactly its drafter's 131072
     - Speculation is output-invariant: the exposure is acceptance/speed past ~131k positions, not correctness
-    - Keep-vs-cap decision pending
+    - Decided 2026-08-04 (user): keep 200000; noted on the models.ini entry
 
 ## Phase 3 - client cutovers
 
-- [ ] claude-local rewired: base URL 11433, tier vars, `--disallowedTools WebSearch`, web-search MCP
-- [ ] `OLLAMA_API_KEY` moved to a user-readable env file for the MCP
+- [x] claude-local rewired: base URL 11433, tier vars, `--disallowedTools WebSearch`, web-search MCP
+  - Applied 2026-08-04 with user consent: `~/.bashrc` fn + `~/.config/claude-local.env` rewrite + new mcp.json
+  - Deviation (measured): `--disallowedTools=WebSearch` = form; the plan's space form swallows `"$@"` into deny rules
+  - MCP scope: per-invocation `--mcp-config` only; nothing registered globally (`~/.claude.json` has no mcpServers)
+  - MCP runtime: pipx (user: pipx first; uv absent) runs the official script vendored at `llamacpp/mcp/`
+    - Local pin `mcp>=1.9,<2` (2026-08-04): mcp 2.0.0 removed FastMCP and Server.tool(); upstream script unfixed
+    - Stdio handshake + live web_search 200 verified end-to-end on the pinned content
+    - Provenance record: `llamacpp/mcp/README.md`
+- [x] `OLLAMA_API_KEY` moved to a user-readable env file for the MCP
+  - Copied (not moved) 2026-08-04: the spec freezes the systemd override until the P4 purge; env file is mode 600
 - [ ] claude-local validated: tool loop, live MCP search, body-log check, cache hits, WebFetch
 - [ ] Open WebUI on OpenAI connection 11433; fleet in picker; search-enabled chat passes
 - [ ] OpenCode provider block + context limits; search-tool behavior recorded
