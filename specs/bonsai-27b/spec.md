@@ -11,14 +11,16 @@
 See [research.md](research.md) in this bundle - verification status marked per claim. The hard ones:
 
 - Q1_0 runs on stock llama.cpp b9860 with CUDA kernels (on-box verified).
-- Ternary fast CUDA is gated on ggml-org/llama.cpp [PR #25707](https://github.com/ggml-org/llama.cpp/pull/25707) (group-64; the `Q2_g64` GGUF is the upstream-compatible file); the fork's g128 formats will never be upstream.
+- Ternary fast CUDA was gated on ggml-org/llama.cpp [PR #25707](https://github.com/ggml-org/llama.cpp/pull/25707) (group-64).
+  - Merged upstream 2026-07-30 (checked 2026-08-03) - the remaining gate is an on-box rebuild past it.
+  - The `Q2_g64` GGUF is the upstream-compatible file; the fork's g128 formats will never be upstream.
 - DSpark is a classic separate drafter (`-md`, not `--spec-type draft-mtp`); community speedups range +33% to -37% by hardware - it must be A/B'd, not assumed.
 - Vendor retention numbers put agentic tool use as the weakest domain - relevant because the daily drivers here are agentic coding.
 
 ## Dependencies / gates
 
 1. `specs/llamacpp-migration` builds the serving lane and fixes where non-Ollama models are configured (`specs/done/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict). This spec adds a model to that lane; it creates no new serving machinery.
-2. Ternary end state: PR #25707 merged + on-box rebuild, OR the fork decision below.
+2. Ternary end state: PR #25707 merged (done 2026-07-30) + on-box rebuild, OR the fork decision below.
 3. Watch only (not gates): [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen a Modelfile path someday.
 
 ## Decisions at spec review
