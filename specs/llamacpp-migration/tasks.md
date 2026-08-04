@@ -128,7 +128,13 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - 9 alembic migrations + 13 seeded config defaults; documented settings and the Brave key intact; serve up on 8080
     - Remaining (user, browser): enable the OpenAI toggle (still false in the DB), add 11433/v1, picker + chat checks
     - During the first chat: check the outgoing body for client-injected temperature/top_p (OpenAI-connection unknown)
-- [ ] OpenCode provider block + context limits; search-tool behavior recorded
+- [x] OpenCode provider block + context limits; search-tool behavior recorded
+  - Applied 2026-08-04 (user consent, "no model left behind"): 12-model provider block with per-model limits
+  - Validated: real tool-loop session fixed a file on disk; requests hit 11433 (no #5674 symptom); picker lists all 12
+  - Search recorded: no websearch tool exists in opencode 1.16.2 - webfetch only; the "search via Ollama" belief closed
+  - Seam clean (no P0-style block overlap); upstream client bug found: `opencode run` drops final text from stdout
+    - 4/4 sessions, stored text intact via `opencode export`; TUI untested; non-blocking for the cutover
+  - Decode 23.2-34.0 tok/s, acceptance 0.71-0.99; zero E/W or CUDA lines across the session's 192 router-log lines
 - [ ] Codex custom provider (Responses, fresh threads); tool loop tested or upstream-blocked documented
 - [ ] Pi best-effort config tried or explicitly deferred
 
