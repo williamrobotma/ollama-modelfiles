@@ -1,42 +1,63 @@
 # Plan: Bonsai-27B onboarding
 
-Blocked until `specs/llamacpp-migration` builds the serving lane (`specs/done/llamacpp-serving` already landed its verdict). Re-verify research.md facts at implementation time - especially the #25707 gate, which may have cleared by then.
+Blocked until `specs/llamacpp-migration` builds the serving lane (`specs/done/llamacpp-serving` landed its verdict).
 
-## Phase 0 - gate check + re-verify
+Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-verify research.md facts at run time.
 
-- Confirm `specs/llamacpp-migration` has put per-model serving config somewhere (llamacpp-serving Phase 2/4 already landed) -> verify: the config home exists and is documented.
-- Re-check #25707 via api.github.com (merged? which build?). If merged: plan the llama.cpp rebuild - a rebuild re-triggers the Gemma MTP load re-check (docs/history/2026-07-17-llamacpp-eval.md, verdict item 5).
-- Spec review: record the three decisions (ternary path / sampling profile / intended role) in tasks.md.
+## Phase 0 - gate check + rebuild
 
-## Phase 1 - 1-bit lane
+- Confirm the serving-config home from `specs/llamacpp-migration` exists and is documented.
+- Rebuild llama.cpp past the #25707 merge (2026-07-30); this is the remaining ternary gate.
+  - The rebuild triggers the migration spec's rebuild rule: crash matrix re-run, froggeric pair re-validation.
+  - Include the Gemma MTP load re-check (docs/history/2026-07-17-llamacpp-eval.md, verdict item 5).
+  - Passing the rule moves the last-known-good pin forward (stack-upkeep policy).
+- Spec review: record the two remaining decisions (sampling profile, intended role) in tasks.md.
+  - Ternary path is already resolved upstream (spec.md decision 1).
 
-- `hf download prism-ml/Bonsai-27B-gguf` for `Bonsai-27B-Q1_0.gguf` (3.8 GB) + `Bonsai-27B-dspark-Q4_1.gguf` (1.79 GB) + `Bonsai-27B-mmproj-Q8_0.gguf` (0.63 GB); pin the snapshot path per AGENTS.md sourcing convention -> verify: `df -h /mnt/f` before/after, ~6.2 GB delta.
-- Template vet: multi-system `/v1/chat/completions` probe against a running instance -> verify: no 400; record pass/fail next to the fleet's guard-scan note.
-- Launch under llama-server from the pinned path with the full decided profile as flags -> verify: `/props default_generation_settings` matches the profile; coding smoke prompt returns coherent output with timings.
+## Phase 1 - ternary lane
 
-## Phase 2 - bench (1-bit)
+- `hf download prism-ml/Ternary-Bonsai-27B-gguf`: `Q2_g64` (7.59 GB), dspark Q4_1 (1.95 GB), mmproj Q8_0 (0.63 GB).
+  - Pin the snapshot path per the AGENTS.md sourcing convention.
+  - Verify: `df -h /mnt/f` before/after, ~10.2 GB delta.
+- Template vet: multi-system `/v1/chat/completions` probe against a running instance.
+  - Verify: no 400; record pass/fail next to the fleet's guard-scan note.
+- Launch under llama-server from the pinned path with the full decided profile as flags.
+  - Verify: `/props default_generation_settings` matches the profile; coding smoke coherent with timings.
+- Serve through the router preset (first ternary-family GGUF through the router).
+  - Verify: one-gen smoke under the preset name.
 
-- Add parity-suite rows (`bonsai27b-q1`, `bonsai27b-q1-dspark`) to `benchmarks/llamacpp-parity/matrix.tsv` with `ollama_model` = `-`; bench against `qwen3.6-27b-coding-ud-q4-k-xl` - same base, so this is a clean quant-vs-quant comparison -> verify: report.py output with warmup + reps, not smoke N=1.
-- DSpark A/B: `-md` + `--spec-draft-n-*` flags on vs off -> verify: decode tok/s delta and acceptance recorded; adopt only on a win.
-- VRAM/ctx envelope on the 4070: resident footprint at the Modelfile-class contexts; find where it stops being fully resident -> verify: `nvidia-smi` figures in the results dir.
+## Phase 2 - bench (ternary)
+
+- Parity rows `bonsai27b-q2g64` / `bonsai27b-q2g64-dspark` vs `qwen3.6-27b-coding-ud-q4-k-xl` (same base).
+  - Verify: report.py output with warmup + reps, not smoke N=1.
+- DSpark A/B: `-md` + `--spec-draft-n-*` flags on vs off.
+  - Verify: decode tok/s delta and acceptance recorded; adopt only on a win.
+- VRAM/ctx envelope on the 4070: resident footprint at the Modelfile-class contexts.
+  - Verify: `nvidia-smi` figures in the results dir.
+- Long-context ceiling: community figures put ternary at 13.7 GiB at 100K ctx.
+  - Establish the actual resident ceiling with the lane's KV quantization before claiming long-ctx support.
 - Optional: mmproj load + one vision smoke (first `--mmproj` use on this lane).
 
-## Phase 3 - ternary (the end state)
+## Phase 3 - 1-bit comparison
 
-- When the Phase-0 ternary gate clears: download `Ternary-Bonsai-27B-Q2_g64.gguf` (7.59 GB) + its dspark Q4_1 (1.95 GB) - or the fork-format files if the fork decision went that way - and repeat Phases 1-2 on it.
-- Three-way comparison: ternary vs 1-bit vs `qwen3.6-27b-coding-ud-q4-k-xl` on throughput, VRAM, and spot quality; the vendor retention deltas (94.6% vs 89.5%) are the hypothesis under test.
-- Long-context check: community figures put ternary at 13.7 GiB at 100K ctx - establish the actual resident ceiling with the lane's KV quantization before claiming long-ctx support.
+- `hf download prism-ml/Bonsai-27B-gguf`: `Q1_0` (3.8 GB), dspark Q4_1 (1.79 GB); ~5.6 GB, no second mmproj.
+  - Pin the snapshot path; verify the `/mnt/f` delta.
+- Serve far enough to bench: template vet + `/props` check on the decided profile.
+- Parity rows `bonsai27b-q1` / `bonsai27b-q1-dspark`.
+- Three-way comparison: ternary vs 1-bit vs `qwen3.6-27b-coding-ud-q4-k-xl` on throughput, VRAM, and spot quality.
+  - The vendor retention deltas (94.6% vs 89.5%) are the hypothesis under test.
 - Write the serving-role verdict; wire the winner into the serving config chosen by the llamacpp follow-on.
 
 ## Phase 4 - document
 
 - docs/parameters.md: Bonsai-27B profile section (values + source URLs + the repeat_penalty stance).
-- docs/benchmarking.md: the new rows and distilled findings; watch items (#25707, #13668) recorded alongside the existing llamacpp watch list.
+- docs/benchmarking.md: the new rows and distilled findings; watch items alongside the llamacpp watch list.
+  - #25707 resolved (merged 2026-07-30); #13668 still watched.
 - research.md: append a dated resolution note per gated fact (merged / still open / superseded).
 
 ## Risks / notes
 
 - Vendor quality and speed numbers are unbenched marketing until Phase 2/3 - do not promote the model on them.
 - DSpark can be a net slowdown on some hardware (-37% on DGX Spark); treat the drafter as an experiment, not a default.
-- Fork lane, if chosen, is a second engine to build and maintain - prefer upstream unless #25707 stalls badly.
+- (Retired 2026-08-03) Fork lane: #25707 merged, so upstream is the only lane; no second engine to maintain.
 - VRAM contention while benchmarking: same posture as the parity suite (idle the systemd Ollama during runs).

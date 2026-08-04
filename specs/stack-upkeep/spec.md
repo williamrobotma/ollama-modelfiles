@@ -13,8 +13,7 @@ Keep llama.cpp, Ollama, Open WebUI, and the pinned GGUFs current and tracked. To
 - The check each component must pass before an update is trusted.
   - Decided for chat templates (2026-07-23): the AGENTS.md gate section's vetting procedure.
 - What stays pinned on purpose.
-  - Decided for all components (2026-08-03): nothing is frozen - llama.cpp, Ollama, Open WebUI, and the GGUFs
-    may stay updated.
+  - Decided for all components (2026-08-03): llama.cpp, Ollama, Open WebUI, and the GGUFs may stay updated.
   - A pin is a documented last-known-good record only; it moves forward when the component's named check passes.
   - Precedent: the llama.cpp launcher-abort removal (decision record in the 2026-08-03 P1 log).
 
