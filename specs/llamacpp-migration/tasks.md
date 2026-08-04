@@ -135,7 +135,18 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Seam clean (no P0-style block overlap); upstream client bug found: `opencode run` drops final text from stdout
     - 4/4 sessions, stored text intact via `opencode export`; TUI untested; non-blocking for the cutover
   - Decode 23.2-34.0 tok/s, acceptance 0.71-0.99; zero E/W or CUDA lines across the session's 192 router-log lines
-- [ ] Codex custom provider (Responses, fresh threads); tool loop tested or upstream-blocked documented
+- [x] Codex custom provider (Responses, fresh threads); tool loop tested or upstream-blocked documented
+  - Applied 2026-08-04 (user consent): provider table + overlay + 12-model catalog; cloud default untouched
+  - Validated: tool loop fixed a file via exec_command x3; /v1/responses -> canonical child proven
+    - #10635 affirmatively dead on the pin (zero 4xx across both runs)
+  - Auth qualifier: 0.145.0 accepts the authless provider but attached the ambient ChatGPT credential
+    - The router ignores the header; authless-without-login and the env_key fallback stay unvalidated
+  - Finding: llama-server silently skips Responses tools typed `namespace` (Codex MCP) and `web_search`, returning 200
+    - Codex-side MCP fails invisibly on this lane (W lines in the router log only); plain function tools unaffected
+    - #26977's zero hits = path never exercised, not fixed; carry to the P4 docs rewrite
+  - Codex phones home under the local profile (chatgpt.com analytics + OTLP); recorded, out of scope here
+  - Cleanup: removed the trust entry Codex self-wrote for the ephemeral validation sandbox; marketplace drift left as-is
+  - Decode 28.9-37.4 tok/s, acceptance 0.72-0.95; the ~10k-token Codex preamble costs ~42 s cold prefill per session
 - [ ] Pi best-effort config tried or explicitly deferred
 
 ## Phase 4 - staged retirement
