@@ -5,10 +5,7 @@
 # CUDA graphs stays ON fleet-wide - never set GGML_CUDA_DISABLE_GRAPHS here (Gemma MTP needs graphs on).
 set -euo pipefail
 
-# Pin record (last known good): version 9860 (fdb1db877) - the build the P0/P1
-# stability envelope was certified on. A rebuilt binary runs fine here, but is not
-# known-good until the spec's rebuild rule passes (crash matrix + froggeric
-# re-validation); then move this record forward.
+# Last known good: 9860 (fdb1db877). Rebuilds re-certify per the migration spec's rebuild rule (P1 log, 2026-08-03).
 BIN=/home/wma/Developer/llama.cpp/build/bin/llama-server
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -23,6 +20,6 @@ mkdir -p "$LLAMA_CACHE"
 # Ollama's KEEP_ALIVE=24h. Extra args pass through to the router.
 exec "$BIN" \
     --models-preset "$DIR/models.ini" \
-    --host 127.0.0.1 --port 11433 \
     --sleep-idle-seconds "${SLEEP_IDLE_SECONDS:-86400}" \
-    "$@"
+    "$@" \
+    --host 127.0.0.1 --port 11433

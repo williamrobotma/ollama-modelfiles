@@ -37,8 +37,8 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Verified: 19 keys map to b9860 flags, all paths resolve, `[*]` mechanics source-checked, copy sha256-identical
 - [x] Launcher uses the absolute build/bin path and aborts unless `--version` reports 9860
   - Verified: assert substring matches live `--version` output; `bash -n` clean; abort branch untested (accepted)
-  - Deviation 2026-08-03 (user): abort removed after P1; the pin stays in launch.sh as a last-known-good record
-    that the spec's rebuild rule moves forward (decision record in the P1 log)
+  - Deviation 2026-08-03 (user): abort removed after P1; launch.sh keeps the pin as a last-known-good record
+    - The spec's rebuild rule moves that record forward (decision record in the P1 log)
 - [x] Router up: `/v1/models` lists only preset entries (no phantom `default`, no HF-cache auto-discovery)
   - One generation OK under the `LLAMA_CACHE` redirect
 - [x] `/v1/messages` smoke via router: basic, streaming, tool loop, cache hits (427 cached tokens on turn 2)
@@ -61,12 +61,12 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 
 - [x] Gemma KV probe: llama-perplexity KL (f16 vs q8_0, one ~16k segment) + VRAM delta; type fixed before the
       ladder; Qwen only if Gemma surprises
-  - q8_0 fleet-wide (user, 2026-08-03): q8_0 KLD 0.072 == bf16's 0.070 vs the f16 base, so the tail is dtype
-    noise; Gemma did not surprise (no Qwen probe); evidence: `docs/history/2026-08-03-llamacpp-p1-envelopes.md`
+  - q8_0 fleet-wide (user, 2026-08-03): q8_0 KLD 0.072 == bf16's 0.070 vs the f16 base, so the tail is dtype noise
+    - Gemma did not surprise, so no Qwen probe ran; evidence in `docs/history/2026-08-03-llamacpp-p1-envelopes.md`
 - [x] Gemma 12B MTP ctx ladder (32k..200k, crash matrix per rung, graphs ON); pick ceiling
   - 36/36 gens stable across all 6 rungs; ceiling 200000; the eval's 200k crash did not reproduce (n=6)
 - [x] 26B MTP pair checked at the chosen ceiling
-  - 6/6 gens stable at 131072 (its profile ctx), 39-42 tok/s, acceptance 0.62-0.74, `-ngl auto` partial offload
+  - 6/6 gens stable at 131072 (its profile ctx), 39.1-41.7 tok/s, acceptance 0.62-0.74, `-ngl auto` partial offload
 - [x] Qwen-MTP graphs-on hammer, 30 gens, 0 crashes (crash = contingency trigger)
   - 30/30 clean against the router child, full 4096 tokens each, 98-121 tok/s; contingency not triggered
 - [x] Results written to a dated docs/history log
@@ -75,17 +75,20 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 ## Phase 2 - full-fleet config home
 
 - [x] Preset INI: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on the 3 guarded-GGUF entries
-  - Verified: 17 sections + 6 alias names, all 29 file paths resolve, `alias`/`chat-template-kwargs` are real
-    b9860 flags
-  - MTP x vision split applied: MTP entries carry no mmproj; the 35B instruct canonical serves plain (no
-    spec-type) with mmproj as that family's vision lane (policy recorded in docs/parameters.md)
+  - Verified: 17 sections + 6 alias names, all 29 file paths resolve, `alias`/`reasoning` are b9860 flags
+    - Review sweep 2026-08-03: `enable_thinking` via kwargs is deprecated on the pin -> `reasoning = off`
+  - MTP x vision split applied: MTP entries carry no mmproj; policy recorded in docs/parameters.md
+    - The 35B instruct canonical serves plain (no spec-type) with mmproj as that family's vision lane
 - [x] Serving flags set (`-fa on`, KV type, `-np 1`, `--jinja`) and explicit `min_p` on every entry
-  - Verified: `[*]` carries all four; `min-p = 0.0` and `n-predict = 65536` on all 17 sections
+  - Verified: `[*]` carries all four, plus the fleet-constant sampling keys hoisted at the review sweep
+    - min-p/n-predict/repeat-penalty/top-p/presence-penalty live in `[*]`; per-entry values only where they differ
 - [x] froggeric template pinned into `llamacpp/templates/`
   - Done at P0; sha256 `d203f334...` re-verified at P2
 - [x] `llamacpp/README.md`: layout, alias policy, add-a-model procedure
 - [ ] Name-parity check against `ollama list`; 3 spot-loads verified via `/props`
   - Parity EXACT 2026-08-03: 17 ids + 6 aliases == the 23 `ollama list` names; spot-loads await the GPU gate
+  - Heretic templates extracted offline 2026-08-03 (review-sweep M8): zero `raise_exception` in either GGUF, so
+    the known multi-system 400 class cannot fire; mid-conversation system rendering checked live at spot-loads
 
 ## Phase 3 - client cutovers
 

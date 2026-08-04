@@ -31,7 +31,6 @@ Superseded once planning starts.
   - If rebuilding anyway, re-smoke speculative decoding and the pinned sampling flags.
     - llama-cli was rewritten.
     - b10242 moved penalties sampling to the GPU.
-    - b10251 added GLM-4.7-Flash MTP.
 - Ollama: 0.31.2 installed, 0.32.5 out. Low risk, no benefit (vendored engine unchanged).
   - 0.32.x rewrites the CLI into an interactive agent - recheck `ollama launch claude` before any upgrade.
 - Open WebUI: 0.11.0 installed = latest (pipx upgrade done), but not started since the upgrade.

@@ -7,9 +7,10 @@ Executes Phase 1 of `specs/llamacpp-migration`. Sections are appended as stages 
 
 ## KV cache probe (Gemma-only KL, per spec execution revisions)
 
-Method: `llama-perplexity --kl-divergence` on the 12B QAT canonical (`gemma-4-12B-it-qat-UD-Q4_K_XL.gguf`),
-one 16384-token wikitext-2-raw chunk (`-c 16384 --chunks 1 -fa on -ngl 99`), f16-cache base logits saved once and
-reused for both comparison runs. f16/q8_0 cells ran 2026-07-29; bf16 cells ran 2026-08-03 (same base file).
+Method: `llama-perplexity --kl-divergence` on the 12B QAT canonical (`gemma-4-12B-it-qat-UD-Q4_K_XL.gguf`).
+The run used one 16384-token wikitext-2-raw chunk (`-c 16384 --chunks 1 -fa on -ngl 99`).
+The f16-cache base logits were saved once and reused for both comparison runs.
+The f16 and q8_0 cells ran 2026-07-29 and the bf16 cells ran 2026-08-03, both against the same base file.
 
 | Metric | q8_0 vs f16 base | bf16 vs f16 base |
 |---|---|---|
@@ -45,26 +46,27 @@ reused for both comparison runs. f16/q8_0 cells ran 2026-07-29; bf16 cells ran 2
 | 16384 | 10544 | 10528 | 9752 |
 
 - f16 premium reproduces (+792 vs +809); bf16 VRAM == f16 within 16 MiB (both 16-bit, as the spec noted).
-- Growth is sub-linear in ctx: most Gemma-4 layers are sliding-window and llama-server allocates the SWA-sized
-  cache by default (`--swa-full` is the opt-out). Plain 12B fits at 200k under every type.
-- MTP changes the budget: the P0 log measured the 12B pair at 200k/q8_0 = 11014 MiB (drafter adds ~1.2 GiB).
-  - By arithmetic (not measured), an f16 pair is ~12.6-12.8 GiB at any rung - over the 12282 MiB card.
-  - So MTP entries require q8_0 regardless of the fleet-wide decision.
+- Growth is sub-linear in ctx: most Gemma-4 layers are sliding-window, and llama-server allocates SWA-sized cache.
+  - `--swa-full` is the opt-out. Plain 12B fits at 200k under every type.
+- MTP changes the budget: q8_0 is the only cache type that fits the 12B pair on this card.
+  - The P0 log measured the pair loaded at 200k under q8_0.
+  - By arithmetic (not measured), an f16 pair overflows the 12282 MiB card.
 - Absolute totals are not comparable across days (desktop baseline moved ~1.1 GiB); read the deltas.
 
 ### Decision
 
 - Decided 2026-08-03 (user): **q8_0 fleet-wide**.
-  - bf16's equal divergence shows ~0.07 KLD is dtype-change noise, not quantization damage - the f16 quality case
-    is retired and no f16 A/B follow-up is filed.
+  - bf16's equal divergence shows ~0.07 KLD is dtype-change noise, not quantization damage.
+    - The f16 quality case is retired; no f16 A/B follow-up is filed.
   - Also cache-neutral vs what Ollama served (`KV_CACHE_TYPE=q8_0`), and the only type that fits the MTP pair.
 - The ctx ladder below runs at q8_0.
 
 ## Gemma 12B MTP ctx ladder (graphs ON, q8_0 KV)
 
-Standalone llama-server (pin) on 11438: pair target + drafter, `--spec-draft-n-max 2`, full thinking-profile
-sampling flags, `--jinja`. Per rung: load, then 6 generations (fixed B-tree coding prompt, `max_tokens` 800).
-VRAM is whole-GPU nvidia-smi incl. ~2.1 GiB desktop baseline.
+Standalone llama-server (pin) on 11438 ran the pair target + drafter with `--spec-draft-n-max 2` and `--jinja`.
+Sampling used the full thinking-profile flags.
+Each rung loaded once, then ran 6 generations on a fixed B-tree coding prompt with `max_tokens` 800.
+VRAM is whole-GPU nvidia-smi including the ~2.1 GiB desktop baseline.
 
 | rung | VRAM after load | decode tok/s (n=6) | draft acceptance |
 |---|---|---|---|
@@ -80,13 +82,13 @@ VRAM is whole-GPU nvidia-smi incl. ~2.1 GiB desktop baseline.
 - The 2026-07-17 eval's gen-5 crash at 200k did not reproduce (n=6 here vs its n=5).
   - Changed since the eval: Gemma QAT snapshots re-pinned 2026-07-23, `--jinja` templating in use.
   - Still treated as a known intermittent exposure; the per-rebuild crash-matrix rule stands.
-- 200k costs ~40% decode vs 160k (57-61 vs 96-98 tok/s) - a ctx-size cost, stable across all 6 gens.
+- 200k costs ~35-40% decode vs 160k (57.0-60.9 vs 83.7-98.0 tok/s) - a ctx-size cost, stable across all 6 gens.
 
 ## 26B-A4B MTP pair at the ceiling
 
-Its profile ctx is 131072 (docs/parameters.md caps 26B-A4B there, under the 12B's 200k), so the check ran at
-131072: standalone llama-server, same flags as the ladder, `-ngl auto` (the b9860 default) for the partial
-offload.
+Its profile ctx is 131072: docs/parameters.md caps 26B-A4B there, under the 12B's 200k.
+The check therefore ran at 131072 on standalone llama-server with the same flags as the ladder.
+`-ngl auto` (the b9860 default) handled the partial offload.
 
 - Load OK; whole-GPU VRAM 11774 MiB.
 - 6/6 generations stable: 39.1-41.7 tok/s, draft acceptance 0.62-0.74.
@@ -94,30 +96,32 @@ offload.
 
 ## Qwen-MTP graphs-on hammer (router child)
 
-`scripts/repro-mtp-graphs.sh` shape against the llamacpp router (launch.sh, port 11433): 30 bounded generations
-on `qwen3.5-9b-mtp-coding-ud-q4-k-xl`, the 9b-coders long prompt, `max_tokens` 4096; crash = non-200 response or
-a new `illegal memory access` / `CUDA error` line in the router log.
+The `scripts/repro-mtp-graphs.sh` shape ran against the llamacpp router (launch.sh, port 11433).
+30 bounded generations on `qwen3.5-9b-mtp-coding-ud-q4-k-xl`, using the 9b-coders long prompt at `max_tokens` 4096.
+A crash counts as a non-200 response or a new `illegal memory access` / `CUDA error` line in the router log.
 
 - **30/30 clean**, full 4096 tokens every run, 98-121 tok/s, zero crash lines.
 - The llama-swap contingency trigger (any crash) did not fire.
-- Context: the 2026-07-01 Ollama-lane characterization was ~12.5%/run; that rate would produce 0/30 with ~2%
-  probability, so this agrees with the eval's verdict that stock b9860 graphs-on is the stable lane.
+- Context: the 2026-07-01 Ollama-lane characterization put the crash rate at ~12.5%/run.
+  - That rate would produce 0/30 with ~2% probability.
+  - This agrees with the eval's verdict that stock b9860 graphs-on is the stable lane.
 
 ## Decision: launcher pin abort removed (2026-08-03, user)
 
 - launch.sh keeps `9860 (fdb1db877)` as a last-known-good record; the hard `--version` abort is removed.
-  - The abort guarded an accident with no precedent: the stale b9552 binaries sat in the repo root, never on the
-    launch path (the launcher always used the absolute `build/bin` path).
+  - The abort guarded an accident with no precedent.
+    - The stale b9552 binaries sat in the repo root, never on the launch path.
+    - The launcher always used the absolute `build/bin` path.
   - Solo-box operating model: deliberate rebuilds only, so departure from the pin is always a chosen event.
-- Unchanged: the locked spec's rebuild rule (re-run the crash matrix, re-validate the froggeric pair) - passing
-  it is what moves the last-known-good record forward.
+- Unchanged: the locked spec's rebuild rule - re-run the crash matrix, re-validate the froggeric pair.
+  - Passing it is what moves the last-known-good record forward.
 
 ## Provenance and validity
 
 - Single box, single model, one 16k chunk, n=1 per KL cell; the spec directs reading the tool's numbers as-is.
-- VRAM method is whole-GPU totals, one sample per cell; allocator variance and desktop baseline shifts are
-  visible across days, so only same-day deltas are treated as signal.
-- 6 gens per ladder rung and 30 hammer runs are small-n for an intermittent crash; the per-rebuild crash-matrix
-  rule is the ongoing control, not these counts.
-- Raw logs in the session scratchpad (`kld-*.log`, `kv-*.log`, `ladder-*.log`, `26b-check.log`,
-  `router-hammer.log`); logits base on `/mnt/f/llamacpp-kld-tmp/`, deleted once the KV decision closes.
+- VRAM method is whole-GPU totals, one sample per cell.
+  - Allocator variance and desktop baseline shifts show across days, so only same-day deltas are treated as signal.
+- 6 gens per ladder rung and 30 hammer runs are small-n for an intermittent crash.
+  - The per-rebuild crash-matrix rule is the ongoing control, not these counts.
+- The session scratchpad holds `kld-*.log`, `kv-*.log`, `ladder-*.log`, `26b-check.log`, and `router-hammer.log`.
+  - The logits base sat on `/mnt/f/llamacpp-kld-tmp/` and is deleted once the KV decision closes.

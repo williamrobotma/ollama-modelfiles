@@ -25,8 +25,10 @@ silently picking one - see the Qwen `presence_penalty` note below.
   - llama.cpp (`--jinja`): the template injects it when the `enable_thinking` kwarg is true, and llama.cpp defaults it true.
   - Ollama: never runs the GGUF's Jinja, so a Modelfile `SYSTEM <|think|>` directive must supply the token literally.
 - **Qwen 3.6 thinking** is enabled by default.
-  - Disable with `--chat-template-kwargs '{"enable_thinking":false}'` (llama.cpp) or `/no_think` in the prompt.
-  - The same kwarg disables Gemma 4 thinking.
+  - Disable at launch with `--reasoning off` (`-rea off`; INI key `reasoning = off`), or with `/no_think` in the prompt.
+    - The `--chat-template-kwargs` launch spelling for `enable_thinking` is deprecated on the pinned build.
+    - Per request, `chat_template_kwargs {"enable_thinking": false}` is the equivalent.
+  - The same control disables Gemma 4 thinking.
 - **Strip prior thoughts in multi-turn history.** Google requires it, except inside function-calling sequences.
 
 ## Gemma 4 (Thinking)
@@ -100,8 +102,10 @@ For direct responses without reasoning traces.
 | presence_penalty | 1.5 |
 | repeat_penalty | 1.0 |
 
-Serve this profile with `--chat-template-kwargs '{"enable_thinking":false}'`, which is what makes it non-thinking on
-llama.cpp. Under Ollama the profile's values were set but thinking could not actually be disabled.
+Serve this profile with `--reasoning off` at launch (`-rea off`; INI key `reasoning = off`).
+That flag is what makes it non-thinking on llama.cpp.
+The per-request equivalent is `chat_template_kwargs {"enable_thinking": false}`.
+Under Ollama the profile's values were set but thinking could not actually be disabled.
 
 ## Serving flags (llama.cpp)
 
@@ -118,18 +122,14 @@ from the service env, so a llama.cpp preset that omits them is not equivalent.
 | `--spec-draft-n-max` | 2 | Vendor cards give 2 for Qwen3.6 MTP and 4 for Gemma 4; the repo runs 2 pending a bench |
 | `--mmproj` | non-MTP vision entries | Coexists with MTP on b9860 but costs the MTP lane ~35-40% decode - see below |
 
-KV cache type is settled: q8_0 fleet-wide (decided 2026-08-03; evidence in
-`history/2026-08-03-llamacpp-p1-envelopes.md`). The on-box probe measured q8_0 KLD 0.0722 vs an f16-cache base on the
-12B QAT - and a bf16 cache measured 0.0702 against the same base, so the ~0.07 tail is the cost of changing KV dtype
-at all, not q8_0 damage. q8_0 is also the only type that fits the MTP pairs on 12 GB (an f16 12B pair is ~12.6+ GiB
-by arithmetic). The earlier third-party lead (q8_0 at 0.108 on Gemma 31B, 0.377 on 26B-A4B, under 0.04 on Qwen; one
-unreplicated run on BF16 GGUFs) stays recorded as directional context only.
-
-`--mmproj` and MTP are documented as mutually exclusive on the Qwen MTP cards, but the 2026-07-28 P0 probe found
-b9860 serves both from one entry - at a ~35-40% decode penalty on the MTP lane from the resident projector (n<=3, one
-GGUF). The fleet therefore splits for speed, not necessity: MTP entries carry no `mmproj`, and vision lives on the
-non-MTP sibling (9B, 27B) or on the 35B-A3B instruct canonical, which serves plain (no `--spec-type`) as that
-family's vision lane. The cards' claim also covers `-np > 1`, which stays untested; the fleet runs `-np 1`.
+- KV cache type is settled: q8_0 fleet-wide (decided 2026-08-03).
+  - Numbers and reasoning live in `history/2026-08-03-llamacpp-p1-envelopes.md`.
+- The earlier third-party lead stays directional context only.
+  - It was one unreplicated run, on BF16 GGUFs rather than the QAT/UD quants this fleet serves.
+- `--mmproj` and MTP coexist on b9860, per the 2026-07-28 P0 probe.
+  - The resident projector costs the MTP lane ~35-40% decode (n<=3, one GGUF).
+- The fleet splits for speed, not necessity: MTP entries carry no `mmproj`.
+  - Vision lives on the non-MTP sibling (9B, 27B) or the 35B-A3B instruct canonical, serving plain (no `--spec-type`).
 
 ## DiffusionGemma
 

@@ -55,7 +55,8 @@ Executes Phase 0 of `specs/llamacpp-migration` (round 2 session). All 11 smokes 
 
 - The pair loads at 200k in 11.0 GiB and decodes at 112.4 tok/s with 26/32 drafts accepted.
 - 4 short gens ran without a crash. The eval's gen-5 crash did not re-trigger, and the P1 ladder still owns the ceiling.
-- Thinking appears on the wire with NO flags set, so the `enable_thinking` default reaches the template.
+- Thinking appears on the wire with NO flags set: the response carries `reasoning_content`.
+  - The `enable_thinking` default therefore reaches the template.
   - The six `SYSTEM <|think|>` Modelfile directives need no migration.
 - The per-request `chat_template_kwargs {"enable_thinking": false}` suppresses the channel.
 - The launch flag `--reasoning off` (`-rea off`) also suppresses it. That is the recorded flag->kwarg mapping.
