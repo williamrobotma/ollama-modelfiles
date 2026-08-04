@@ -111,21 +111,25 @@ from the service env, so a llama.cpp preset that omits them is not equivalent.
 | Flag | Value | Note |
 |---|---|---|
 | `-fa` | `on` | In both vendors' recommended commands; pairs with quantized KV, which fails to load without it |
-| `-ctk` / `-ctv` | q8_0, under review | Inherited from Ollama's `KV_CACHE_TYPE=q8_0`; see the caveat below |
+| `-ctk` / `-ctv` | q8_0 | Fleet-wide, decided 2026-08-03 from the on-box KL probe - see the caveat below |
 | `-np` | 1 | Vendor MTP cards state `-np > 1` is unsupported with MTP |
 | `--jinja` | required | Thinking kwargs and chat templates do nothing without it |
 | `--spec-type` | `draft-mtp` | MTP lanes only |
 | `--spec-draft-n-max` | 2 | Vendor cards give 2 for Qwen3.6 MTP and 4 for Gemma 4; the repo runs 2 pending a bench |
-| `--mmproj` | vision entries | Documented as unsupported alongside MTP - see below |
+| `--mmproj` | non-MTP vision entries | Coexists with MTP on b9860 but costs the MTP lane ~35-40% decode - see below |
 
-KV cache type is unsettled for Gemma. A third-party KL-divergence benchmark measured q8_0 cache at 0.108 on Gemma 31B
-and 0.377 on Gemma 26B A4B, against under 0.04 for both Qwen models tested. It is a single unreplicated source run on
-BF16 GGUFs rather than the QAT/UD quants this fleet serves, so it is a lead, not a finding. An on-box probe is filed in
-`specs/llamacpp-migration` ahead of the Gemma context ladder, because KV type changes the VRAM the ladder measures.
+KV cache type is settled: q8_0 fleet-wide (decided 2026-08-03; evidence in
+`history/2026-08-03-llamacpp-p1-envelopes.md`). The on-box probe measured q8_0 KLD 0.0722 vs an f16-cache base on the
+12B QAT - and a bf16 cache measured 0.0702 against the same base, so the ~0.07 tail is the cost of changing KV dtype
+at all, not q8_0 damage. q8_0 is also the only type that fits the MTP pairs on 12 GB (an f16 12B pair is ~12.6+ GiB
+by arithmetic). The earlier third-party lead (q8_0 at 0.108 on Gemma 31B, 0.377 on 26B-A4B, under 0.04 on Qwen; one
+unreplicated run on BF16 GGUFs) stays recorded as directional context only.
 
-`--mmproj` and MTP are documented as mutually exclusive on the Qwen MTP cards. Three fleet entries currently configure
-both, so each affected GGUF gets two router entries - one with the drafter flags, one with `--mmproj` - rather than
-losing either capability.
+`--mmproj` and MTP are documented as mutually exclusive on the Qwen MTP cards, but the 2026-07-28 P0 probe found
+b9860 serves both from one entry - at a ~35-40% decode penalty on the MTP lane from the resident projector (n<=3, one
+GGUF). The fleet therefore splits for speed, not necessity: MTP entries carry no `mmproj`, and vision lives on the
+non-MTP sibling (9B, 27B) or on the 35B-A3B instruct canonical, which serves plain (no `--spec-type`) as that
+family's vision lane. The cards' claim also covers `-np > 1`, which stays untested; the fleet runs `-np 1`.
 
 ## DiffusionGemma
 

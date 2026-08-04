@@ -74,11 +74,18 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 
 ## Phase 2 - full-fleet config home
 
-- [ ] Preset INI: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on the 3 guarded-GGUF entries
-- [ ] Serving flags set (`-fa on`, KV type, `-np 1`, `--jinja`) and explicit `min_p` on every entry
-- [ ] froggeric template pinned into `llamacpp/templates/`
-- [ ] `llamacpp/README.md`: layout, alias policy, add-a-model procedure
+- [x] Preset INI: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on the 3 guarded-GGUF entries
+  - Verified: 17 sections + 6 alias names, all 29 file paths resolve, `alias`/`chat-template-kwargs` are real
+    b9860 flags
+  - MTP x vision split applied: MTP entries carry no mmproj; the 35B instruct canonical serves plain (no
+    spec-type) with mmproj as that family's vision lane (policy recorded in docs/parameters.md)
+- [x] Serving flags set (`-fa on`, KV type, `-np 1`, `--jinja`) and explicit `min_p` on every entry
+  - Verified: `[*]` carries all four; `min-p = 0.0` and `n-predict = 65536` on all 17 sections
+- [x] froggeric template pinned into `llamacpp/templates/`
+  - Done at P0; sha256 `d203f334...` re-verified at P2
+- [x] `llamacpp/README.md`: layout, alias policy, add-a-model procedure
 - [ ] Name-parity check against `ollama list`; 3 spot-loads verified via `/props`
+  - Parity EXACT 2026-08-03: 17 ids + 6 aliases == the 23 `ollama list` names; spot-loads await the GPU gate
 
 ## Phase 3 - client cutovers
 
