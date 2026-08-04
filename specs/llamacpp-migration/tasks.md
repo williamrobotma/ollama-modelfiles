@@ -85,10 +85,21 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 - [x] froggeric template pinned into `llamacpp/templates/`
   - Done at P0; sha256 `d203f334...` re-verified at P2
 - [x] `llamacpp/README.md`: layout, alias policy, add-a-model procedure
-- [ ] Name-parity check against `ollama list`; 3 spot-loads verified via `/props`
-  - Parity EXACT 2026-08-03: 17 ids + 6 aliases == the 23 `ollama list` names; spot-loads await the GPU gate
-  - Heretic templates extracted offline 2026-08-03 (review-sweep M8): zero `raise_exception` in either GGUF, so
-    the known multi-system 400 class cannot fire; mid-conversation system rendering checked live at spot-loads
+- [x] Name-parity check against `ollama list`; 3 spot-loads verified via `/props`
+  - Parity EXACT 2026-08-03: 17 ids + 6 aliases == the 23 `ollama list` names
+  - Heretic templates extracted offline 2026-08-03 (review-sweep M8): zero `raise_exception` in either GGUF
+  - Spot-loads 2026-08-04: 4/4 PASS (31b-mtp, queen-27b-coding, 35b-a3b-mtp-coding, 26b-heretic carrying the probe)
+    - `/props` sampling exact per profile on all 4; ctx-size pads to a 256 boundary (200000 -> 200192)
+    - Display-only `/props` artifacts: `n_predict -1` (known P0) and `speculative.types "none"` while drafting runs
+    - Queen's served template byte-identical to froggeric; acceptance 0.83 (31B pair) / 0.88 (35B); no CUDA lines
+    - Heretic probe HTTP 200 via the "outdated gemma4 chat template" compat rewrite (3 warnings; unsloth sibling 0)
+      - The multi-system pass depends on that upstream workaround staying present
+    - 31B `-ngl auto` fitting could not measure the drafter ("failed to measure draft model memory"); worked anyway
+  - Finding 2026-08-04: the 31B MTP entry serves ctx 200000 but its drafter is trained at 131072
+    - Source: drafter GGUF `gemma4-assistant.context_length = 131072`; load warns "possible training context overflow"
+    - 12B's drafter is trained at 262144 (fine at 200000); the 26B pair serves exactly its drafter's 131072
+    - Speculation is output-invariant: the exposure is acceptance/speed past ~131k positions, not correctness
+    - Keep-vs-cap decision pending
 
 ## Phase 3 - client cutovers
 
