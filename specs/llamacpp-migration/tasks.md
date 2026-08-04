@@ -113,7 +113,16 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Provenance record: `llamacpp/mcp/README.md`
 - [x] `OLLAMA_API_KEY` moved to a user-readable env file for the MCP
   - Copied (not moved) 2026-08-04: the spec freezes the systemd override until the P4 purge; env file is mode 600
-- [ ] claude-local validated: tool loop, live MCP search, body-log check, cache hits, WebFetch
+- [x] claude-local validated: tool loop, live MCP search, body-log check, cache hits, WebFetch
+  - 2026-08-04: 9/9 checks PASS against the live router (evidence: session scratchpad p25/; P3 history log at phase end)
+  - Blocker found: tier vars don't override settings.json's literal model - `claude-fable-5` hit the wire, router 400
+    - Fixed: the function now exports `ANTHROPIC_MODEL=$_cl_model`
+    - Re-smoked with no passthrough: alias on the wire, 200
+  - Cache hits ~25.9k `cache_read_input_tokens` on later turns; thinking blocks round-trip with `signature: ""`
+  - Alias resolves server-side (alias request -> canonical child); decode 26.8-36.0 tok/s, acceptance 0.66-0.97
+  - WebSearch absent from the tools array; `web_search_20250305` count 0 across all 21 body-log files
+  - MTP x graphs-on side result: 10 requests to 26.2k ctx, graphs reused to 1030, zero crashes
+    - n=1; the tracked issue stays open
 - [ ] Open WebUI on OpenAI connection 11433; fleet in picker; search-enabled chat passes
 - [ ] OpenCode provider block + context limits; search-tool behavior recorded
 - [ ] Codex custom provider (Responses, fresh threads); tool loop tested or upstream-blocked documented
