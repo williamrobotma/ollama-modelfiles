@@ -126,8 +126,12 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 - [ ] Open WebUI on OpenAI connection 11433; fleet in picker; search-enabled chat passes
   - Prep 2026-08-04: backup `~/.open-webui/webui.db.bak-pre-0.11.0` taken, then the pending 0.11.0 first start ran
     - 9 alembic migrations + 13 seeded config defaults; documented settings and the Brave key intact; serve up on 8080
-    - Remaining (user, browser): enable the OpenAI toggle (still false in the DB), add 11433/v1, picker + chat checks
-    - During the first chat: check the outgoing body for client-injected temperature/top_p (OpenAI-connection unknown)
+  - Browser pass 2026-08-07 (user): OpenAI connection saved (external/bearer, no model filter, no passthrough params)
+    - Picker shows the 17 canonical ids (plus Open WebUI's own "Arena Model"); Ollama connection disabled
+    - Gemma family chat served via the router with thinking rendering (user screenshot)
+  - Sampling neutrality closed at source: `open_webui/utils/payload.py:70` applies only non-None params
+    - Unset chat params never enter the body, so the router's launch-time profiles govern (0.11.0 installed package)
+  - Remaining: one qwen3.5 + one qwen3.6 chat, and the Brave search-enabled chat (each loads a child; GPU-gated)
 - [x] OpenCode provider block + context limits; search-tool behavior recorded
   - Applied 2026-08-04 (user consent, "no model left behind"): 12-model provider block with per-model limits
   - Validated: real tool-loop session fixed a file on disk; requests hit 11433 (no #5674 symptom); picker lists all 12
