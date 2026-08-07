@@ -151,6 +151,8 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - The drafter bypasses fitting and demands full offload (server-context.cpp:1205); any pressured load can hit it
     - Upstream: #19973 derived the mechanism (closed unfixed); a #24443 comment reproduces it verbatim; no fix on master
     - Deterministic fix candidate: spec-draft-ngl = 0 on the 26b entry (241 MiB drafter to CPU); awaiting user go
+    - Applied 2026-08-07 (user: "yes to both"): spec-draft-ngl = 0 in models.ini; launch.sh gains --models-max
+      - models-max default 1 per user (over the proposed 2): one-model-at-a-time usage; effective at next restart
   - Family-chat check 2026-08-07: zero qwen3.5/qwen3.6 chats exist in webui.db (11 chats total, all scanned)
     - Today's 15:55 qwen child spawns came from a non-Open-WebUI client (agentic task-id pattern, 97-127 tok/s)
   - Finding 2026-08-07: 31b-mtp decoded at 1.82 tok/s under 4-resident pressure (vs 38-120 tok/s elsewhere today)

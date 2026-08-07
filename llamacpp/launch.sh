@@ -17,9 +17,11 @@ export LLAMA_CACHE="$DIR/.cache-empty"
 mkdir -p "$LLAMA_CACHE"
 
 # SLEEP_IDLE_SECONDS=30 ./launch.sh for the sleep-idle smoke; default matches
-# Ollama's KEEP_ALIVE=24h. Extra args pass through to the router.
+# Ollama's KEEP_ALIVE=24h. MODELS_MAX default 1: a lone resident child gets the
+# whole GPU (P3 pressure findings, 2026-08-07). Extra args pass through.
 exec "$BIN" \
     --models-preset "$DIR/models.ini" \
     --sleep-idle-seconds "${SLEEP_IDLE_SECONDS:-86400}" \
+    --models-max "${MODELS_MAX:-1}" \
     "$@" \
     --host 127.0.0.1 --port 11433
