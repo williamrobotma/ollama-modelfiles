@@ -198,7 +198,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 
 - [x] Gate met (claude-local, Open WebUI, OpenCode validated; Codex validated or documented-blocked)
   - Met 2026-08-07: all four cutovers validated (claude-local/OpenCode/Codex 2026-08-04, Open WebUI 2026-08-07)
-- [ ] ollama.service stopped + disabled (user runs sudo)
+- [x] ollama.service stopped + disabled (user runs sudo)
+  - Done 2026-08-07 (user ran sudo; stop and disable verified live: is-active inactive, is-enabled disabled)
+  - Port 11434 closed; store/binaries/override stay frozen on disk until the purge
+  - Validation window starts 2026-08-07; purge eligible ~2026-08-21 on explicit user go
 - [x] Docs rewritten: architecture.md, AGENTS.md, README, CLAUDE.md note, benchmarking.md pending-action dropped
   - 2026-08-07: six files (those plus openwebui.md and parameters.md touch-ups); all rumdl-clean
   - architecture.md redrawn for the router: runbook, frozen-legacy framing, fresh du figures (HF 199G, store 186G)
