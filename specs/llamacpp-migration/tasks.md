@@ -143,14 +143,22 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Responses api_type would lose tok/s (stream_options popped at openai.py:1113; Responses stream has no timings)
       - And filter-injected web_search/namespace tools would pass into llama-server's silent drop; keep chat-completions
     - tok/s already works: timings merge into message.usage (middleware.py:4378-4382); the info icon shows the dict
+    - froggeric renders <think> only after the last user query (jinja:226); cross-turn stripping is template-enforced
   - Finding 2026-08-07: 26b-a4b-mtp child died loading its drafter via the router - vector::_M_range_check
     - First-ever router-context load: P1's 6/6 was standalone with a free GPU; three residents held ~10.7/12.3 GiB here
-    - Router evicts LRU at stock models-max 4 (observed live: 12b-mtp died for 31b, 9b for 26b); diagnosis agent running
+    - Router evicts LRU at stock models-max 4 (observed live: 12b-mtp died for 31b, 9b for 26b)
+    - Root cause (source-traced): full GPU reports free=0 -> NaN split -> devices.at(1) on size-1 (llama-model.cpp:1291)
+    - The drafter bypasses fitting and demands full offload (server-context.cpp:1205); any pressured load can hit it
+    - Upstream: #19973 derived the mechanism (closed unfixed); a #24443 comment reproduces it verbatim; no fix on master
+    - Deterministic fix candidate: spec-draft-ngl = 0 on the 26b entry (241 MiB drafter to CPU); awaiting user go
   - Family-chat check 2026-08-07: zero qwen3.5/qwen3.6 chats exist in webui.db (11 chats total, all scanned)
     - Today's 15:55 qwen child spawns came from a non-Open-WebUI client (agentic task-id pattern, 97-127 tok/s)
   - Finding 2026-08-07: 31b-mtp decoded at 1.82 tok/s under 4-resident pressure (vs 38-120 tok/s elsewhere today)
     - The two follow-up 31b generations were cancelled ~1 s after launch each; reads as giving up on a hang
-  - Remaining: one qwen3.5 + one qwen3.6 chat (each loads a child)
+    - Same pathology on the 35b instruct as a 5th model: 2.94 tok/s on its first turn (chat f49e10a3)
+  - qwen3.6 family chat verified in DB 2026-08-07: chat f49e10a3 turn 1 done=true, 35b instruct via Open WebUI
+    - Turn 2 completed with platform search on the same model - 2x search_web, 10 sources (user screenshot)
+  - Remaining: one qwen3.5 chat (child already warm)
 - [x] OpenCode provider block + context limits; search-tool behavior recorded
   - Applied 2026-08-04 (user consent, "no model left behind"): 12-model provider block with per-model limits
   - Validated: real tool-loop session fixed a file on disk; requests hit 11433 (no #5674 symptom); picker lists all 12
