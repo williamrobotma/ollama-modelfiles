@@ -123,7 +123,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - WebSearch absent from the tools array; `web_search_20250305` count 0 across all 21 body-log files
   - MTP x graphs-on side result: 10 requests to 26.2k ctx, graphs reused to 1030, zero crashes
     - n=1; the tracked issue stays open
-- [ ] Open WebUI on OpenAI connection 11433; fleet in picker; search-enabled chat passes
+- [x] Open WebUI on OpenAI connection 11433; fleet in picker; search-enabled chat passes
   - Prep 2026-08-04: backup `~/.open-webui/webui.db.bak-pre-0.11.0` taken, then the pending 0.11.0 first start ran
     - 9 alembic migrations + 13 seeded config defaults; documented settings and the Brave key intact; serve up on 8080
   - Browser pass 2026-08-07 (user): OpenAI connection saved (external/bearer, no model filter, no passthrough params)
@@ -163,7 +163,14 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Observation 2026-08-07: 35b instruct fell into a "/" repetition loop after 7 searches (~11.6k ctx, 30 sources)
     - Log clean (truncated = 0, no context shift): sampling degeneracy, not corruption; profiles carry no repeat penalty
     - Same model completed the 2-search turn fine; user cancelled the looping task (1313); regenerate is the escape
-  - Remaining: one qwen3.5 chat (child already warm)
+  - qwen3.5 family chat verified in DB 2026-08-07 post-restart: chat 68d974be, queen-27b-reasoning, 3 done turns
+    - usage.predicted_per_second joins each DB turn to its router-log task exactly (22.896.../1.947.../1.930...)
+  - Post-restart verification 2026-08-07 (models-max 1 live): 26b-mtp loads clean, --n-gpu-layers-draft 0 in args
+    - 5 completed gens at 22.9-31.2 tok/s, acceptance 0.638-0.841; zero _M_range_check or draft-load failures
+  - Correction to the pressure finding: dense 16-18 GB offloaders sit at ~2-3 tok/s even solo (offload-bound)
+    - queen-27b 1.93-2.30 and 31b 2.77 as lone residents; pressure mainly hurt MoE (35b back to 25-30 solo)
+  - models-max 1 trade-off observed live: switching models force-kills an in-flight generation after 10 s
+  - The 31b "n_ctx_train 131072" overflow W is the drafter's trained ctx (P2 finding); the target trains 262144
 - [x] OpenCode provider block + context limits; search-tool behavior recorded
   - Applied 2026-08-04 (user consent, "no model left behind"): 12-model provider block with per-model limits
   - Validated: real tool-loop session fixed a file on disk; requests hit 11433 (no #5674 symptom); picker lists all 12
