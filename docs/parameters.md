@@ -23,7 +23,7 @@ silently picking one - see the Qwen `presence_penalty` note below.
 - **Gemma 4 thinking is engine-scoped.** The trigger is `<|think|>` at the start of the system prompt.
   - How it gets there differs by engine, so never assume one mechanism carries over.
   - llama.cpp (`--jinja`): the template injects it when the `enable_thinking` kwarg is true, and llama.cpp defaults it true.
-  - Ollama: never runs the GGUF's Jinja, so a Modelfile `SYSTEM <|think|>` directive must supply the token literally.
+  - Ollama (retired lane): never ran the GGUF's Jinja, so a Modelfile `SYSTEM <|think|>` directive supplied it literally.
 - **Qwen 3.6 thinking** is enabled by default.
   - Disable at launch with `--reasoning off` (`-rea off`; INI key `reasoning = off`), or with `/no_think` in the prompt.
     - The `--chat-template-kwargs` launch spelling for `enable_thinking` is deprecated on the pinned build.
@@ -109,8 +109,8 @@ Under Ollama the profile's values were set but thinking could not actually be di
 
 ## Serving flags (llama.cpp)
 
-The tables above are sampling only. These are the launch-side flags a served model also needs; under Ollama they came
-from the service env, so a llama.cpp preset that omits them is not equivalent.
+The tables above are sampling only. These are the launch-side flags a served model also needs.
+Under Ollama they came from the service env; `llamacpp/models.ini` hoists them fleet-wide in its `[*]` block.
 
 | Flag | Value | Note |
 |---|---|---|

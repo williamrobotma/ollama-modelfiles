@@ -1,12 +1,17 @@
 # CLAUDE.md
 
-[AGENTS.md](AGENTS.md) is authoritative for this repo (conventions, build/benchmark commands, doc map). Read it first. This file holds only Claude-Code-specific notes.
+[AGENTS.md](AGENTS.md) is authoritative for this repo (conventions, build/benchmark commands, doc map); read it first.
+This file holds only Claude-Code-specific notes.
 
 ## claude-local
 
-- `claude-local` drives Ollama by `ollama launch claude`, routing Claude Code to Ollama's Anthropic-compatible endpoint (`127.0.0.1:11434/v1/messages`).
+- `claude-local` is a `~/.bashrc` function routing Claude Code to the router (`127.0.0.1:11433/v1/messages`).
+  - Pins `ANTHROPIC_MODEL` + tier/subagent vars to the 35B coding alias (settings.json models otherwise hit the wire).
+  - Execs `claude` with `--disallowedTools=WebSearch` plus the vendored web-search MCP (`llamacpp/mcp/`, via pipx).
+  - Secrets live in `~/.config/claude-local.env` (mode 600); cutover validated 2026-08-04, see the P3 history log.
 - Claude Code sends multiple `system`-role messages mid-conversation.
-  - No guard risk on llama-server's `/v1/messages` (verified); under Ollama unresolved but moot (retiring).
+  - No guard risk on llama-server's `/v1/messages` (verified per-build).
   - The [AGENTS.md gate](AGENTS.md#chat-template-gate-for-community-ggufs) bites OpenAI-endpoint clients.
-  - Vet new community GGUFs per that section's procedure, not `ollama show --template`.
-- The MTP models served via claude-local are the ones exposed to the CUDA-graphs crash tracked in [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash) (prod graphs-off fix is pending, needs sudo).
+  - Vet new community GGUFs per that section's procedure.
+- CUDA graphs run ON fleet-wide, including the MTP models claude-local serves (P1-validated 2026-08-03).
+  - Crash history: [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash).

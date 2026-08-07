@@ -196,9 +196,15 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 
 ## Phase 4 - staged retirement
 
-- [ ] Gate met (claude-local, Open WebUI, OpenCode validated; Codex validated or documented-blocked)
+- [x] Gate met (claude-local, Open WebUI, OpenCode validated; Codex validated or documented-blocked)
+  - Met 2026-08-07: all four cutovers validated (claude-local/OpenCode/Codex 2026-08-04, Open WebUI 2026-08-07)
 - [ ] ollama.service stopped + disabled (user runs sudo)
-- [ ] Docs rewritten: architecture.md, AGENTS.md, README, CLAUDE.md note, benchmarking.md pending-action dropped
+- [x] Docs rewritten: architecture.md, AGENTS.md, README, CLAUDE.md note, benchmarking.md pending-action dropped
+  - 2026-08-07: six files (those plus openwebui.md and parameters.md touch-ups); all rumdl-clean
+  - architecture.md redrawn for the router: runbook, frozen-legacy framing, fresh du figures (HF 199G, store 186G)
+  - The silent Responses tool-drop folded into architecture.md + openwebui.md; openwebui.md guidance inverted
+  - benchmarking.md pending action replaced by the graphs-ON stance with P1 evidence
+  - launch.sh pin documented as record-not-assertion (reconciles the spec's pin-enforcement wording)
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)

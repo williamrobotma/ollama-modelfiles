@@ -1,10 +1,14 @@
 # ollama-modelfiles
 
-Ollama Modelfile configurations for local LLM inference on a single 12 GB GPU, organized by model family and use profile. Every Modelfile references a local GGUF in the Hugging Face cache (downloaded with `hf download`, pinned to a snapshot path - mostly [Unsloth](https://unsloth.ai) builds). The same cached GGUFs can be loaded directly by llama.cpp. Agents should read [AGENTS.md](AGENTS.md) first.
+Local LLM serving config for a single 12 GB GPU, organized by model family and use profile.
+The live lane is stock llama.cpp in router mode ([llamacpp/](llamacpp/README.md), port 11433).
+The Ollama Modelfiles are the retired legacy build layer, frozen on disk until the post-migration purge.
+Every served GGUF is a pinned Hugging Face cache snapshot (`hf download`; mostly [Unsloth](https://unsloth.ai) builds).
+Agents should read [AGENTS.md](AGENTS.md) first.
 
 ## Requirements
 
-- Ollama 0.31.1 or newer (the `DRAFT` MTP directive runs on the CUDA runner as of 0.31.1).
+- Stock llama.cpp built at the pinned rev b9860; [llamacpp/README.md](llamacpp/README.md) covers the rebuild rule.
 - The Hugging Face CLI (`hf`, from `huggingface_hub`) to provision GGUFs.
 - An NVIDIA CUDA GPU. The reference box is an RTX 4070 (12 GB, WSL2); models larger than ~12 GB partial-offload to CPU. Use CUDA 13.1 or 13.3 - 13.2 corrupts Gemma 4 output.
 
@@ -18,18 +22,19 @@ git clone <this repo> && cd ollama-modelfiles
 hf download unsloth/gemma-4-12B-it-qat-GGUF \
     gemma-4-12B-it-qat-UD-Q4_K_XL.gguf mmproj-BF16.gguf
 
-# 3. Build the Ollama model from its Modelfile directory
-scripts/ollama-create.sh modelfiles/gemma4/12b-it-qat
+# 3. Serve the fleet (every preset entry, 127.0.0.1:11433)
+llamacpp/launch.sh
 
-# 4. Run it
-ollama run gemma4-12b-it-qat
+# 4. Chat (any OpenAI or Anthropic client; Open WebUI runs on :8080)
+curl 127.0.0.1:11433/v1/chat/completions -d '{"model":"gemma4-12b-it-qat","messages":[{"role":"user","content":"hi"}]}'
 ```
 
-The model name is always `<family>-<stem>` from `modelfiles/<family>/<stem>/`. `FROM` paths are pinned to a specific snapshot commit; if `hf download` fetches a newer commit, update the `FROM` line in the Modelfile to the new snapshot path (deliberate pinning - see [AGENTS.md](AGENTS.md#gguf-sourcing-convention)). Run `scripts/ollama-create.sh` with no argument to build every model.
+Served ids and pinned snapshot paths live in `llamacpp/models.ini`.
+The pinning convention and add-a-model procedure are in [llamacpp/README.md](llamacpp/README.md).
 
 ## Model catalog
 
-Model name = `<family>-<stem>`. Sizes are the Ollama store size on the reference box.
+Model name = `<family>-<stem>`. Sizes are approximate on-disk sizes on the reference box (Ollama-era store figures).
 
 ### Gemma 4 (thinking; vision via mmproj)
 
@@ -37,7 +42,7 @@ Model name = `<family>-<stem>`. Sizes are the Ollama store size on the reference
 |---|---|---|---|---|
 | `gemma4-12b-it-qat` | gemma4 | 12B IT QAT, thinking + vision, resident | UD-Q4_K_XL | 6.9 GB |
 | `gemma4-26b-a4b-it-qat` | gemma4 | 26B-A4B MoE IT QAT, thinking + vision | UD-Q4_K_XL | 15 GB |
-| `gemma4-26b-a4b-it-qat-mtp` | gemma4 | 26B-A4B + separate MTP drafter (`DRAFT`) | UD-Q4_K_XL | 15 GB |
+| `gemma4-26b-a4b-it-qat-mtp` | gemma4 | 26B-A4B + separate MTP drafter | UD-Q4_K_XL | 15 GB |
 | `gemma4-31b-it-qat` | gemma4 | 31B dense IT QAT, thinking + vision, offloads | UD-Q4_K_XL | 18 GB |
 
 ### Qwen 3.6 coders (precise coding)
@@ -106,8 +111,9 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in
 
 | Path | What |
 |---|---|
-| `modelfiles/<family>/<stem>/Modelfile` | The models; name = `<family>-<stem>`. |
-| `scripts/` | `ollama-create.sh` (build), `repro-mtp-graphs.sh` (crash repro). |
+| `llamacpp/` | The live serving lane: `models.ini` preset, `launch.sh`, pinned templates, vendored MCP. |
+| `modelfiles/<family>/<stem>/Modelfile` | Legacy Ollama build layer (frozen until purge); name = `<family>-<stem>`. |
+| `scripts/` | `ollama-create.sh` (legacy build), `repro-mtp-graphs.sh` (crash repro). |
 | `benchmarks/` | Three dry-run-by-default suites plus shared `common.sh`, `report.py`, `all.sh`. |
 | `docs/` | Topic docs; `docs/history/` holds immutable dated session logs. |
 | `specs/<feature>/` | Spec + tasks (plus plan when needed) for in-flight work; executed by the run-spec skill. |
@@ -116,7 +122,8 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in
 
 ## Benchmarking
 
-Three dry-run-by-default suites (`qwen`, `gemma`, `9b-coders`) time decode throughput and A/B CUDA graphs off vs on. Nothing runs without `--execute`.
+Three dry-run-by-default suites (`qwen`, `gemma`, `9b-coders`) time decode throughput against the retired Ollama lane.
+The cross-engine `llamacpp-parity` suite covers the live lane. Nothing runs without `--execute`.
 
 ```bash
 benchmarks/qwen/run.sh            # print the plan (dry-run)

@@ -4,28 +4,36 @@ Canonical, tooling-agnostic instructions for any coding agent working in this re
 
 ## What this repo is
 
-Ollama Modelfile configurations for local LLM inference, organized by model family and use profile. There is no application code and no test suite - just Modelfiles, a build helper, benchmark harnesses, docs, and immutable research logs. Every Modelfile references a local GGUF in the Hugging Face cache. The same cached GGUFs also feed llama.cpp directly (`--model` / `--model-draft`).
+Local LLM serving config, organized by model family and use profile. There is no application code and no test suite.
+The live lane is stock llama.cpp (b9860) in router mode: `llamacpp/models.ini` + `launch.sh` on `127.0.0.1:11433`.
+The Ollama Modelfiles are the retired legacy build layer, frozen until the P4 purge (`specs/llamacpp-migration`).
+Every served GGUF is a pinned local Hugging Face cache snapshot referenced by absolute path.
 
 ## GGUF sourcing convention
 
-Do NOT use `FROM hf.co/...` (Ollama's OCI bridge; prone to config-blob hangs) or `registry.ollama.ai` tags. Instead:
+Provision with `hf download ORG/REPO file.gguf`; reference absolute pinned snapshot paths in `llamacpp/models.ini`
+(`model =`, `model-draft =`, `mmproj =`).
 
-- Provision with `hf download ORG/REPO file.gguf`.
-- Reference the absolute, pinned snapshot path: `FROM /home/wma/.cache/huggingface/hub/models--ORG--REPO/snapshots/<commit>/<file>.gguf`.
-- Snapshot paths are pinned on purpose. An `hf download` that pulls a newer repo commit creates a new snapshot dir; the Modelfile keeps pointing at the old (still-cached) one. Updating a model is a deliberate two-step: download, then edit the `FROM` path. That is intended pinning, not drift.
-- Vision models need a second `FROM <...>/mmproj-*.gguf` line, or the `vision` capability is silently dropped (the old OCI pull auto-bundled the projector).
+- Snapshot paths are pinned on purpose: a newer `hf download` lands in a new snapshot dir; the preset keeps the old.
+- Updating a model is a deliberate two-step: download, then edit the path. That is intended pinning, not drift.
+- Vision models need the `mmproj =` key on their entry, or vision is silently absent.
+- Legacy: Modelfiles used the same pinned paths via `FROM`; never `FROM hf.co/...` (OCI bridge, config-blob hangs).
 
 ## Modelfile layering and naming
 
-Layout is `modelfiles/<family>/<stem>/Modelfile`; families are `gemma4`, `qwen3.5`, `qwen3.6`, `qwopus3.5`. The Ollama model name is computed as `<family>-<stem>` (e.g. `modelfiles/gemma4/12b-it-qat/Modelfile` -> `gemma4-12b-it-qat`). Do not rename models - Open WebUI's DB and claude-local reference them by name.
+Served ids follow `<family>-<stem>`; families are `gemma4`, `qwen3.5`, `qwen3.6`, `qwopus3.5`.
+Ids and their aliases live in `llamacpp/models.ini`; thin unsuffixed aliases repoint defaults without renames.
+Do not rename models - Open WebUI's DB and claude-local reference them by name.
+Add-a-model procedure: [llamacpp/README.md](llamacpp/README.md).
 
-Three layers (`scripts/ollama-create.sh` resolves them bottom-up):
+The frozen legacy Modelfiles (`modelfiles/<family>/<stem>/`) used three layers via `scripts/ollama-create.sh`:
 
-- **Canonical** (quant-suffixed stem, e.g. `35b-a3b-coding-ud-q4-k-xl`): full parameter block, `FROM` an absolute snapshot path. Source of truth.
+- **Canonical** (quant-suffixed stem, e.g. `35b-a3b-coding-ud-q4-k-xl`): full parameter block, absolute `FROM` path.
+  - Was the source of truth; `llamacpp/models.ini` is now.
 - **Layered / derived**: `FROM` a local model name (inherits weights + params), then overrides or adds directives (e.g. a coding profile layered on an MTP base, or a `DRAFT` line).
 - **Thin alias** (unsuffixed stem, e.g. `35b-a3b-coding`): a single `FROM <canonical model name>` line so the default can be repointed without renaming the family.
 
-Adding a model: create `modelfiles/<family>/<stem>/Modelfile`, mirror the exact upstream quant tag verbatim in the stem, put the full verified parameter block in the canonical file, keep any alias thin.
+Stems mirror the exact upstream quant tag verbatim; that convention carries over to new `models.ini` ids.
 
 See [docs/architecture.md](docs/architecture.md) for the full stack diagram.
 
@@ -33,10 +41,16 @@ See [docs/architecture.md](docs/architecture.md) for the full stack diagram.
 
 Speculative decoding via a draft model - two different shapes:
 
-- **Qwen (self-contained)**: one GGUF with embedded MTP tensors; Ollama auto-detects and self-drafts. Measured ~1.65x (9B).
-- **Gemma (target + separate drafter)**: main GGUF plus a `mtp-gemma-4-*.gguf` drafter (~250 MB, shipped in the QAT repos), wired via the `DRAFT` directive in the Modelfile. Measured 1.67x (12B), 1.54x (26B).
+- **Qwen (self-contained)**: one GGUF with embedded MTP tensors; served with `spec-type = draft-mtp` alone.
+  Measured ~1.65x (9B, Ollama-era); 98-121 tok/s on the router child (P1 hammer).
+- **Gemma (target + separate drafter)**: main GGUF plus a `mtp-gemma-4-*.gguf` drafter (~250 MB, in the QAT repos).
+  Wired via `model-draft =` plus `spec-type = draft-mtp`; measured 1.67x (12B) / 1.54x (26B) on the Ollama-era lane.
 
-Both historically ran on Ollama's CUDA runner (now 0.31.2, vendored llama.cpp b9840), but the 2026-07-17 eval inverted that picture on-box: Ollama's Gemma `DRAFT` lane crashes (illegal memory access on most requests), while stock llama.cpp b9860 serves the same target+drafter pair at ~1.8x - stable only with CUDA graphs ON at moderate ctx. Graphs-off reproduces the #24795 drafter load failure (the bug is config-gated, not build-gated; issue still open upstream). Until the migration spec lands, stock llama-server (graphs-on, capped ctx) is the working CUDA path for Gemma MTP; crash matrix and caveats in [docs/history/2026-07-17-llamacpp-eval.md](docs/history/2026-07-17-llamacpp-eval.md).
+History: Ollama's Gemma `DRAFT` lane crashed on-box while stock b9860 served the same pair at ~1.8x (2026-07-17 eval).
+Since 2026-08-07, llama-server with CUDA graphs ON is the serving lane for all MTP models (migration complete).
+Graphs-off reproduces the #24795 drafter load failure (config-gated, not build-gated; still open upstream).
+The 26B pair pins its drafter to CPU (`spec-draft-ngl = 0`) against an upstream full-GPU loader crash.
+Crash matrix and caveats: [docs/history/2026-07-17-llamacpp-eval.md](docs/history/2026-07-17-llamacpp-eval.md).
 
 ## Parameters
 
@@ -57,8 +71,7 @@ The guard: `raise_exception('System message must be at the beginning.')`.
 - On llama-server, the guard fires only on the OpenAI endpoint (`/v1/chat/completions` with `--jinja`).
   - A multi-system request there returns 400.
   - `/v1/messages` is immune: system folds into one message before the template runs.
-  - Under Ollama: unresolved (the eval found Jinja never runs, yet the 2026-06-23 HauhauCS 400s went through Ollama).
-    - Moot once Ollama retires.
+  - Under Ollama it stayed unresolved (Jinja never ran, yet 400s happened); moot since the 2026-08-07 retirement.
 
 Standing rule: serve guarded Qwen GGUFs to OpenAI-style clients under a guard-free template.
 
@@ -66,7 +79,7 @@ Standing rule: serve guarded Qwen GGUFs to OpenAI-style clients under a guard-fr
   - Validated pair: v21.3 snapshot `23a40b0b` on b9860.
 - Don't wait for an official fix: Qwen says the guard is by design (re-role later system messages to user).
 
-Vetting (replaces `ollama show --template`, which shows a template that never runs):
+Vetting (store-reported templates lie - Ollama's `ollama show --template` showed one that never ran):
 
 1. Per GGUF: `head -c 30000000 <file>.gguf | grep -c 'System message must be at the beginning'`.
 2. Per GGUF: one non-first-`system` request to `/v1/chat/completions` - 400 = guarded.
@@ -80,9 +93,14 @@ Guarded fleet GGUFs as of 2026-07-23 ([evidence](docs/history/2026-07-23-chat-te
 
 ## Keep-set policy
 
-Every installed Ollama model corresponds to a repo Modelfile. Anything else gets `ollama rm`'d. Rebuilding the keep-set from a clean checkout is `git clone` + `hf download` + `scripts/ollama-create.sh`.
+Every served id corresponds to a `llamacpp/models.ini` entry; the preset is the keep-set.
+Rebuilding from a clean checkout is `git clone` + `hf download` - the preset references the cache directly, no build.
+Legacy: the Ollama store mirrored the Modelfiles (`ollama rm` for strays); it stays frozen until the P4 purge.
 
-## Build commands
+## Build commands (legacy Ollama layer)
+
+The live lane has no build step - the router loads GGUFs straight from `llamacpp/models.ini`.
+The commands below build the frozen Modelfile layer and retire with it at the P4 purge.
 
 ```bash
 # Build all models (resolves canonical -> layered -> alias order automatically)
@@ -106,22 +124,32 @@ benchmarks/qwen/run.sh --execute  # actually run the matrix
 benchmarks/all.sh                 # all suites, sequential
 ```
 
-The runtime A/B spins up isolated alternate-port serves. All suites share ports `11435`/`11436`, so never run two suites concurrently (`all.sh` is sequential and safe). Full detail, ports, and distilled findings: [docs/benchmarking.md](docs/benchmarking.md).
+The runtime A/B spins up isolated alternate-port serves.
+All suites share ports `11435`/`11436`, so never run two suites concurrently (`all.sh` is sequential and safe).
+The three Ollama suites target the retired lane (frozen harnesses); `llamacpp-parity` covers the live engine.
+Full detail, ports, and distilled findings: [docs/benchmarking.md](docs/benchmarking.md).
 
 ## Serving env constraints
 
-The systemd Ollama service (`127.0.0.1:11434`) sets `KEEP_ALIVE=24h`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`.
+The live serve is `llamacpp/launch.sh`: llama-server b9860 router mode on `127.0.0.1:11433`.
+Defaults: `--models-max 1` (env `MODELS_MAX`), `--sleep-idle-seconds 86400` (env `SLEEP_IDLE_SECONDS`).
+Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike `/tmp`).
 
-- **`FLASH_ATTENTION=1` and `KV_CACHE_TYPE=q8_0` must stay paired**: the quantized V-cache hard-fails to load if flash attention resolves off.
-- **Modelfile `num_ctx` outranks the env.** `OLLAMA_NUM_PARALLEL`/`OLLAMA_CONTEXT_LENGTH` being unset is harmless because every repo Modelfile pins `num_ctx`, which wins over the VRAM-tier auto-default and is never auto-shrunk on OOM (it partial-offloads instead).
-- Prod currently runs CUDA graphs ON with the MTP crash exposure noted in [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash) (fix needs sudo).
+- **`-fa on` and q8_0 KV must stay paired** (both live in the `[*]` block of `models.ini`): the quantized V-cache
+  hard-fails to load if flash attention resolves off.
+- `ctx-size` is per-entry in `models.ini` and wins; nothing auto-shrinks on OOM (partial offload instead).
+- CUDA graphs run ON fleet-wide (P1-validated); never set `GGML_CUDA_DISABLE_GRAPHS` in the launcher env.
+  - Children inherit the router env verbatim, and Gemma MTP needs graphs on.
+- The retired systemd Ollama service (`11434`) stays frozen - stop/disable and purge tracked in Phase 4.
 
 ## WSL disk budget
 
 This runs on WSL2; the guest disk is an `ext4.vhdx` on the Windows `F:` drive that grows and never shrinks by itself.
 
 - Budget against `df -h /mnt/f`, NOT the guest `df -h /` (the guest reports the virtual disk and lies about free host space).
-- Count hidden copies: bytes exist twice by design - the HF cache blob (source) and the Ollama re-serialized layer both hold the model. A migration that copies + downloads + rebuilds can balloon the vhdx and crash the host (it has, twice).
+- Under Ollama bytes existed twice (HF blob + re-serialized layer); the live lane serves the HF cache directly.
+  - The frozen Ollama store is reclaimed at the P4 purge.
+- Bulk copy/download/rebuild operations can balloon the vhdx and crash the host (it has, twice).
 - After large in-guest deletions, reclaim host space with `wsl --shutdown` then `Optimize-VHD` (Windows side).
 
 ## Markdown style
@@ -132,6 +160,7 @@ This runs on WSL2; the guest disk is an `ext4.vhdx` on the Windows `F:` drive th
 ## Doc map
 
 - [README.md](README.md) - what/why, quickstart, model catalog, repo map.
+- [llamacpp/README.md](llamacpp/README.md) - the serving lane: preset layout, alias policy, add-a-model.
 - [docs/architecture.md](docs/architecture.md) - the stack: source of truth, layering, MTP, serving, disk.
 - [docs/parameters.md](docs/parameters.md) - sampling profiles, mandates, verification sources.
 - [docs/benchmarking.md](docs/benchmarking.md) - suite mechanics, ports, distilled findings.
