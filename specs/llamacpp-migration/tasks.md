@@ -160,6 +160,9 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Same pathology on the 35b instruct as a 5th model: 2.94 tok/s on its first turn (chat f49e10a3)
   - qwen3.6 family chat verified in DB 2026-08-07: chat f49e10a3 turn 1 done=true, 35b instruct via Open WebUI
     - Turn 2 completed with platform search on the same model - 2x search_web, 10 sources (user screenshot)
+  - Observation 2026-08-07: 35b instruct fell into a "/" repetition loop after 7 searches (~11.6k ctx, 30 sources)
+    - Log clean (truncated = 0, no context shift): sampling degeneracy, not corruption; profiles carry no repeat penalty
+    - Same model completed the 2-search turn fine; user cancelled the looping task (1313); regenerate is the escape
   - Remaining: one qwen3.5 chat (child already warm)
 - [x] OpenCode provider block + context limits; search-tool behavior recorded
   - Applied 2026-08-04 (user consent, "no model left behind"): 12-model provider block with per-model limits
