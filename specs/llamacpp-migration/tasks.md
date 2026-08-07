@@ -131,7 +131,26 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Gemma family chat served via the router with thinking rendering (user screenshot)
   - Sampling neutrality closed at source: `open_webui/utils/payload.py:70` applies only non-None params
     - Unset chat params never enter the body, so the router's launch-time profiles govern (0.11.0 installed package)
-  - Remaining: one qwen3.5 + one qwen3.6 chat, and the Brave search-enabled chat (each loads a child; GPU-gated)
+  - Search chat 2026-08-07 (user): tool-mode search ran on the 12B child - "Explored search_web", 5 cited sources
+    - Web search is Open WebUI's platform toggle, not a model tool
+    - Two earlier turns denied having search; the successful turn's reasoning trace calls those refusals incorrect
+    - DB cross-matches the router log verbatim (predicted_per_second 96.66... on the search turn in both)
+  - Connection research 2026-08-07 (source-grounded, 0.11.0 installed package): keep external + chat-completions
+    - external vs local is a label: the sole behavioral read picks the external vs local task model (utils/task.py:20)
+    - Recommend Provider=llama.cpp: prior-turn reasoning goes back as reasoning_content; unset DROPS it
+      - Sites: middleware.py:2059-2073 -> misc.py:437-439; also unlocks the Loaded badge + Eject (/models/unload)
+      - Our router serves per-model status in /v1/models, so the badge reads true residency (fallback caveat moot)
+    - Responses api_type would lose tok/s (stream_options popped at openai.py:1113; Responses stream has no timings)
+      - And filter-injected web_search/namespace tools would pass into llama-server's silent drop; keep chat-completions
+    - tok/s already works: timings merge into message.usage (middleware.py:4378-4382); the info icon shows the dict
+  - Finding 2026-08-07: 26b-a4b-mtp child died loading its drafter via the router - vector::_M_range_check
+    - First-ever router-context load: P1's 6/6 was standalone with a free GPU; three residents held ~10.7/12.3 GiB here
+    - Router evicts LRU at stock models-max 4 (observed live: 12b-mtp died for 31b, 9b for 26b); diagnosis agent running
+  - Family-chat check 2026-08-07: zero qwen3.5/qwen3.6 chats exist in webui.db (11 chats total, all scanned)
+    - Today's 15:55 qwen child spawns came from a non-Open-WebUI client (agentic task-id pattern, 97-127 tok/s)
+  - Finding 2026-08-07: 31b-mtp decoded at 1.82 tok/s under 4-resident pressure (vs 38-120 tok/s elsewhere today)
+    - The two follow-up 31b generations were cancelled ~1 s after launch each; reads as giving up on a hang
+  - Remaining: one qwen3.5 + one qwen3.6 chat (each loads a child)
 - [x] OpenCode provider block + context limits; search-tool behavior recorded
   - Applied 2026-08-04 (user consent, "no model left behind"): 12-model provider block with per-model limits
   - Validated: real tool-loop session fixed a file on disk; requests hit 11433 (no #5674 symptom); picker lists all 12
@@ -151,7 +170,9 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Codex phones home under the local profile (chatgpt.com analytics + OTLP); recorded, out of scope here
   - Cleanup: removed the trust entry Codex self-wrote for the ephemeral validation sandbox; marketplace drift left as-is
   - Decode 28.9-37.4 tok/s, acceptance 0.72-0.95; the ~10k-token Codex preamble costs ~42 s cold prefill per session
-- [ ] Pi best-effort config tried or explicitly deferred
+- [x] Pi best-effort config tried or explicitly deferred
+  - Explicitly deferred 2026-08-07 (user: "defer pi for now"); Pi is not installed here, so nothing was rewired
+  - No Pi config landed in the repo; wire it from `llamacpp/models.ini` at pickup - does not gate P4
 
 ## Phase 4 - staged retirement
 
