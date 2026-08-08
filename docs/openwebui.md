@@ -43,6 +43,7 @@ Evidence logs:
 - `api_type`: Chat Completions, not Responses.
   - Responses loses tok/s display: `stream_options` is popped at `openai.py:1113`.
   - llama-server's Responses stream carries no timings, and it silently drops `web_search`/namespace tools.
+  - Revisit at component updates: the Responses migration is a stack-upkeep watch item (`specs/stack-upkeep/spec.md`).
 - Provider: llama.cpp.
   - Prior-turn reasoning goes back as `reasoning_content`, which chat templates strip from history (standard).
   - Also unlocks the Loaded badge and the admin Eject action via the router's `/models/unload`.

@@ -21,6 +21,15 @@ Keep llama.cpp, Ollama, Open WebUI, and the pinned GGUFs current and tracked. To
 
 A short procedure doc exists and each component has a named check. No new services.
 
+## Watch items
+
+- The client ecosystem is migrating toward OpenAI's Responses API; this stack deliberately holds Chat Completions.
+  - Held: llama-server's Responses path has no stream timings and no stored threads (Codex runs fresh threads only).
+  - And it silently drops web_search/namespace-typed tools with HTTP 200 (the invisible Codex MCP failure).
+  - Choices held: Open WebUI api_type (docs/openwebui.md) and OpenCode stay on Chat Completions; Codex is Responses-native.
+  - Flip triggers: llama-server Responses gains timings, tool-type errors, and state; or a client degrades Chat Completions.
+  - The update posture above means no version pin protects these choices: re-check at every rebuild and client upgrade.
+
 ## Version snapshot (2026-08-03)
 
 Superseded once planning starts.
