@@ -239,6 +239,12 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - Fleet becomes 18 configs + 8 alias names at the reshape (ctx mirrors the plain 27B entry, 131072)
     - Queen-27B ids gain quant-tag fidelity -i1-q4-k-m (upstream i1-Q4_K_M, Heretic precedent); no compat alias
     - No alias moves at 27B: qwen3.6-27b-coding stays on the plain coding entry (mtp-explicit rule)
+    - Executed 2026-08-08 (GPU-gate closed, config-side): models.ini 18 + 8, OpenCode/Codex swapped, doc counts moved
+      - Download complete (29.3G blob, snapshot a483e9e6); stale 16.9G .incomplete removed
+      - New-GGUF gate greps: guard 0, merged_system 7 - joins the carriers (now 5 GGUFs / 7 entries)
+  - GPU-window queue (gate closed 2026-08-08): diagnosis hammers (graphs-off; fa-off; optional 35B lane hammer)
+    - Plus: 31B drafter load test; live probes (gate step 3) for both new instruct entries before first real use
+    - Plus: per-build multi-system /v1/messages probe whenever the build moves
   - Pending decision (found 2026-08-08, gate sweep): 4 merged_system GGUFs back 6 entries with no template override
     - Those entries silently drop mid-conversation system messages on /v1/chat/completions (no error surfaces)
     - Options: extend chat-template-file froggeric to the 6 entries (needs per-family validation) or accept + document

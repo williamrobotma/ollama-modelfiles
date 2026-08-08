@@ -94,8 +94,8 @@ Guarded fleet GGUFs ([gate evidence 2026-07-23](docs/history/2026-07-23-chat-tem
 
 - Current: unsloth Qwen3.5-9B non-MTP and Queen-27B, backing the 3 `chat-template-file` preset entries.
   - OBLITERATUS-27B and Qwopus3.5-9B-coder left the fleet in the 2026-07-27 reduction.
-- `merged_system` carriers (step 2 grep, 2026-08-08): unsloth Qwen3.5-9B-MTP, Qwen3.6-27B, -27B-MTP, -35B-A3B-MTP.
-  - 4 GGUFs backing 6 preset entries (the 35B GGUF backs three); step 1 clean (no raise_exception guard).
+- `merged_system` carriers (step 2 grep, 2026-08-08): unsloth Qwen3.5-9B-MTP + Qwen3.6 27B, 27B-MTP, 35B-A3B-MTP, 35B-A3B.
+  - 5 GGUFs backing 7 preset entries (multi-entry GGUFs: 35B-A3B-MTP x2, 27B x2); step 1 clean on all.
   - No entry has a `chat-template-file` override yet: mid-conversation system messages silently drop today.
 - Validated (template, build) pair record: [llamacpp/templates/README.md](llamacpp/templates/README.md).
   - Re-validate the pair when the build record moves.

@@ -35,7 +35,7 @@ The pinning convention and add-a-model procedure are in [llamacpp/README.md](lla
 
 ## Model catalog
 
-The served fleet is defined by `llamacpp/models.ini` - 17 configs + 8 alias names as of 2026-08-08.
+The served fleet is defined by `llamacpp/models.ini` - 18 configs + 8 alias names as of 2026-08-08.
 List the live ids with `curl -s 127.0.0.1:11433/v1/models`; each entry's serving profile lives in the INI itself.
 Families: Gemma 4 (thinking; vision via mmproj), Qwen 3.6 coders, Qwen 3.5 small coders, and an uncensored track.
 
