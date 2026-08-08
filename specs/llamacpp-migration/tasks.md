@@ -224,6 +224,21 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Throughput notes: 12B 99-110 tok/s (9860: 57-61); 26B 21.5-27.7 (9860: 39-42); hammer 108-123
     - launch.sh record stays 9860 last-known-good (pins move on pass); disposition pending user decision
     - Raw evidence: job scratch recert/ (router.log, 42 response JSONs); history log to follow disposition
+    - Decided 2026-08-08 (user): disposition = upstream check, rebuild newer, re-run hammer + per-build probes only
+      - Upstream check done 2026-08-08: NO fix exists upstream; rebuild-to-fix is off the table (re-decision open)
+      - #26609 (OPEN, unlabeled): exact signature - synchronize site :2499, fa path, Qwen3.6-35B MoE; -fa off clears it
+      - #26558 (OPEN, unlabeled): draft-mtp, CUDA-graphs cache-corruption theory; GGML_CUDA_DISABLE_GRAPHS=1 soaks clean
+      - Tip b10327 = unrelated cpy launch fix; constraints: graphs-off breaks Gemma MTP, fa-off breaks q8_0 V-cache
+      - 9860-revert caveat (search agent): 30/30 clean is ~11% by luck at a true 7%/run; blamed design predates 9860
+  - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
+    - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
+      - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch
+    - Naming axes: profile token (blank = instruct); -mtp- explicit on every MTP-serving name
+      - Vision is the plain lane's mmproj property, not a name token; blank entries are not defaults (no bare alias)
+    - qwen3.6-27b gains a blank instruct entry qwen3.6-27b-ud-q4-k-xl (Instruct profile, non-MTP GGUF + mmproj, q4)
+      - Fleet becomes 18 configs + 8 alias names at the reshape (ctx mirrors the plain 27B entry, 131072)
+    - Queen-27B ids gain quant-tag fidelity -i1-q4-k-m (upstream i1-Q4_K_M, Heretic precedent); no compat alias
+    - No alias moves at 27B: qwen3.6-27b-coding stays on the plain coding entry (mtp-explicit rule)
   - claude-local subagent pinning documented in CLAUDE.md (B6a); wrapper change not taken
   - Held by user: OTEL body-log cleanup (B8)
   - Fixed 2026-08-08 (user "1"): the 9-tag whitespace patch is applied to the vendored template; render verified

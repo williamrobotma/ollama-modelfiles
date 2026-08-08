@@ -2,8 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "mcp>=1.9,<2",  # local pin 2026-08-04: mcp 2.0.0 drops FastMCP and Server.tool(); upstream script unfixed
-#   "rich",
-#   "ollama",
+#   "ollama>=0.6.2,<1",  # local pin 2026-08-08: was unbounded, re-resolved on every pipx run
 # ]
 # ///
 """

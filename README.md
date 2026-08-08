@@ -35,7 +35,7 @@ The pinning convention and add-a-model procedure are in [llamacpp/README.md](lla
 
 ## Model catalog
 
-The served fleet is defined by `llamacpp/models.ini` - 17 configs + 9 alias names as of 2026-08-08.
+The served fleet is defined by `llamacpp/models.ini` - 17 configs + 8 alias names as of 2026-08-08.
 List the live ids with `curl -s 127.0.0.1:11433/v1/models`; each entry's serving profile lives in the INI itself.
 Families: Gemma 4 (thinking; vision via mmproj), Qwen 3.6 coders, Qwen 3.5 small coders, and an uncensored track.
 
@@ -67,7 +67,7 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in
 | `llamacpp/` | The live serving lane: `models.ini` preset, `launch.sh`, pinned templates, vendored MCP. |
 | `modelfiles/<family>/<stem>/Modelfile` | Legacy Ollama build layer (frozen until purge); name = `<family>-<stem>`. |
 | `scripts/` | `ollama-create.sh` (legacy build), `repro-mtp-graphs.sh` (crash repro). |
-| `benchmarks/` | Three dry-run-by-default suites plus shared `common.sh`, `report.py`, `all.sh`. |
+| `benchmarks/` | Three frozen-Ollama suites + `llamacpp-parity` (live engine), shared `common.sh`, `report.py`, `all.sh`. |
 | `docs/` | Topic docs; `docs/history/` holds immutable dated session logs. |
 | `specs/<feature>/` | Spec + tasks (plus plan when needed) for in-flight work; executed by the run-spec skill. |
 | `specs/done/<feature>/` | Completed bundles (spec.md Acceptance met), filed here by the run-spec skill. |
