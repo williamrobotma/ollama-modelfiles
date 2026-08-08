@@ -22,7 +22,7 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
                                    |
                                    |  absolute snapshot paths in model = / model-draft = / mmproj =
                                    v
-              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (20 configs + 9 aliases)
+              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (17 configs + 9 aliases)
                                    |
                                    |  llamacpp/launch.sh -> llama-server --models-preset (router mode)
                                    v

@@ -230,8 +230,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Decided 2026-08-08 (user): the #32 window clock does NOT restart at the 10326 re-cert; opened 2026-08-07 stands
   - Decided 2026-08-08 (user, "Q6 quants for 35B are now standard. no more others"): unsuffixed 35B aliases
     repointed q5 -> q6 in models.ini (claude-local follows automatically via its alias)
-    - Open ("no more others" scope): delete the three 35B q5 entries, or keep them demoted? Deferred to user
-    - Open: OpenCode/Codex model lists still pin q5 ids explicitly; swap to q6 ids once the scope is decided
+    - Resolved 2026-08-08 (user): the 35B q5 trio deleted from models.ini - fleet is 17 configs + 9 alias names
+    - OpenCode + Codex swapped to the q6 ids (catalog, provider list, and the Codex coding default)
+      - ctx limits carry over unchanged (coding 200000; reasoning/instruct 262144)
+      - The 35B UD-Q5_K_XL GGUF (~28G) is now unreferenced in the HF cache; delete on user go
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)
