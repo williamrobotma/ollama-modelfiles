@@ -233,7 +233,9 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Resolved 2026-08-08 (user): the 35B q5 trio deleted from models.ini - fleet is 17 configs + 9 alias names
     - OpenCode + Codex swapped to the q6 ids (catalog, provider list, and the Codex coding default)
       - ctx limits carry over unchanged (coding 200000; reasoning/instruct 262144)
-      - The 35B UD-Q5_K_XL GGUF (~28G) is now unreferenced in the HF cache; delete on user go
+      - Deleted 2026-08-08 (user go): the 35B UD-Q5_K_XL GGUF blob (26G measured) removed from the HF cache
+        - Guest / usage 484G -> 459G; q6 + mmproj blobs untouched; host vhdx reclaim folds into the purge step
+        - The frozen q5 canonical Modelfile keeps its dead FROM path (build-time only; store copy serves rollback)
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)
