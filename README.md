@@ -95,6 +95,10 @@ Thin one-line Modelfiles that repoint an unsuffixed default at the current canon
 | `qwen3.6-27b-obliterated-coding` | `qwen3.6-27b-obliterated-coding-q4-k-m` |
 | `qwen3.5-9b-mtp-coding` | `qwen3.5-9b-mtp-coding-ud-q4-k-xl` |
 
+### Roadmap
+
+- [ ] Qwen 3.8 support (pending official release of open weights)
+
 ## Quantization
 
 Canonical Unsloth models use an Unsloth Dynamic ("UD-") quant, which is not standard llama.cpp Q4_0:
