@@ -69,7 +69,7 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 ## Phase 2 - full-fleet config home
 
 1. Fill the preset INI: 17 configs and 6 alias names (2026-07-27 fleet reduction).
-   - Amended 2026-08-08: the q6 trio replaced the 35B q5 trio -> 17 configs + 9 alias names.
+   - Amended 2026-08-08: the q6 trio replaced the 35B q5 trio -> 17 configs + 8 alias names.
    - Every key sits under a `[section]` header: a top-level key silently becomes a phantom model named `default`
      (the upstream example's top-level `version = 1` does exactly this - do not copy it).
    - Full sampling flags per docs/parameters.md (GGUF metadata overrides any flag not set - eval log section 3).
@@ -130,8 +130,8 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 
 ## Deferred / follow-ups
 
-- Benchmark `presence_penalty` 1.5 vs 0.0 on `35b-a3b-mtp-reasoning-ud-q5-k-xl`, the one entry that diverges from its
-  own model card (preflight log). Held out of the migration to keep the cutover sampling-neutral.
+- Benchmark `presence_penalty` 1.5 vs 0.0 on `qwen3.6-35b-a3b-mtp-reasoning-ud-q6-k` (diverges from its card).
+  - Preflight log has the divergence; held out of the migration to keep the cutover sampling-neutral.
 - Benchmark `--spec-draft-n-max` 4 vs 2 on the Gemma MTP lanes; unsloth's Gemma card recommends 4, the fleet runs 2.
 - systemd unit for the router (after the validation window).
 - `specs/copilot-byok` (scaffolded; VS Code Copilot Custom Endpoint).

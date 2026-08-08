@@ -5,7 +5,7 @@ Canonical, tooling-agnostic instructions for any coding agent working in this re
 ## What this repo is
 
 Local LLM serving config, organized by model family and use profile. There is no application code and no test suite.
-The live lane is stock llama.cpp in router mode: `llamacpp/models.ini` + `launch.sh` on `127.0.0.1:11433`.
+Stock llama.cpp in router mode serves the live lane: fleet in `llamacpp/models.ini`, entrypoint `launch.sh`, on `127.0.0.1:11433`.
 The Ollama Modelfiles are the retired legacy build layer, frozen until the P4 purge (`specs/llamacpp-migration`).
 The 2026-07-27 fleet reduction already deleted 8 of them (a recorded spec supersede, not freeze drift).
 Every served GGUF is a pinned local Hugging Face cache snapshot referenced by absolute path.
@@ -29,7 +29,7 @@ Add-a-model procedure: [llamacpp/README.md](llamacpp/README.md).
 
 The frozen legacy Modelfiles (`modelfiles/<family>/<stem>/`) used three layers via `scripts/ollama-create.sh`:
 
-- **Canonical** (quant-suffixed stem, e.g. `35b-a3b-coding-ud-q4-k-xl`): full parameter block, absolute `FROM` path.
+- **Canonical** (quant-suffixed stem, e.g. `35b-a3b-mtp-ud-q5-k-xl`): full parameter block, absolute `FROM` path.
   - Was the source of truth; `llamacpp/models.ini` is now.
 - **Layered / derived**: `FROM` a local model name (inherits weights + params), then overrides or adds directives (e.g. a coding profile layered on an MTP base, or a `DRAFT` line).
 - **Thin alias** (unsuffixed stem, e.g. `35b-a3b-coding`): a single `FROM <canonical model name>` line so the default can be repointed without renaming the family.
@@ -78,21 +78,27 @@ The guard: `raise_exception('System message must be at the beginning.')`.
 Standing rule: serve guarded Qwen GGUFs to OpenAI-style clients under a guard-free template.
 
 - Fix: `--jinja --chat-template-file` with froggeric's `chat_template.jinja`, validated once per (template, build) pair.
-  - Validated pair: v21.3 snapshot `23a40b0b` on b9860.
+  - Validated-pair record: [llamacpp/templates/README.md](llamacpp/templates/README.md).
 - Don't wait for an official fix: Qwen says the guard is by design (re-role later system messages to user).
 
 Vetting (store-reported templates lie - Ollama's `ollama show --template` showed one that never ran):
 
-1. Per GGUF: `head -c 30000000 <file>.gguf | grep -c 'System message must be at the beginning'`.
-2. Per GGUF: one non-first-`system` request to `/v1/chat/completions` - 400 = guarded.
+1. Per GGUF: `head -c 30000000 <file>.gguf | grep -ac 'System message must be at the beginning'`.
+2. Per GGUF: `head -c 30000000 <file>.gguf | grep -ac 'merged_system'`.
+   - Hazard: a hit means silent drops, not a 400 - it never shows up as an error.
+3. Per GGUF: one non-first-`system` request to `/v1/chat/completions` - 400 = guarded.
    - Never cold-load onto a busy GPU; `-ngl 0` is fine.
-3. Per build: one multi-block-`system` request to `/v1/messages` (immunity check).
+4. Per build: one multi-block-`system` request to `/v1/messages` (immunity check).
 
 Guarded fleet GGUFs ([gate evidence 2026-07-23](docs/history/2026-07-23-chat-template-refresh.md)):
 
 - Current: unsloth Qwen3.5-9B non-MTP and Queen-27B, backing the 3 `chat-template-file` preset entries.
   - OBLITERATUS-27B and Qwopus3.5-9B-coder left the fleet in the 2026-07-27 reduction.
-- Validated (template, build) pair: froggeric v21.3 on 9860; re-validate the pair when the build record moves.
+- `merged_system` carriers (step 2 grep, 2026-08-08): unsloth Qwen3.5-9B-MTP, Qwen3.6-27B, -27B-MTP, -35B-A3B-MTP.
+  - 4 GGUFs backing 6 preset entries (the 35B GGUF backs three); step 1 clean (no raise_exception guard).
+  - No entry has a `chat-template-file` override yet: mid-conversation system messages silently drop today.
+- Validated (template, build) pair record: [llamacpp/templates/README.md](llamacpp/templates/README.md).
+  - Re-validate the pair when the build record moves.
 
 ## Keep-set policy
 

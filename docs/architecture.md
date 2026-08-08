@@ -22,7 +22,7 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
                                    |
                                    |  absolute snapshot paths in model = / model-draft = / mmproj =
                                    v
-              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (17 configs + 9 aliases)
+              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (17 configs + 8 aliases)
                                    |
                                    |  llamacpp/launch.sh -> llama-server --models-preset (router mode)
                                    v
@@ -67,8 +67,8 @@ MTP ENTRY (drafting sibling; carries no mmproj - the MTP x vision split)
       spec-draft-ngl = 0                                          <- this entry only: drafter to CPU
 
 ALIAS (a key on its owning entry, never its own section)
-  [qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl]
-      alias = qwen3.6-35b-a3b-coding,qwen3.6-35b-a3b-mtp-coding
+  [qwen3.6-35b-a3b-mtp-coding-ud-q6-k]
+      alias = qwen3.6-35b-a3b-coding,qwen3.6-35b-a3b-mtp-coding,qwen3.6-35b-a3b-coding-ud-q6-k
 ```
 
 Aliases resolve inside request bodies but never appear as `/v1/models` ids, so point UI pickers at canonical ids.
@@ -79,10 +79,9 @@ Aliases resolve inside request bodies but never appear as `/v1/models` ids, so p
 
 FROZEN LEGACY - the Modelfile graph that used to be this mapping layer (see section 1):
 
-- `modelfiles/<family>/<stem>/Modelfile` named the model `<family>-<stem>`.
-  - `scripts/ollama-create.sh` resolved that graph bottom-up: canonical -> layered/derived -> thin alias.
+- Three-layer scheme (canonical -> layered/derived -> thin alias) via `scripts/ollama-create.sh`.
+  - Full detail: [AGENTS.md](../AGENTS.md#modelfile-layering-and-naming).
 - Canonical files carried weights plus a second `FROM` for the vision projector, which was silently dropped if omitted.
-  - Gemma drafters were wired with `DRAFT`; profiles and thin aliases layered `FROM` a local model name.
 - Name parity with the preset was exact at the 2026-08-03 check: 17 ids + 6 aliases == the 23 `ollama list` names.
 
 ## 3. The two MTP mechanisms (they are not the same thing)
@@ -142,18 +141,11 @@ No inbound auth anywhere: the router checks nothing, and it binds 127.0.0.1, as 
 
 Per-client detail worth carrying:
 
-- claude-local: the `~/.bashrc` function exports `ANTHROPIC_BASE_URL` plus `ANTHROPIC_MODEL` and the tier/subagent vars.
-  - `ANTHROPIC_MODEL` is load-bearing: tier vars alone do not override a literal `model` in settings.json.
-  - It sources `~/.config/claude-local.env`, then execs `claude` with both flags in `=VALUE` form.
-    - The space form is not equivalent: it swallows `"$@"` into the deny list.
-  - The MCP is the official Ollama web-search script vendored at `llamacpp/mcp/`, run via pipx on an `mcp>=1.9,<2` pin.
-- Open WebUI: started on demand by `~/.local/bin/openwebui`, with no background service.
-  - `DATA_DIR=~/.open-webui` is pinned in that launcher, and every setting lives in `webui.db` beneath it.
-  - Configured through the Admin UI, not env; the Brave search key survived the 0.11.0 migration.
-  - Its Ollama connection is disabled.
-  - The old reason to avoid an OpenAI connection was Ollama's own `/v1` shim, which llama-server does not have.
-    - That shim injected `temp=1.0`/`top_p=1.0` when they were omitted, silently overriding the model's sampling.
-  - 0.11.0 sends only non-None params (`utils/payload.py:70`), so the router's launch-time profiles govern sampling.
+- claude-local: the `~/.bashrc` fn exports `ANTHROPIC_BASE_URL` + `ANTHROPIC_MODEL`/tier vars.
+  - Full detail: [CLAUDE.md](../CLAUDE.md#claude-local).
+  - Execs `claude` with both flags in `=VALUE` form - the space form swallows `"$@"` into the deny list.
+  - The MCP is the official Ollama web-search script, run via pipx on an `mcp>=1.9,<2` pin.
+- Open WebUI: started on demand, no background service, OpenAI connection at 11433 ([openwebui.md](openwebui.md)).
 - Codex: llama-server silently skips Responses tools typed `namespace` or `web_search` and still returns 200.
   - Codex-side MCP therefore fails invisibly on this lane; plain `function` tools are unaffected.
 - The multi-system-message template gate now bites the OpenAI-endpoint clients, not `/v1/messages` (see AGENTS.md).

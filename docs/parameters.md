@@ -87,8 +87,9 @@ For non-coding use with thinking mode on.
 - Qwen's own caveat: a higher value reduces repetition but "may occasionally result in language mixing and a slight
   decrease in model performance".
 - Qwen READMEs are self-inconsistent elsewhere too (`Qwen/Qwen3.5-9B` discussion #51, unanswered since April).
-- The repo pins `0.0` fleet-wide. Only `35b-a3b-mtp-reasoning-ud-q5-k-xl` diverges from its own card; a post-migration
-  A/B against `1.5` on that entry is filed in `specs/llamacpp-migration`.
+- The repo pins `0.0` in `[*]`; the one override is `qwen3.6-35b-a3b-mtp-ud-q6-k` (instruct) at `1.5`, per its card.
+- Only `qwen3.6-35b-a3b-mtp-reasoning-ud-q6-k` diverges from its own card within this profile.
+  - A post-migration A/B against `1.5` on that entry is filed in `specs/llamacpp-migration`.
 
 ## Qwen 3.6 (Instruct Mode, non-thinking)
 

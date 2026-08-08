@@ -8,6 +8,7 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
 - `launch.sh` - launcher: absolute `build/bin` path, `LLAMA_CACHE` redirect, and the build record (last known good)
 - `models.ini` - the fleet, one `[section]` per config
 - `templates/` - froggeric v21.3 `chat_template.jinja` for guarded GGUFs (provenance in `templates/README.md`)
+- `mcp/` - vendored web-search MCP server for claude-local, run via pipx (provenance in `mcp/README.md`)
 
 ## Alias policy
 
@@ -20,6 +21,10 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
 2. New `[section]` named like the fleet (family-size-variant-quant): profile sampling + ctx from `docs/parameters.md`.
    Keys the `[*]` section already carries (min-p, n-predict, penalties, top-p) need only per-entry overrides.
 3. Vet the embedded chat template per the AGENTS.md chat-template gate; guarded -> `chat-template-file` froggeric.
+   - Preset values get no interpolation (`common/preset.cpp:304-330`): the path is a literal absolute string.
+     - Cloning to another machine means hand-editing the 3 guarded entries' paths.
+   - A CLI `--chat-template-file` is no per-entry fix: base CLI args merge into every entry (`server-models.cpp:551`).
+     - It would force one template onto the whole fleet, not just the guarded entries.
 4. MTP lane: `spec-type = draft-mtp` + `spec-draft-n-max = 2` (+ `model-draft` for Gemma drafters).
    Vision: `mmproj` on the non-MTP entry only (split policy: docs/parameters.md).
 5. Spot-load via `launch.sh`: `/props?model=` matches the profile, one generation OK.

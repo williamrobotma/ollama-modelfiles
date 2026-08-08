@@ -27,10 +27,8 @@ Each Ollama suite's `run.sh` sets its suite name and sources `common.sh`.
 It benches the same GGUF on an isolated Ollama serve (graphs-off profile) against stock llama-server.
 Stock llama-server is now the live serving lane.
 `LLAMA_SERVER_BIN` selects the binary (default `~/Developer/llama.cpp/build/bin/llama-server`).
-Decode tok/s is read from each engine's own primary metrics.
-The Ollama side reads `ollama run --verbose` eval rate; the llama-server side reads response `timings`.
-Its matrix rows carry the GGUF snapshot path, ctx, sampling flags (mirroring docs/parameters.md).
-They also carry spec-decode flags per model.
+Decode tok/s is read per engine: `ollama run --verbose` eval rate (Ollama), response `timings` (llama-server).
+Its matrix rows carry the GGUF snapshot path, ctx, sampling flags (per docs/parameters.md), and spec-decode flags.
 It has its own `report.py` (mean/stdev plus llamacpp-vs-ollama and mtp-vs-plain ratios).
 Same dry-run-by-default CLI as the other suites.
 Built for the specs/done/llamacpp-serving option-C eval.
@@ -55,7 +53,8 @@ Suite scope:
 - **9b-coders**: small coders that fit fully in 12 GB VRAM, benched against the `gemma4-12b-it-qat` baseline.
   - `qwen3.5-9b-coding-ud-q4-k-xl`
   - `qwen3.5-9b-mtp-coding` (self-draft variant)
-  - `qwopus3.5-9b-coder` (community finetune; left the fleet in the 2026-07-27 reduction - this frozen row no longer resolves)
+  - `qwopus3.5-9b-coder` (community finetune)
+    - Left the fleet in the 2026-07-27 reduction; this frozen row no longer resolves.
 
 ## Isolated serves and ports
 
@@ -104,10 +103,8 @@ Distilled from the evidence logs; follow the links for the primary-source detail
 - MTP models with CUDA graphs on crashed ~12.5% per run (illegal memory access) on the Ollama lane.
   - Reproduced with a 30-run hammer.
   - See [history/2026-07-01-mtp-graphs-crash.md](history/2026-07-01-mtp-graphs-crash.md).
-- Ollama-era decision: keep `GGML_CUDA_DISABLE_GRAPHS=1` serve-wide.
-  - Ollama had no per-model graphs toggle (issue #12083).
-  - A ~12.5%/run hard crash on the MTP models served via claude-local outweighed the throughput trim.
-  - The MTP self-draft speedup already dwarfed the recoverable graphs delta.
+- Ollama-era decision (retired): kept `GGML_CUDA_DISABLE_GRAPHS=1` serve-wide to dodge the MTP crash above.
+  - See [history/2026-07-01-mtp-graphs-crash.md](history/2026-07-01-mtp-graphs-crash.md).
 - Current stance (llama-server lane): CUDA graphs run ON fleet-wide, deliberately.
   - Validated in Phase 1 of specs/llamacpp-migration (2026-08-03).
   - The 12B MTP ctx ladder ran 36/36 clean generations through 200k ctx.

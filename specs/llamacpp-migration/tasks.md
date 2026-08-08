@@ -239,6 +239,9 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - Fleet becomes 18 configs + 8 alias names at the reshape (ctx mirrors the plain 27B entry, 131072)
     - Queen-27B ids gain quant-tag fidelity -i1-q4-k-m (upstream i1-Q4_K_M, Heretic precedent); no compat alias
     - No alias moves at 27B: qwen3.6-27b-coding stays on the plain coding entry (mtp-explicit rule)
+  - Pending decision (found 2026-08-08, gate sweep): 4 merged_system GGUFs back 6 entries with no template override
+    - Those entries silently drop mid-conversation system messages on /v1/chat/completions (no error surfaces)
+    - Options: extend chat-template-file froggeric to the 6 entries (needs per-family validation) or accept + document
   - claude-local subagent pinning documented in CLAUDE.md (B6a); wrapper change not taken
   - Held by user: OTEL body-log cleanup (B8)
   - Fixed 2026-08-08 (user "1"): the 9-tag whitespace patch is applied to the vendored template; render verified

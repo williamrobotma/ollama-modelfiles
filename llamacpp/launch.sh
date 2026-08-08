@@ -5,7 +5,7 @@
 # CUDA graphs stays ON fleet-wide - never set GGML_CUDA_DISABLE_GRAPHS here (Gemma MTP needs graphs on).
 set -euo pipefail
 
-# Build record: last known good 9860 (fdb1db877); on-disk moved to 10326 (3653e6d6d) 2026-08-07, re-cert pending.
+# Build record: last known good 9860 (fdb1db877); on-disk 10326 (3653e6d6d) FAILED re-cert 2026-08-08 (tasks.md).
 # Rebuilds re-certify per the migration spec's rebuild rule (crash matrix + froggeric pair; P1 log 2026-08-03).
 BIN=/home/wma/Developer/llama.cpp/build/bin/llama-server
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,6 +25,8 @@ mkdir -p "$LLAMA_CACHE"
 # --cors-origins localhost: only localhost-origin pages get CORS read access (browser-only mechanism;
 # non-browser clients send no Origin). POST /models still executes regardless of CORS or --api-key at
 # this build (path-only public-endpoint exemption upstream); the loopback bind is the real boundary.
+# POST /models is CORS-simple (no preflight) and Host is unvalidated, so a browser CSRF / DNS-rebinding
+# page can still reach it; verified impact ceiling is low: drive-by into gitignored .cache-empty; DELETE gated upstream.
 exec "$BIN" \
     --models-preset "$DIR/models.ini" \
     --sleep-idle-seconds "${SLEEP_IDLE_SECONDS:-86400}" \

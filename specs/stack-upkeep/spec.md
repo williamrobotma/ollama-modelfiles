@@ -36,3 +36,5 @@ Superseded once planning starts.
 - Open WebUI: 0.11.0 installed = latest (pipx upgrade done), but not started since the upgrade.
   - `~/.open-webui/webui.db` is untouched since Jul 11, so the 0.11.0 DB migration has not run.
   - Pending at first run: the DB migration, then the native-connection sampling check in docs/openwebui.md.
+  - Amended 2026-08-08: stale - 0.11.0 first started 2026-08-04 (P3 prep) and ran 9 alembic migrations clean.
+    - Browser-validated 2026-08-07; current state: `docs/openwebui.md`.
