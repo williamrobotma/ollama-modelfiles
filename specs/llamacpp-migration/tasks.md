@@ -221,6 +221,11 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Held by user: OTEL body-log cleanup (B8)
   - Open: froggeric v21.3 collapses tool-instruction bullets under trim_blocks (both engines) - fix decision pending
     - A 9-tag whitespace fix is verified cross-engine on a scratch copy; upstream report is the policy-clean path
+    - Online investigation 2026-08-08 (all 66 repo discussions grepped byte-exact): the bug is unreported - novel
+    - It is a v21.3 regression: the vulnerable split landed in the repo's last commit (2026-07-02); v21.2 was immune
+    - Qwen/unsloth official templates are immune by construction (single string literal); froggeric-only exposure
+    - Undiagnosed symptom threads #55/#56/#64 (broken tool calls "with v21.3") are consistent with this root cause
+    - Author pattern: bursty batch fixes, 5-week lull ongoing; best traction = detailed repro report (#43 precedent)
   - Decided 2026-08-08 (user): the #32 window clock does NOT restart at the 10326 re-cert; opened 2026-08-07 stands
   - Decided 2026-08-08 (user, "Q6 quants for 35B are now standard. no more others"): unsuffixed 35B aliases
     repointed q5 -> q6 in models.ini (claude-local follows automatically via its alias)
