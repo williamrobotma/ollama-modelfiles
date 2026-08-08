@@ -221,7 +221,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Held by user: OTEL body-log cleanup (B8)
   - Open: froggeric v21.3 collapses tool-instruction bullets under trim_blocks (both engines) - fix decision pending
     - A 9-tag whitespace fix is verified cross-engine on a scratch copy; upstream report is the policy-clean path
-  - Open: does the #32 window clock restart at the 10326 re-cert? (asked 2026-08-08)
+  - Decided 2026-08-08 (user): the #32 window clock does NOT restart at the 10326 re-cert; opened 2026-08-07 stands
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)
