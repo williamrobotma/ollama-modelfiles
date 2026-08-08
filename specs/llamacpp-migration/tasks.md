@@ -245,9 +245,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - GPU-window queue (gate closed 2026-08-08): diagnosis hammers (graphs-off; fa-off; optional 35B lane hammer)
     - Plus: 31B drafter load test; live probes (gate step 3) for both new instruct entries before first real use
     - Plus: per-build multi-system /v1/messages probe whenever the build moves
-  - Pending decision (found 2026-08-08, gate sweep): 4 merged_system GGUFs back 6 entries with no template override
-    - Those entries silently drop mid-conversation system messages on /v1/chat/completions (no error surfaces)
-    - Options: extend chat-template-file froggeric to the 6 entries (needs per-family validation) or accept + document
+  - Resolved 2026-08-08 (user): merged_system exposure accepted + documented (5 GGUFs / 7 entries post-reshape)
+    - Those entries would silently drop mid-conversation system messages on /v1/chat/completions (no error surfaces)
+    - No live exposure: the one multi-system client rides /v1/messages; OpenAI-endpoint clients send leading-only
+    - The gate's merged_system step flags future carriers at vetting; froggeric extension rejected as overengineering
   - claude-local subagent pinning documented in CLAUDE.md (B6a); wrapper change not taken
   - Held by user: OTEL body-log cleanup (B8)
   - Fixed 2026-08-08 (user "1"): the 9-tag whitespace patch is applied to the vendored template; render verified
