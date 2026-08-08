@@ -217,6 +217,13 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Full closure = upstream fix or local patch; neither taken; upstream report not filed (not authorized)
   - Build record: on-disk moved to 10326 (3653e6d6d, 2026-08-07); re-cert pending (crash matrix + froggeric pair)
     - GPU-gated; present-tense prose made version-free so it cannot restale
+    - Re-cert RAN 2026-08-08: 10326 FAILS the Qwen-MTP hammer - 2/30 gens crashed the child
+      (CUDA illegal memory access, ggml_backend_cuda_synchronize, ggml-cuda.cu:2499; 9860 was 30/30)
+    - Passed on 10326: Gemma 12B matrix 6/6 @200k, 26B 6/6 @131072, /v1/messages immunity,
+      froggeric patched-pair probes on both guarded GGUFs (no guard 400, tools block rendered)
+    - Throughput notes: 12B 99-110 tok/s (9860: 57-61); 26B 21.5-27.7 (9860: 39-42); hammer 108-123
+    - launch.sh record stays 9860 last-known-good (pins move on pass); disposition pending user decision
+    - Raw evidence: job scratch recert/ (router.log, 42 response JSONs); history log to follow disposition
   - claude-local subagent pinning documented in CLAUDE.md (B6a); wrapper change not taken
   - Held by user: OTEL body-log cleanup (B8)
   - Fixed 2026-08-08 (user "1"): the 9-tag whitespace patch is applied to the vendored template; render verified
