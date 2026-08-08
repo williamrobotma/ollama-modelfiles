@@ -5,7 +5,8 @@
 # CUDA graphs stays ON fleet-wide - never set GGML_CUDA_DISABLE_GRAPHS here (Gemma MTP needs graphs on).
 set -euo pipefail
 
-# Last known good: 9860 (fdb1db877). Rebuilds re-certify per the migration spec's rebuild rule (P1 log, 2026-08-03).
+# Build record: last known good 9860 (fdb1db877); on-disk moved to 10326 (3653e6d6d) 2026-08-07, re-cert pending.
+# Rebuilds re-certify per the migration spec's rebuild rule (crash matrix + froggeric pair; P1 log 2026-08-03).
 BIN=/home/wma/Developer/llama.cpp/build/bin/llama-server
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -18,10 +19,16 @@ mkdir -p "$LLAMA_CACHE"
 
 # SLEEP_IDLE_SECONDS=30 ./launch.sh for the sleep-idle smoke; default matches
 # Ollama's KEEP_ALIVE=24h. MODELS_MAX default 1: a lone resident child gets the
-# whole GPU (P3 pressure findings, 2026-08-07). Extra args pass through.
+# whole GPU (P3 pressure findings, 2026-08-07).
+# Extra args pass through, but they overlay EVERY preset entry (router CLI args
+# merge into each model's config) and cannot move the bind (trailing --host/--port wins).
+# --cors-origins localhost: only localhost-origin pages get CORS read access (browser-only mechanism;
+# non-browser clients send no Origin). POST /models still executes regardless of CORS or --api-key at
+# this build (path-only public-endpoint exemption upstream); the loopback bind is the real boundary.
 exec "$BIN" \
     --models-preset "$DIR/models.ini" \
     --sleep-idle-seconds "${SLEEP_IDLE_SECONDS:-86400}" \
     --models-max "${MODELS_MAX:-1}" \
+    --cors-origins localhost \
     "$@" \
     --host 127.0.0.1 --port 11433

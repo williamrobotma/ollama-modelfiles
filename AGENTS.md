@@ -5,8 +5,9 @@ Canonical, tooling-agnostic instructions for any coding agent working in this re
 ## What this repo is
 
 Local LLM serving config, organized by model family and use profile. There is no application code and no test suite.
-The live lane is stock llama.cpp (b9860) in router mode: `llamacpp/models.ini` + `launch.sh` on `127.0.0.1:11433`.
+The live lane is stock llama.cpp in router mode: `llamacpp/models.ini` + `launch.sh` on `127.0.0.1:11433`.
 The Ollama Modelfiles are the retired legacy build layer, frozen until the P4 purge (`specs/llamacpp-migration`).
+The 2026-07-27 fleet reduction already deleted 8 of them (a recorded spec supersede, not freeze drift).
 Every served GGUF is a pinned local Hugging Face cache snapshot referenced by absolute path.
 
 ## GGUF sourcing convention
@@ -21,7 +22,7 @@ Provision with `hf download ORG/REPO file.gguf`; reference absolute pinned snaps
 
 ## Modelfile layering and naming
 
-Served ids follow `<family>-<stem>`; families are `gemma4`, `qwen3.5`, `qwen3.6`, `qwopus3.5`.
+Served ids follow `<family>-<stem>`; families are `gemma4`, `qwen3.5`, `qwen3.6`.
 Ids and their aliases live in `llamacpp/models.ini`; thin unsuffixed aliases repoint defaults without renames.
 Do not rename models - Open WebUI's DB and claude-local reference them by name.
 Add-a-model procedure: [llamacpp/README.md](llamacpp/README.md).
@@ -47,7 +48,8 @@ Speculative decoding via a draft model - two different shapes:
   Wired via `model-draft =` plus `spec-type = draft-mtp`; measured 1.67x (12B) / 1.54x (26B) on the Ollama-era lane.
 
 History: Ollama's Gemma `DRAFT` lane crashed on-box while stock b9860 served the same pair at ~1.8x (2026-07-17 eval).
-Since 2026-08-07, llama-server with CUDA graphs ON is the serving lane for all MTP models (migration complete).
+Since 2026-08-07, llama-server with CUDA graphs ON is the serving lane for all MTP models.
+The client cutovers are complete; the P4 validation window and gated purge remain open in the spec's tasks.
 Graphs-off reproduces the #24795 drafter load failure (config-gated, not build-gated; still open upstream).
 The 26B pair pins its drafter to CPU (`spec-draft-ngl = 0`) against an upstream full-GPU loader crash.
 Crash matrix and caveats: [docs/history/2026-07-17-llamacpp-eval.md](docs/history/2026-07-17-llamacpp-eval.md).
@@ -86,10 +88,11 @@ Vetting (store-reported templates lie - Ollama's `ollama show --template` showed
    - Never cold-load onto a busy GPU; `-ngl 0` is fine.
 3. Per build: one multi-block-`system` request to `/v1/messages` (immunity check).
 
-Guarded fleet GGUFs as of 2026-07-23 ([evidence](docs/history/2026-07-23-chat-template-refresh.md)):
+Guarded fleet GGUFs ([gate evidence 2026-07-23](docs/history/2026-07-23-chat-template-refresh.md)):
 
-- unsloth Qwen3.5-9B non-MTP, OBLITERATUS-27B, Queen-27B, Qwopus3.5-9B-coder.
-- All validated under froggeric on b9860.
+- Current: unsloth Qwen3.5-9B non-MTP and Queen-27B, backing the 3 `chat-template-file` preset entries.
+  - OBLITERATUS-27B and Qwopus3.5-9B-coder left the fleet in the 2026-07-27 reduction.
+- Validated (template, build) pair: froggeric v21.3 on 9860; re-validate the pair when the build record moves.
 
 ## Keep-set policy
 
@@ -125,18 +128,17 @@ benchmarks/all.sh                 # all suites, sequential
 ```
 
 The runtime A/B spins up isolated alternate-port serves.
-All suites share ports `11435`/`11436`, so never run two suites concurrently (`all.sh` is sequential and safe).
+All suites share ports `11435`-`11438`, so never run two suites concurrently (`all.sh` is sequential and safe).
 The three Ollama suites target the retired lane (frozen harnesses); `llamacpp-parity` covers the live engine.
 Full detail, ports, and distilled findings: [docs/benchmarking.md](docs/benchmarking.md).
 
 ## Serving env constraints
 
-The live serve is `llamacpp/launch.sh`: llama-server b9860 router mode on `127.0.0.1:11433`.
+The live serve is `llamacpp/launch.sh`: llama-server router mode on `127.0.0.1:11433`.
 Defaults: `--models-max 1` (env `MODELS_MAX`), `--sleep-idle-seconds 86400` (env `SLEEP_IDLE_SECONDS`).
 Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike `/tmp`).
 
-- **`-fa on` and q8_0 KV must stay paired** (both live in the `[*]` block of `models.ini`): the quantized V-cache
-  hard-fails to load if flash attention resolves off.
+- **`-fa on` and q8_0 KV must stay paired** (`[*]` block): the quantized V-cache hard-fails without flash attention.
 - `ctx-size` is per-entry in `models.ini` and wins; nothing auto-shrinks on OOM (partial offload instead).
 - CUDA graphs run ON fleet-wide (P1-validated); never set `GGML_CUDA_DISABLE_GRAPHS` in the launcher env.
   - Children inherit the router env verbatim, and Gemma MTP needs graphs on.

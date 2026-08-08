@@ -69,6 +69,7 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 ## Phase 2 - full-fleet config home
 
 1. Fill the preset INI: 17 configs and 6 alias names (2026-07-27 fleet reduction).
+   - Amended 2026-08-08: 20 configs + 9 alias names since the 2026-08-07 q6 trio.
    - Every key sits under a `[section]` header: a top-level key silently becomes a phantom model named `default`
      (the upstream example's top-level `version = 1` does exactly this - do not copy it).
    - Full sampling flags per docs/parameters.md (GGUF metadata overrides any flag not set - eval log section 3).

@@ -55,7 +55,7 @@ Suite scope:
 - **9b-coders**: small coders that fit fully in 12 GB VRAM, benched against the `gemma4-12b-it-qat` baseline.
   - `qwen3.5-9b-coding-ud-q4-k-xl`
   - `qwen3.5-9b-mtp-coding` (self-draft variant)
-  - `qwopus3.5-9b-coder` (community finetune)
+  - `qwopus3.5-9b-coder` (community finetune; left the fleet in the 2026-07-27 reduction - this frozen row no longer resolves)
 
 ## Isolated serves and ports
 

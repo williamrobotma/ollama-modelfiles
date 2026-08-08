@@ -42,6 +42,8 @@ Evidence log: `docs/history/2026-07-25-llamacpp-preflight.md`. These refine the 
 
 - **Pin enforcement is mechanical, not documentary.** The launcher uses the absolute `build/bin/llama-server` path and
   asserts `--version` reports 9860 before starting.
+  - Amended 2026-08-08: the version assert was removed 2026-08-03 (tasks.md deviation, user).
+    - Per `specs/stack-upkeep`, the pin is a last-known-good record that moves forward when the named check passes.
   - Stale b9552 binaries at the llama.cpp repo root were deleted this session; router children spawn from the router's
     own executable, so launching the wrong one would silently run the whole fleet off-pin.
 - **Router mode cannot do per-model env.** Children inherit the router's environment verbatim, so CUDA graphs is a
@@ -76,6 +78,7 @@ Decided at the first execution session's review; these supersede the specific lo
   (3 configs + 1 alias), Qwopus (config + Jackrong repo), noctrex repo, 35B q4 MTP pair, and the non-MTP 35B lane
   are deleted now - Modelfiles, Ollama models, and HF cache (~89G) together. Queen-27B and the heretic pair stay.
   - Fleet becomes **17 configs + 6 alias names** (was 21 + 7).
+    - Amended 2026-08-08: the q6 trio (added 2026-08-07) makes it 20 configs + 9 alias names.
   - `35b-a3b-coding` alias repoints to `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` and is rebuilt under Ollama.
   - Guarded fleet drops to 2 GGUFs (unsloth 9B non-MTP, Queen-27B); froggeric applies to the 3 entries they back
     (Queen-27B backs both `queen-27b-*` configs - corrected 2026-07-28, was "two entries").
@@ -105,7 +108,7 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
 
 1. Phase 0 - router smokes on 11433 with a 3-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.
 2. Phase 1 - Gemma MTP ctx probe (ladder above known-stable 16k, crash matrix, graphs ON); Qwen-MTP graphs-on hammer.
-3. Phase 2 - full-fleet `llamacpp/` preset: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on guarded.
+3. Phase 2 - full-fleet preset: 17 configs + 6 aliases (now 20 + 9), full flags, mmproj, drafters, froggeric on guarded.
 4. Phase 3 - client cutovers: claude-local, Open WebUI, OpenCode, Codex, Pi (best-effort).
 5. Phase 4 - staged retirement: stop + disable, docs rewrite, validation window, gated purge + prune.
 

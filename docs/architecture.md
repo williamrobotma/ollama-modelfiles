@@ -22,11 +22,11 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
                                    |
                                    |  absolute snapshot paths in model = / model-draft = / mmproj =
                                    v
-              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (17 configs + 6 aliases)
+              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (20 configs + 9 aliases)
                                    |
                                    |  llamacpp/launch.sh -> llama-server --models-preset (router mode)
                                    v
-              router on 127.0.0.1:11433: stock llama.cpp b9860 (fdb1db877),
+              router on 127.0.0.1:11433: stock llama.cpp (build record in launch.sh),
               run from ~/Developer/llama.cpp/build/bin/llama-server
               one child llama-server per served id, spawned on demand
 

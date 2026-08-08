@@ -3,12 +3,13 @@
 Local LLM serving config for a single 12 GB GPU, organized by model family and use profile.
 The live lane is stock llama.cpp in router mode ([llamacpp/](llamacpp/README.md), port 11433).
 The Ollama Modelfiles are the retired legacy build layer, frozen on disk until the post-migration purge.
+The 2026-07-27 fleet reduction already deleted 8 of them (a recorded spec supersede, not freeze drift).
 Every served GGUF is a pinned Hugging Face cache snapshot (`hf download`; mostly [Unsloth](https://unsloth.ai) builds).
 Agents should read [AGENTS.md](AGENTS.md) first.
 
 ## Requirements
 
-- Stock llama.cpp built at the pinned rev b9860; [llamacpp/README.md](llamacpp/README.md) covers the rebuild rule.
+- A stock llama.cpp build; the build record and rebuild rule live in [llamacpp/README.md](llamacpp/README.md).
 - The Hugging Face CLI (`hf`, from `huggingface_hub`) to provision GGUFs.
 - An NVIDIA CUDA GPU. The reference box is an RTX 4070 (12 GB, WSL2); models larger than ~12 GB partial-offload to CPU. Use CUDA 13.1 or 13.3 - 13.2 corrupts Gemma 4 output.
 
@@ -34,66 +35,14 @@ The pinning convention and add-a-model procedure are in [llamacpp/README.md](lla
 
 ## Model catalog
 
-Model name = `<family>-<stem>`. Sizes are approximate on-disk sizes on the reference box (Ollama-era store figures).
+The served fleet is defined by `llamacpp/models.ini` - 20 configs + 9 alias names as of 2026-08-08.
+List the live ids with `curl -s 127.0.0.1:11433/v1/models`; each entry's serving profile lives in the INI itself.
+Families: Gemma 4 (thinking; vision via mmproj), Qwen 3.6 coders, Qwen 3.5 small coders, and an uncensored track.
 
-### Gemma 4 (thinking; vision via mmproj)
-
-| Model | Family | What it is | Quant | Size |
-|---|---|---|---|---|
-| `gemma4-12b-it-qat` | gemma4 | 12B IT QAT, thinking + vision, resident | UD-Q4_K_XL | 6.9 GB |
-| `gemma4-26b-a4b-it-qat` | gemma4 | 26B-A4B MoE IT QAT, thinking + vision | UD-Q4_K_XL | 15 GB |
-| `gemma4-26b-a4b-it-qat-mtp` | gemma4 | 26B-A4B + separate MTP drafter | UD-Q4_K_XL | 15 GB |
-| `gemma4-31b-it-qat` | gemma4 | 31B dense IT QAT, thinking + vision, offloads | UD-Q4_K_XL | 18 GB |
-
-### Qwen 3.6 coders (precise coding)
-
-| Model | Family | What it is | Quant | Size |
-|---|---|---|---|---|
-| `qwen3.6-27b-coding-ud-q4-k-xl` | qwen3.6 | 27B dense precise coding | UD-Q4_K_XL | 18 GB |
-| `qwen3.6-27b-mtp-coding-ud-q4-k-xl` | qwen3.6 | 27B MTP self-draft coding | UD-Q4_K_XL | 18 GB |
-| `qwen3.6-35b-a3b-coding-ud-q4-k-xl` | qwen3.6 | 35B-A3B MoE precise coding | UD-Q4_K_XL | 23 GB |
-| `qwen3.6-35b-a3b-mtp-ud-q4-k-xl` | qwen3.6 | 35B-A3B MTP base (instruct profile) | UD-Q4_K_XL | 23 GB |
-| `qwen3.6-35b-a3b-mtp-ud-q5-k-xl` | qwen3.6 | 35B-A3B MTP base (instruct profile) | UD-Q5_K_XL | 28 GB |
-| `qwen3.6-35b-a3b-mtp-coding-ud-q4-k-xl` | qwen3.6 | 35B-A3B MTP coding profile | UD-Q4_K_XL | 23 GB |
-| `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` | qwen3.6 | 35B-A3B MTP coding profile | UD-Q5_K_XL | 28 GB |
-| `qwen3.6-35b-a3b-mtp-reasoning-ud-q5-k-xl` | qwen3.6 | 35B-A3B MTP reasoning profile | UD-Q5_K_XL | 28 GB |
-
-### Small coders (fit 12 GB VRAM)
-
-Qwen 3.6's smallest GGUF is 27B (offloads), so these use the Qwen 3.5 dense line, which fits fully resident and runs the same precise-coding profile.
-
-| Model | Family | What it is | Quant | Size |
-|---|---|---|---|---|
-| `qwen3.5-9b-coding-ud-q4-k-xl` | qwen3.5 | 9B precise coding, resident | UD-Q4_K_XL | 6.9 GB |
-| `qwen3.5-9b-mtp-coding-ud-q4-k-xl` | qwen3.5 | 9B MTP self-draft coding | UD-Q4_K_XL | 7.1 GB |
-| `qwopus3.5-9b-coder-q4-k-m` | qwopus3.5 | Community Qwen3.5-9B finetune (experimental), coding | Q4_K_M | 6.6 GB |
-| `qwen3.5-queen-27b-coding-q4-k-m` | qwen3.5 | Queen-27B community model, coding (verify claims; gate 2026-07-23: guarded, serve OpenAI clients with froggeric) | i1-Q4_K_M | 16 GB |
-
-### Uncensored (reasoning / research / agentic track)
-
-Community abliterated builds (plain Q4/i1-Q4, not UD-*). Abliteration can dent reasoning/tool-calling - verify on-task; all must pass the [chat-template gate](AGENTS.md#chat-template-gate-for-community-ggufs).
-
-| Model | Family | What it is | Quant | Size |
-|---|---|---|---|---|
-| `gemma4-12b-it-obliterated` | gemma4 | Uncensored 12B (OBLITERATUS CoT-aware), resident thinking | Q4_K_M | 7.4 GB |
-| `gemma4-26b-a4b-it-heretic-i1-q4-k-m` | gemma4 | Uncensored 26B-A4B MoE (Heretic/ARA), reasoning daily driver, offload | i1-Q4_K_M | 16 GB |
-| `gemma4-31b-it-heretic-i1-q4-k-m` | gemma4 | Uncensored 31B dense (Heretic), offload | i1-Q4_K_M | 18 GB |
-| `qwen3.6-27b-obliterated-q4-k-m` | qwen3.6 | Uncensored 27B (OBLITERATUS), general/thinking | Q4_K_M | 16 GB |
-| `qwen3.6-27b-obliterated-coding-q4-k-m` | qwen3.6 | Uncensored 27B (OBLITERATUS), precise coding | Q4_K_M | 16 GB |
-
-### Compatibility aliases
-
-Thin one-line Modelfiles that repoint an unsuffixed default at the current canonical quant, so model names stay stable when the default changes.
-
-| Alias | Current target |
-|---|---|
-| `qwen3.6-27b-coding` | `qwen3.6-27b-coding-ud-q4-k-xl` |
-| `qwen3.6-27b-mtp-coding` | `qwen3.6-27b-mtp-coding-ud-q4-k-xl` |
-| `qwen3.6-35b-a3b-coding` | `qwen3.6-35b-a3b-coding-ud-q4-k-xl` |
-| `qwen3.6-35b-a3b-mtp-coding` | `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` |
-| `qwen3.6-35b-a3b-mtp-reasoning` | `qwen3.6-35b-a3b-mtp-reasoning-ud-q5-k-xl` |
-| `qwen3.6-27b-obliterated-coding` | `qwen3.6-27b-obliterated-coding-q4-k-m` |
-| `qwen3.5-9b-mtp-coding` | `qwen3.5-9b-mtp-coding-ud-q4-k-xl` |
+- Small coders: Qwen 3.6's smallest GGUF is 27B (offloads), so the resident coding line is Qwen 3.5 dense.
+- Uncensored: community abliterated builds (plain Q4/i1-Q4, not UD-*); abliteration can dent reasoning/tool-calling.
+  - Verify on-task; all must pass the [chat-template gate](AGENTS.md#chat-template-gate-for-community-ggufs).
+- Aliases (`alias =` keys in the INI) keep unsuffixed default names stable when the canonical quant changes.
 
 ### Roadmap
 

@@ -24,7 +24,7 @@ Evidence logs:
   - To change a setting later, use the Admin UI, not env.
 - Verified DB state (2026-08-07): OpenAI connection to `http://127.0.0.1:11433/v1`; Ollama connection disabled.
   - Connection is external, bearer auth with a dummy key, no model filter, no passthrough params.
-- The picker shows the 17 canonical router ids plus Open WebUI's own built-in "Arena Model".
+- The picker shows the canonical router ids (20 as of 2026-08-08) plus Open WebUI's own built-in "Arena Model".
 
 ## Connection: OpenAI-compat at 11433, not native Ollama (inverted from the old guidance)
 

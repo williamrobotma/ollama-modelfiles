@@ -85,7 +85,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 - [x] froggeric template pinned into `llamacpp/templates/`
   - Done at P0; sha256 `d203f334...` re-verified at P2
 - [x] `llamacpp/README.md`: layout, alias policy, add-a-model procedure
-- [x] Name-parity check against `ollama list`; 3 spot-loads verified via `/props`
+- [x] Name-parity check against `ollama list`; spot-loads verified via `/props` (4 ran)
   - Parity EXACT 2026-08-03: 17 ids + 6 aliases == the 23 `ollama list` names
   - Heretic templates extracted offline 2026-08-03 (review-sweep M8): zero `raise_exception` in either GGUF
   - Spot-loads 2026-08-04: 4/4 PASS (31b-mtp, queen-27b-coding, 35b-a3b-mtp-coding, 26b-heretic carrying the probe)
@@ -208,6 +208,20 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - The silent Responses tool-drop folded into architecture.md + openwebui.md; openwebui.md guidance inverted
   - benchmarking.md pending action replaced by the graphs-ON stance with P1 evidence
   - launch.sh pin documented as record-not-assertion (reconciles the spec's pin-enforcement wording)
+- [x] PR #15 review response (2026-08-08): merge-gating comments addressed
+  - Applied: README catalog tables deleted (root-cause de-drift); live counts corrected to 20 configs + 9 aliases
+  - Spec-class lock lifted by user: spec.md/plan.md carry dated amendments (counts; pin-assert superseded note)
+  - q6 aliases reshaped per user: self-identical names dropped; reasoning gains qwen3.6-35b-a3b-reasoning-ud-q6-k
+  - launch.sh: --cors-origins localhost added (user picked B4a); overlay/bind comments; build record updated
+    - Finding: POST /models executes regardless of CORS or --api-key at 10326 (path-only public-endpoint exemption)
+    - Full closure = upstream fix or local patch; neither taken; upstream report not filed (not authorized)
+  - Build record: on-disk moved to 10326 (3653e6d6d, 2026-08-07); re-cert pending (crash matrix + froggeric pair)
+    - GPU-gated; present-tense prose made version-free so it cannot restale
+  - claude-local subagent pinning documented in CLAUDE.md (B6a); wrapper change not taken
+  - Held by user: OTEL body-log cleanup (B8)
+  - Open: froggeric v21.3 collapses tool-instruction bullets under trim_blocks (both engines) - fix decision pending
+    - A 9-tag whitespace fix is verified cross-engine on a scratch copy; upstream report is the policy-clean path
+  - Open: does the #32 window clock restart at the 10326 re-cert? (asked 2026-08-08)
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)

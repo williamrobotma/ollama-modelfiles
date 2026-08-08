@@ -5,7 +5,7 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
 
 ## Layout
 
-- `launch.sh` - launcher: absolute `build/bin` path, `LLAMA_CACHE` redirect, last-known-good pin `9860 (fdb1db877)`
+- `launch.sh` - launcher: absolute `build/bin` path, `LLAMA_CACHE` redirect, and the build record (last known good)
 - `models.ini` - the fleet, one `[section]` per config
 - `templates/` - froggeric v21.3 `chat_template.jinja` for guarded GGUFs (provenance in `templates/README.md`)
 

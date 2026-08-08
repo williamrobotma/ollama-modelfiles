@@ -1,6 +1,7 @@
 # Parameter reference
 
-Single authoritative home for the sampling profiles used across the Modelfiles. README and AGENTS.md link here instead of duplicating the tables.
+Single authoritative home for the sampling profiles served across the fleet.
+README and AGENTS.md link here instead of duplicating the tables.
 
 Every value is verified against the official sources before it goes into a Modelfile:
 
@@ -133,4 +134,8 @@ Under Ollama they came from the service env; `llamacpp/models.ini` hoists them f
 
 ## DiffusionGemma
 
-DiffusionGemma uses discrete block diffusion, not autoregressive token generation. It denoises 256-token canvases iteratively. Standard autoregressive parameters (temperature, top_k, top_p) are explicitly insufficient - the model needs a diffusion sampler with a temperature schedule (0.8 -> 0.4 decay) and entropy-bound adaptive stopping. See the DiffusionGemma docs linked above.
+DiffusionGemma uses discrete block diffusion, not autoregressive token generation.
+It denoises 256-token canvases iteratively.
+Standard autoregressive parameters (temperature, top_k, top_p) are explicitly insufficient.
+The model needs a diffusion sampler with a temperature schedule (0.8 -> 0.4 decay) and entropy-bound stopping.
+See the DiffusionGemma docs linked above.
