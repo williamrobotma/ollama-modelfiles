@@ -276,6 +276,9 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - GPU-window queue (gate closed 2026-08-08): diagnosis hammers (graphs-off; fa-off; optional 35B lane hammer)
     - Plus: 31B drafter load test; live probes (gate step 3) for both new instruct entries before first real use
     - Plus: per-build multi-system /v1/messages probe whenever the build moves
+    - Gate reopened 2026-08-08 evening; batch ran Stage 1 (default-config crash repro) + Stage 2 (fa-off)
+    - Gate RECLOSED 2026-08-08 (user, "stop at next checkpoint"): stages still owed at next window:
+      graphs-off discriminator, 35B large-ctx bound, 31B drafter load test, both instruct-entry live probes
   - Resolved 2026-08-08 (user): merged_system exposure accepted + documented (5 GGUFs / 7 entries post-reshape)
     - Those entries would silently drop mid-conversation system messages on /v1/chat/completions (no error surfaces)
     - No live exposure: the one multi-system client rides /v1/messages; OpenAI-endpoint clients send leading-only
