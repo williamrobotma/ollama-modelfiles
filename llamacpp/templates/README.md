@@ -12,7 +12,8 @@
   - Validated pairs, keyed by file sha256 (shas above):
     - Upstream v21.3 (unpatched) on b9860: validated 2026-07-23 (`docs/history/2026-07-23-chat-template-refresh.md`).
     - Vendored patched file on build 10326: probes PASSED 2026-08-08.
-      - Multi-system `/v1/chat/completions` answered on both guarded GGUFs, no guard 400; tool block rendered live.
+      - Multi-system `/v1/chat/completions`: 200 + no guard 400 on both guarded GGUFs; the 9B answered in content.
+      - Queen spent its 32-token cap inside reasoning (empty content): a status-level pass, not visible text.
       - The same-day 10326 re-cert FAILED on an unrelated Qwen-MTP crash; the build record stays 9860.
       - Whether this becomes the served pair follows the build disposition, not this probe.
     - Re-validate whichever pair is live whenever the build record moves.

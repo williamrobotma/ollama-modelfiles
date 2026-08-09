@@ -84,6 +84,7 @@ Standing rule: serve guarded Qwen GGUFs to OpenAI-style clients under a guard-fr
 Vetting (store-reported templates lie - Ollama's `ollama show --template` showed one that never ran):
 
 1. Per GGUF: `head -c 30000000 <file>.gguf | grep -ac 'System message must be at the beginning'`.
+   - The greps certify the first 30 MB only; template strings sit in the GGUF header well inside that (fleet-verified).
 2. Per GGUF: `head -c 30000000 <file>.gguf | grep -ac 'merged_system'`.
    - Hazard: a hit means silent drops, not a 400 - it never shows up as an error.
 3. Per GGUF: one non-first-`system` request to `/v1/chat/completions` - 400 = guarded.

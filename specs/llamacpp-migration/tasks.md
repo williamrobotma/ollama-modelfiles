@@ -220,7 +220,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Re-cert RAN 2026-08-08: 10326 FAILS the Qwen-MTP hammer - 2/30 gens crashed the child
       (CUDA illegal memory access, ggml_backend_cuda_synchronize, ggml-cuda.cu:2499; 9860 was 30/30)
     - Passed on 10326: Gemma 12B matrix 6/6 @200k, 26B 6/6 @131072, /v1/messages immunity,
-      froggeric patched-pair probes on both guarded GGUFs (no guard 400, tools block rendered)
+      froggeric patched-pair probes on both guarded GGUFs (200, no guard 400; Queen reply was reasoning-only)
     - Throughput notes: 12B 99-110 tok/s (9860: 57-61); 26B 21.5-27.7 (9860: 39-42); hammer 108-123
     - launch.sh record stays 9860 last-known-good (pins move on pass); disposition pending user decision
     - Raw evidence: job scratch recert/ (router.log, 42 response JSONs); history log to follow disposition
@@ -232,11 +232,20 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - 9860-revert caveat (search agent): 30/30 clean is ~11% by luck at a true 7%/run; blamed design predates 9860
       - Live-use finding 2026-08-08 (user's 19:26 router, 10326): gemma4-12b-it-qat-mtp crash-looped under claude-local
         - 13 CUDA illegal-memory crashes / 15 spawns in 35 min; same synchronize:2499 signature as the failed hammer
-        - Each respawn re-prefills the ~88k-token session (~40 s), then dies: large-ctx-linked, near-deterministic
+        - Each respawn re-prefills the ~88k-token session (48-54 s measured), then dies: large-ctx, near-deterministic
         - Strengthens the #26609 match (fa path, model-agnostic); the matrix's ~1k-prompt shape missed this exposure
         - Corrected 2026-08-08 (user): 9860 has NO sustained live mileage - the window opened the day the build moved
         - 9860's actual record: small-n validations (7/7 @16k; 36/36 ladder at 800-token gens; 30/30 hammer)
-          plus one recorded 200k illegal-memory crash (2026-07-17 eval 2b, pre-repin): revert = experiment, not fix
+          plus one recorded 200k illegal-memory crash (2026-07-17 eval 2b graphs-ON cell, pre-repin): revert = experiment
+      - Post-mortem audit 2026-08-08 (1 opus + 2 sonnet, adversarial): provenance + sweep + correction re-verify
+        - Provenance: plan.md:124 / tasks.md "~2 weeks daily use" (future-tense policy) read as past evidence
+        - Fused with P1 "zero crashes" (Gemma 36/36) and "30/30 clean" (QWEN - cross-model conflation to Gemma)
+        - "crash-free" appears nowhere in the sources - coined at write time; eval log's "daily-driving" fed "daily"
+        - The claim explicitly overrode the adjacent recorded caveat ("outweighs") - assertion, not proximity confusion
+        - Sweep of 14 commits: 15 confirmed, 2 OVERSTATED (Queen "answered" / tool-render), 4 refuted, 3 unverifiable
+        - Fixed on audit: Queen probe wording, parameters.md dual-override, 40s -> 48-54s, graphs-ON cell qualifier
+        - State moved post-record: all 15 pre-kill spawns crashed (14 illegal-memory + 1 misaligned); a 16th survived
+        - Direction-of-error note: every soft spot leaned toward making 9860 look cleaner than its record
       - Decided 2026-08-08 (user): downgrading is NOT an option - the current on-disk build is canonical, always
         - Mitigation must be config-side or upstream-forward; the last-known-good record stays a record only
   - Decided 2026-08-08 (user): B6 deferral revoked - "the wrapper change MUST be taken"; fix applied same day
