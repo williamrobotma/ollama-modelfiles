@@ -279,6 +279,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Gate reopened 2026-08-08 evening; batch ran Stage 1 (default-config crash repro) + Stage 2 (fa-off)
     - Gate RECLOSED 2026-08-08 (user, "stop at next checkpoint"): stages still owed at next window:
       graphs-off discriminator, 35B large-ctx bound, 31B drafter load test, both instruct-entry live probes
+    - Batch results (verified at artifacts): Stage 1 default config fresh-prefill crash 1/2 (:2499, n_decoded=1051)
+    - Stage 2 (fa off + f16 KV + ctx 131k): 1/1 clean past the crash point; prefill ~5x slower, decode ~25x slower
+      - Confound: three variables in the overlay; graphs stayed ON (reused 758); consistent with #26609, not proof
+    - Full evidence log: docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md (re-cert, loop, diagnosis)
   - Resolved 2026-08-08 (user): merged_system exposure accepted + documented (5 GGUFs / 7 entries post-reshape)
     - Those entries would silently drop mid-conversation system messages on /v1/chat/completions (no error surfaces)
     - No live exposure: the one multi-system client rides /v1/messages; OpenAI-endpoint clients send leading-only
