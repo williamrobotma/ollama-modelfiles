@@ -266,7 +266,8 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - Re-verified via stub + pty: menu pick, Enter-reuse, non-TTY reuse note, out-of-range abort, passthrough
       - Simplify review (opus) applied 2026-08-08: decimal 10# index (fixes octal 08/09), off-list picks launch
         visibly but are not persisted, empty-ini guard, EOF aborts, escape hatch documented in fn + CLAUDE.md
-        - Menu ordering left grouped (canonical ids then aliases); interleaved variant offered, user preference open
+        - Menu ordering resolved 2026-08-09 (user, "why not just a simple sort"): LC_ALL=C sort over ids + aliases
+          - Simplest of the three (no file-order dependency) and lands each alias beside its canonical for free
         - Reviewer note: stub/pty-verified only so far; one real interactive + one non-TTY run still owed live
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
