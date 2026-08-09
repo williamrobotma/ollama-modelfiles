@@ -69,7 +69,41 @@ error and its cause are kept in section 6 because the failure mode is the reusab
   at raised verbosity), an unconfounded `-fa on`/`-fa off` pair at fixed ctx and KV type, a no-MTP control on the same
   prompt, and multi-trial repeats of every n=1 above.
 
-## 6. Method failures worth keeping (both mine, both same-day)
+## 6. Isolation batch (2026-08-09): MTP is the trigger; CUDA graphs are not
+
+Design: identical model (`gemma4-12b-it-qat-mtp` unless noted), identical 81,163-token prompt, `max_tokens` 1600,
+five fresh trials per arm, one variable changed per arm. Freshness enforced per trial (see the cache note below).
+
+- Marker control first (this is what the previous batch lacked): with `GGML_CUDA_DISABLE_GRAPHS` unset the log carries
+  `ggml_backend_cuda_graph_compute: CUDA graph warmup complete`; with it set, zero such lines. The env provably works.
+
+| Arm | Crashes / fresh trials | Crash lines in log |
+|---|---|---|
+| Baseline (default config) | 4/5 | 10 |
+| CUDA graphs off | 2/5 | 4 |
+| **No MTP** (`gemma4-12b-it-qat`, same GGUF, no `spec-type`) | **0/5** | **0** |
+| flash-attn on (ctx 131072, f16 KV) | 1/3 | 2 |
+| flash-attn off (ctx 131072, f16 KV) | 0/2 | 0 |
+
+- **Removing MTP stops it**: 4/5 -> 0/5 against the same-session baseline, Fisher exact two-tailed **p = 0.048**.
+  - The no-MTP arm is the same GGUF served without `spec-type`/`model-draft` (it does carry `mmproj`, the one other diff).
+  - This matches upstream #26782 (same model, same flag, HIP backend); ours is the CUDA-side confirmation that thread lacks.
+- **CUDA graphs are not the mechanism here**: 4/5 -> 2/5 is not significant (Fisher exact two-tailed p = 0.50).
+  - Both graphs-off crashes carried the identical signature, so graphs-off is at best a partial mitigant.
+  - That is evidence against #26558's theory as applied to this crash, not against #26558 itself (different regime).
+- flash-attn arms are too small to conclude, and fa-off runs ~17x slower, which itself lowers exposure to a timing race.
+  - One fa-on crash reported `misaligned address` rather than `illegal memory access` at the same function - possibly a
+    second fault mode, not distinguishable from this data.
+- Crash timing widened: crashes landed at n_decoded 0 (prefill->decode boundary), ~403, ~609, and ~1517, not just the
+  earlier 981-1391 window. Several landed exactly at the boundary.
+- Baseline rate escalated to 80% here from the earlier 1/3. Unexplained; the agent's hypothesis is repeated
+  load/unload cycling within one router session. It applies equally to every arm, so cross-arm comparison holds.
+- **Methodological finding**: `"cache_prompt": false` is silently ignored on `/v1/messages` at this build - a resent
+  prompt still reported `cache_read_input_tokens` > 0 with `selected slot by LCP similarity, f_sim_best=1.000`.
+  - Freshness had to be forced with `POST /models/unload` between trials, verified per trial in the log.
+  - Any future trial counting must verify freshness from the log, never from the request flag.
+
+## 7. Method failures worth keeping (both mine, both same-day)
 
 - **A truncated grep cannot prove absence.** The "removed upstream" claim came from `grep -rn ... | head -8`, whose
   output filled with unrelated `USE_CUDA_GRAPH` hits before reaching the single real match in `common.cuh`.

@@ -295,6 +295,14 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Our crash is a third thing: #26609 has no MTP; #26558 is a different error under KV saturation on a 0.8B
     - Best target is #26782 (2026-08-09: same Gemma model + draft-mtp, HIP backend, crashes in prefill, survives -fa off)
     - Gate before filing: one single-variable toggle that stops it, plus the b9860 known-good re-run on the Gemma config
+  - Isolation batch 2026-08-09 (5 fresh trials/arm, one variable each): MTP IS THE TRIGGER; graphs are not
+    - Baseline 4/5 crashed; no-MTP (same GGUF, no spec-type) 0/5 with zero crash lines - Fisher exact p = 0.048
+    - CUDA graphs off: 2/5, not significant (p = 0.50); same crash signature both times - partial mitigant at best
+    - Marker control ran first: graphs env provably effective (CUDA graph warmup lines present unset, absent when set)
+    - flash-attn arms inconclusive (1/3 on, 0/2 off); one fa-on crash said "misaligned address" - possible 2nd fault mode
+    - Gotcha recorded: "cache_prompt": false is silently ignored on /v1/messages; force freshness via POST /models/unload
+    - Filing gate is now MET (a single variable stops it); best target #26782, owner writes it - AI-written posts banned
+    - Still owed for a strong report: b9860 known-good re-run on THIS Gemma config, and a compute-sanitizer trace
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch
