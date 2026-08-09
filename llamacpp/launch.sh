@@ -6,7 +6,8 @@
 # The var lives at ggml-cuda/common.cuh:1258 and tests presence only, so even =0 disables graphs.
 set -euo pipefail
 
-# Build record: last known good 9860 (fdb1db877); on-disk 10326 (3653e6d6d) FAILED re-cert 2026-08-08 (tasks.md).
+# Build record: on-disk 10335 (74ce15741) since 2026-08-09, re-cert pending. 10326 (3653e6d6d) FAILED re-cert
+# 2026-08-08 (crash matrix; tasks.md), and 10335 carries no fix for it - 9 commits, none touching MTP or CUDA graphs.
 # Decided 2026-08-08 (user): the on-disk build is canonical - downgrades are never an option; serve it as-is.
 # Rebuilds re-certify per the migration spec's rebuild rule (crash matrix + froggeric pair; P1 log 2026-08-03).
 BIN=/home/wma/Developer/llama.cpp/build/bin/llama-server

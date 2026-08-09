@@ -302,7 +302,13 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - flash-attn arms inconclusive (1/3 on, 0/2 off); one fa-on crash said "misaligned address" - possible 2nd fault mode
     - Gotcha recorded: "cache_prompt": false is silently ignored on /v1/messages; force freshness via POST /models/unload
     - Filing gate is now MET (a single variable stops it); best target #26782, owner writes it - AI-written posts banned
-    - Still owed for a strong report: b9860 known-good re-run on THIS Gemma config, and a compute-sanitizer trace
+    - Still owed for a strong report: a compute-sanitizer trace (b9860 re-run dropped - user: "dead and bygone")
+    - Dossier for the human-written report: docs/history/2026-08-09-mtp-crash-report-dossier.md
+  - Build moved 2026-08-09 (user rebuilt): on-disk is now 10335 (74ce15741); 10326 evidence is build-scoped
+    - 9 commits past 10326; only 2 touch CUDA (26767 rms_norm+rope fusion, 26731 cpy launch counts), none touch
+      MTP, speculative, or CUDA graphs - so no fix for the crash is expected, and #26782 is still open unfixed
+    - 26767 is a new fusion path, so it is a fresh variable for the crash matrix rather than a neutral bump
+    - Re-cert owed on 10335 per the rebuild rule (GPU-gated); re-running one MTP crash arm would re-scope the evidence
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch
