@@ -230,6 +230,11 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - #26558 (OPEN, unlabeled): draft-mtp, CUDA-graphs cache-corruption theory; GGML_CUDA_DISABLE_GRAPHS=1 soaks clean
       - Tip b10327 = unrelated cpy launch fix; constraints: graphs-off breaks Gemma MTP, fa-off breaks q8_0 V-cache
       - 9860-revert caveat (search agent): 30/30 clean is ~11% by luck at a true 7%/run; blamed design predates 9860
+      - Live-use finding 2026-08-08 (user's 19:26 router, 10326): gemma4-12b-it-qat-mtp crash-looped under claude-local
+        - 13 CUDA illegal-memory crashes / 15 spawns in 35 min; same synchronize:2499 signature as the failed hammer
+        - Each respawn re-prefills the ~88k-token session (~40 s), then dies: large-ctx-linked, near-deterministic
+        - Strengthens the #26609 match (fa path, model-agnostic); the matrix's ~1k-prompt shape missed this exposure
+        - 9860's weeks of crash-free live Gemma MTP mileage now outweighs the small-n luck caveat above
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch
