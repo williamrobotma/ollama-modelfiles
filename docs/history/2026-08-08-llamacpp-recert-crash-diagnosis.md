@@ -40,7 +40,26 @@ Repro asset: 340,916-byte synthetic prompt, server-tokenized to 81,163 tokens. M
   - CUDA graphs stayed active under the overlay (`graphs reused = 758`), so the graphs mechanism was not perturbed.
   - Confound: the overlay changed FA + KV dtype + ctx together; offload state unverified (no layer lines at this verbosity).
 - Verdict so far: consistent with #26609 (flash-attn path), NOT a confirmed isolation; #26558 (graphs) entirely untested.
-- Not run (owed at the next GPU window): graphs-off discriminator, 35B large-ctx lane bound, 31B drafter load test, live probes for the two new instruct entries.
+
+## 5. Second batch (2026-08-09, post-rename): the graphs discriminator cannot be run on this build
+
+- `GGML_CUDA_DISABLE_GRAPHS` no longer exists in llama.cpp at `3653e6d6d`: no such `getenv` in `ggml/src/ggml-cuda/`.
+  - Graphs are compile-time (`GGML_CUDA_GRAPHS`, ON in this build's CMakeCache) and always on for Volta+ at runtime.
+  - `GGML_CUDA_GRAPH_OPT=1` (ggml-cuda.cu:4215) is a separate extra optimization pass, default off - not a disable switch.
+  - So the repo's graphs-off contingency, and upstream #26558's documented workaround, are both unavailable here.
+- Consequence: the "graphs-off" stage ran with graphs ON (log showed `graphs reused` 741/1526/2375, the graphs-on range).
+  - It is therefore not a discriminator, just a third fresh-prefill trial on the default config - which did not crash.
+  - Default-config fresh-prefill record across both batches: 1 crash in 3 trials.
+  - The mechanism question (#26558 graphs vs #26609 flash-attn) stays open; testing graphs-off now needs a rebuild.
+- Prefix-cache caveat: re-sending an identical prompt to the single-slot router serves from KV cache (`cache_n` ~= prompt).
+  - Only `cache_n: 0` requests count as trials; use varied prompts or `cache_prompt: false` for repeat trials.
+- 35B daily lane (`qwen3.6-35b-a3b-mtp-coding`, default config): 1 fresh 81,695-token prefill + 1 cached, 0 crashes.
+  - Prefill 198.5 tok/s, decode 25.2 tok/s, draft acceptance 0.733, VRAM 11026 MiB. No exposure observed (n=1 fresh).
+- 31B drafter load test (`gemma4-31b-it-qat-mtp`, no `spec-draft-ngl` pin): PASS - loaded and generated, VRAM 11186 MiB.
+  - The 26B sibling's NaN-split loader crash did not reproduce here; n=1, so the pin question stays open on evidence.
+- Instruct-entry gate probes after the rename: `qwen3.6-27b` and `qwen3.6-35b-a3b` both HTTP 200, no guard error text.
+  - Both answered "OK." in one word, consistent with the mid-conversation system message surviving `merged_system`; n=1 each.
+- Still owed: a real graphs-off discriminator (rebuild with `-DGGML_CUDA_GRAPHS=OFF`), and multi-trial repeats of all of the above.
 
 ## Provenance and validity
 

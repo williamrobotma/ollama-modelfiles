@@ -278,6 +278,15 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Swept: models.ini, OpenCode, Codex catalog + default, AGENTS.md, llamacpp/README.md, docs, pending specs
     - Frozen harnesses left as-is (benchmarks matrices hold retired Ollama names; Modelfiles stay frozen)
     - Open WebUI: 3 live names in stored chats break on resume (the DB already held 5 dead names pre-rename)
+  - GPU batch 2 ran 2026-08-09 on the renamed fleet; results in the 2026-08-08 history log (section 5)
+    - KEY FINDING: GGML_CUDA_DISABLE_GRAPHS is inert on 10326 (removed upstream); graphs are compile-time only
+      - The intended graphs-off stage therefore ran graphs-ON; it is not a discriminator, just a 3rd clean trial
+      - Default-config fresh-prefill record is now 1 crash / 3 trials; mechanism (#26558 vs #26609) still open
+      - Repo docs promising a graphs-off escape hatch corrected (AGENTS.md, launch.sh, architecture, benchmarking)
+    - 35B daily lane: 1 fresh 81,695-token prefill clean, 25.2 tok/s, acceptance 0.733 (n=1, no exposure observed)
+    - 31B drafter load: PASS without the 26B's spec-draft-ngl pin (n=1; pin question stays open on evidence)
+    - Instruct-entry gate probes post-rename: qwen3.6-27b and qwen3.6-35b-a3b both 200, no guard error, one-word replies
+    - Owed: real graphs-off discriminator needs a rebuild (-DGGML_CUDA_GRAPHS=OFF); repeat trials for every n=1 above
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch

@@ -106,7 +106,8 @@ QWEN (self-contained)                      GEMMA (target + drafter)
 
   BOTH now run as router children on stock llama.cpp, CUDA graphs ON fleet-wide.
   #24795 is config-gated, not build-gated: graphs-OFF reproduces the Gemma drafter
-  load failure, graphs-ON serves it. Never set GGML_CUDA_DISABLE_GRAPHS on this lane.
+  load failure, graphs-ON serves it. GGML_CUDA_DISABLE_GRAPHS is inert on the current
+  build (removed upstream); graphs are compile-time, so graphs-off needs a rebuild.
   P1 (2026-08-03): 36/36 gens across the 12B ctx ladder, 30/30 on the Qwen hammer, 0 crashes.
   26B-A4B exception: its drafter is pinned to CPU (spec-draft-ngl = 0, 241 MiB) because a
   full GPU reports free=0 -> NaN layer split -> devices.at(1) throws

@@ -106,6 +106,8 @@ Distilled from the evidence logs; follow the links for the primary-source detail
   - Reproduced with a 30-run hammer.
   - See [history/2026-07-01-mtp-graphs-crash.md](history/2026-07-01-mtp-graphs-crash.md).
 - Ollama-era decision (retired): kept `GGML_CUDA_DISABLE_GRAPHS=1` serve-wide to dodge the MTP crash above.
+  - That env var is inert on the current llama.cpp build (removed upstream), so the Ollama suites' graphs-off
+    profile no longer does anything on the live engine; graphs-off now requires a rebuild.
   - See [history/2026-07-01-mtp-graphs-crash.md](history/2026-07-01-mtp-graphs-crash.md).
 - Current stance (llama-server lane): CUDA graphs run ON fleet-wide, deliberately.
   - Validated in Phase 1 of specs/llamacpp-migration (2026-08-03).

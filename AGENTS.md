@@ -154,7 +154,10 @@ Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike
 
 - **`-fa on` and q8_0 KV must stay paired** (`[*]` block): the quantized V-cache hard-fails without flash attention.
 - `ctx-size` is per-entry in `models.ini` and wins; nothing auto-shrinks on OOM (partial offload instead).
-- CUDA graphs run ON fleet-wide (P1-validated); never set `GGML_CUDA_DISABLE_GRAPHS` in the launcher env.
+- CUDA graphs run ON fleet-wide (P1-validated), and on the current build there is no way to turn them off at runtime.
+  - `GGML_CUDA_DISABLE_GRAPHS` was removed upstream: setting it is inert, and a run under it is still a graphs-ON run.
+  - Graphs are compile-time now (`GGML_CUDA_GRAPHS`, ON in this build); `GGML_CUDA_GRAPH_OPT=1` is a separate extra pass.
+  - Verified 2026-08-09 at `3653e6d6d`: `ggml-cuda.cu` has no such getenv, and a run "with" it logged graphs reused.
   - Children inherit the router env verbatim, and Gemma MTP needs graphs on.
   - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
   - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.

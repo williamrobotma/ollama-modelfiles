@@ -2,7 +2,8 @@
 # Router launcher for the llama.cpp lane (specs/llamacpp-migration).
 # Port 11433: 8080 = Open WebUI, 11434 = Ollama (retired 2026-08-07), 11435-11438 = benchmarks.
 # Children inherit this environment verbatim (no per-model env in router mode):
-# CUDA graphs stays ON fleet-wide - never set GGML_CUDA_DISABLE_GRAPHS here (Gemma MTP needs graphs on).
+# CUDA graphs stays ON fleet-wide (Gemma MTP needs it). There is no runtime off switch on this build:
+# GGML_CUDA_DISABLE_GRAPHS was removed upstream and is inert; graphs are the compile-time GGML_CUDA_GRAPHS.
 set -euo pipefail
 
 # Build record: last known good 9860 (fdb1db877); on-disk 10326 (3653e6d6d) FAILED re-cert 2026-08-08 (tasks.md).
