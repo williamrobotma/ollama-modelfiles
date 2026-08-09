@@ -26,7 +26,7 @@ Spec review pending: the two remaining decisions in spec.md (sampling profile, i
 
 ## Phase 2 - bench (ternary)
 
-- [ ] Parity rows `bonsai27b-q2g64` / `bonsai27b-q2g64-dspark` vs `qwen3.6-27b-coding-ud-q4-k-xl`.
+- [ ] Parity rows `bonsai27b-q2g64` / `bonsai27b-q2g64-dspark` vs `qwen3.6-27b-coding`.
 - [ ] DSpark A/B (tok/s delta + acceptance); adopt only on a win.
 - [ ] VRAM/ctx envelope + long-context ceiling on the 4070.
 - [ ] (optional) mmproj vision smoke.

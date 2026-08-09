@@ -11,3 +11,7 @@
   - Trust a check's readout only after confirming your own instance bound (its log says so), not just that the port answered.
   - Why: a parse-check trusted an hours-stale "router down" note; the new instance failed to bind, the curl silently
     read the user's live router (old preset), and the cleanup pkill killed it mid-use.
+- Kill only a PID you captured from your own launch (`nohup ... & MYPID=$!`), never one found by pgrep/pkill. (2026-08-09)
+  - A probe that refuses to launch must abort the whole script - check the refusal before curl or kill, not after.
+  - Why: the launcher's preflight correctly refused over a live router, the script ignored the refusal, curled that
+    router (stale ids surfaced it), then killed it by pgrep first-match. Same loss as before, new path in.

@@ -269,6 +269,15 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
         - Menu ordering resolved 2026-08-09 (user, "why not just a simple sort"): LC_ALL=C sort over ids + aliases
           - Simplest of the three (no file-order dependency) and lands each alias beside its canonical for free
         - Reviewer note: stub/pty-verified only so far; one real interactive + one non-TTY run still owed live
+  - Decided 2026-08-09 (user, "remove quant designations from names"): served ids name the lane, never the quant
+    - 12 of 18 ids renamed; the 6 Gemma QAT ids keep `qat` (training method, not a quant designation - user ruled)
+    - Alias layer collapses 8 -> 1: five equalled their own entry's new id (silent-drop collision), two were quant-named
+    - Survivor `qwen3.6-35b-a3b-coding` -> the MTP coding lane; it sits in tension with the mtp-explicit rule (open)
+    - Fleet is 18 configs + 1 alias name; verified live (18 ids served, zero quant suffixes, alias resolving)
+    - Reverses the 2026-08-08 Queen `-i1` tag-fidelity rename and retires the AGENTS.md verbatim-quant-tag rule
+    - Swept: models.ini, OpenCode, Codex catalog + default, AGENTS.md, llamacpp/README.md, docs, pending specs
+    - Frozen harnesses left as-is (benchmarks matrices hold retired Ollama names; Modelfiles stay frozen)
+    - Open WebUI: 3 live names in stored chats break on resume (the DB already held 5 dead names pre-rename)
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch

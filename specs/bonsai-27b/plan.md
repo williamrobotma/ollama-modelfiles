@@ -30,7 +30,7 @@ Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-ve
 
 ## Phase 2 - bench (ternary)
 
-- Parity rows `bonsai27b-q2g64` / `bonsai27b-q2g64-dspark` vs `qwen3.6-27b-coding-ud-q4-k-xl` (same base).
+- Parity rows `bonsai27b-q2g64` / `bonsai27b-q2g64-dspark` vs `qwen3.6-27b-coding` (same base).
   - Verify: report.py output with warmup + reps, not smoke N=1.
 - DSpark A/B: `-md` + `--spec-draft-n-*` flags on vs off.
   - Verify: decode tok/s delta and acceptance recorded; adopt only on a win.
@@ -46,7 +46,7 @@ Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-ve
   - Pin the snapshot path; verify the `/mnt/f` delta.
 - Serve far enough to bench: template vet + `/props` check on the decided profile.
 - Parity rows `bonsai27b-q1` / `bonsai27b-q1-dspark`.
-- Three-way comparison: ternary vs 1-bit vs `qwen3.6-27b-coding-ud-q4-k-xl` on throughput, VRAM, and spot quality.
+- Three-way comparison: ternary vs 1-bit vs `qwen3.6-27b-coding` on throughput, VRAM, and spot quality.
   - The vendor retention deltas (94.6% vs 89.5%) are the hypothesis under test.
 - Write the serving-role verdict; wire the winner into the serving config chosen by the llamacpp follow-on.
 

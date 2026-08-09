@@ -13,8 +13,8 @@ Status legend: [ ] pending, [x] done. Resume point for this side task.
 
 ## Chat-template gate
 
-- [ ] `qwen3.5-queen-27b-coding-q4-k-m`: multi-system-message probe; record verdict.
-- [ ] `gemma4-31b-it-heretic-i1-q4-k-m`: multi-system-message probe; record verdict.
+- [ ] `qwen3.5-queen-27b-coding`: multi-system-message probe; record verdict.
+- [ ] `gemma4-31b-it-heretic`: multi-system-message probe; record verdict.
 - [ ] Verdicts recorded in README catalog or docs/openwebui.md.
 
 ## Model visibility

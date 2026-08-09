@@ -50,7 +50,7 @@ See [research.md](research.md) in this bundle - verification status marked per c
 
 - **Ternary (first-class)**: Ternary-Bonsai-27B serves on the llama.cpp lane's fast CUDA path, template-vetted.
   - Served from a pinned HF-cache snapshot; full profile flags verified via `/props`.
-  - Benched against 1-bit and `qwen3.6-27b-coding-ud-q4-k-xl` (same base) in the parity suite's shape.
+  - Benched against 1-bit and `qwen3.6-27b-coding` (same base) in the parity suite's shape.
   - A written serving-role verdict exists.
   - Delivers the repo's first fully-resident 27B and the first published 4070 numbers.
 - **1-bit (bench comparison)**: `Q1_0` served from a pinned snapshot and template-vetted far enough to bench.

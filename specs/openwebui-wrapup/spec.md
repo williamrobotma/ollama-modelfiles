@@ -22,8 +22,8 @@ Launch `~/.local/bin/openwebui`, open <http://127.0.0.1:8080>. Each check either
 
 Vet per the AGENTS.md gate procedure (`ollama show --template` is retired - it shows a template that never runs):
 
-- `qwen3.5-queen-27b-coding-q4-k-m`: done 2026-07-23 - guarded; froggeric-validated (see the 2026-07-23 history log).
-- `gemma4-31b-it-heretic-i1-q4-k-m`: still unvetted.
+- `qwen3.5-queen-27b-coding`: done 2026-07-23 - guarded; froggeric-validated (see the 2026-07-23 history log).
+- `gemma4-31b-it-heretic`: still unvetted.
 
 Record pass/fail per model in the model catalog (README) or docs/openwebui.md. A model that fails the gate is unusable from multi-system clients (claude-local, and Open WebUI's own system-message stacking) - note it, do not silently keep it as such a target.
 

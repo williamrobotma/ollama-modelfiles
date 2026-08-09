@@ -22,7 +22,7 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
                                    |
                                    |  absolute snapshot paths in model = / model-draft = / mmproj =
                                    v
-              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (18 configs + 8 aliases)
+              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (18 configs + 1 alias)
                                    |
                                    |  llamacpp/launch.sh -> llama-server --models-preset (router mode)
                                    v
@@ -67,9 +67,14 @@ MTP ENTRY (drafting sibling; carries no mmproj - the MTP x vision split)
       spec-draft-ngl = 0                                          <- this entry only: drafter to CPU
 
 ALIAS (a key on its owning entry, never its own section)
-  [qwen3.6-35b-a3b-mtp-coding-ud-q6-k]
-      alias = qwen3.6-35b-a3b-coding,qwen3.6-35b-a3b-mtp-coding,qwen3.6-35b-a3b-coding-ud-q6-k
+  [qwen3.6-35b-a3b-mtp-coding]
+      alias = qwen3.6-35b-a3b-coding
 ```
+
+Ids name the lane (family-size-profile), never the quant: the quant lives in the `model =` path only.
+
+- Changing quant is a path edit - no rename, no client churn, so aliases now serve only profile-defaults.
+- The one surviving alias points the unsuffixed coding name at the MTP coding lane.
 
 Aliases resolve inside request bodies but never appear as `/v1/models` ids, so point UI pickers at canonical ids.
 
@@ -83,7 +88,7 @@ FROZEN LEGACY - the Modelfile graph that used to be this mapping layer (see sect
   - Full detail: [AGENTS.md](../AGENTS.md#modelfile-layering-and-naming).
 - Canonical files carried weights plus a second `FROM` for the vision projector, which was silently dropped if omitted.
 - Name parity with the preset was exact at the 2026-08-03 check: 17 ids + 6 aliases == the 23 `ollama list` names.
-  - The preset has since moved to 18 + 8; this parity record is frozen at its 2026-08-03 date, not current.
+  - The preset has since moved to 18 + 1; this parity record is frozen at its 2026-08-03 date, not current.
 
 ## 3. The two MTP mechanisms (they are not the same thing)
 

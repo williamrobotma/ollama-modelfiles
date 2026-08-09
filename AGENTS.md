@@ -24,7 +24,8 @@ Provision with `hf download ORG/REPO file.gguf`; reference absolute pinned snaps
 
 Served ids follow `<family>-<stem>`; families are `gemma4`, `qwen3.5`, `qwen3.6`.
 Ids and their aliases live in `llamacpp/models.ini`; thin unsuffixed aliases repoint defaults without renames.
-Do not rename models - Open WebUI's DB and claude-local reference them by name.
+Renaming a served id is a deliberate act with a cost: Open WebUI stores model names per chat, so old chats break visibly.
+Rename only for a naming-rule change, and sweep every client (OpenCode, Codex catalog + default) in the same commit.
 Add-a-model procedure: [llamacpp/README.md](llamacpp/README.md).
 
 The frozen legacy Modelfiles (`modelfiles/<family>/<stem>/`) used three layers via `scripts/ollama-create.sh`:
@@ -34,10 +35,11 @@ The frozen legacy Modelfiles (`modelfiles/<family>/<stem>/`) used three layers v
 - **Layered / derived**: `FROM` a local model name (inherits weights + params), then overrides or adds directives (e.g. a coding profile layered on an MTP base, or a `DRAFT` line).
 - **Thin alias** (unsuffixed stem, e.g. `35b-a3b-coding`): a single `FROM <canonical model name>` line so the default can be repointed without renaming the family.
 
-Stems mirror the exact upstream quant tag verbatim; that convention carries over to new `models.ini` ids.
+Served ids name the lane and never the quant (2026-08-09): `<family>-<size>[-mtp][-profile]`, blank profile = instruct.
 
-- Exception (frozen legacy side only): the Queen-27B Modelfile stems predate the `-i1` HF tag.
-  - Served `models.ini` ids carry it (`-i1-q4-k-m`, renamed 2026-08-08 for tag fidelity) - the rule-compliant side.
+- The quant lives in the `model =` path alone, so promoting a new quant is a path edit - no rename, no client churn.
+  - This retires the older rule that stems mirror the upstream quant tag; the frozen Modelfile stems still carry them.
+- Aliases exist for profile defaults only, never as quant-free stand-ins for a quant-carrying id.
 
 See [docs/architecture.md](docs/architecture.md) for the full stack diagram.
 

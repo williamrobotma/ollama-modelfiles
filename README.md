@@ -39,14 +39,14 @@ The pinning convention and add-a-model procedure are in [llamacpp/README.md](lla
 
 ## Model catalog
 
-The served fleet is defined by `llamacpp/models.ini` - 18 configs + 8 alias names as of 2026-08-08.
+The served fleet is defined by `llamacpp/models.ini` - 18 configs + 1 alias name as of 2026-08-09.
 List the live ids with `curl -s 127.0.0.1:11433/v1/models`; each entry's serving profile lives in the INI itself.
 Families: Gemma 4 (thinking; vision via mmproj), Qwen 3.6 coders, Qwen 3.5 small coders, and an uncensored track.
 
 - Small coders: Qwen 3.6's smallest GGUF is 27B (offloads), so the resident coding line is Qwen 3.5 dense.
 - Uncensored: community abliterated builds (plain Q4/i1-Q4, not UD-*); abliteration can dent reasoning/tool-calling.
   - Verify on-task; all must pass the [chat-template gate](AGENTS.md#chat-template-gate-for-community-ggufs).
-- Aliases (`alias =` keys in the INI) keep unsuffixed default names stable when the canonical quant changes.
+- Ids no longer carry quant tags (the quant lives only in the `model =` path); aliases now serve only profile-defaults.
 
 ### Roadmap
 
