@@ -279,14 +279,22 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Frozen harnesses left as-is (benchmarks matrices hold retired Ollama names; Modelfiles stay frozen)
     - Open WebUI: 3 live names in stored chats break on resume (the DB already held 5 dead names pre-rename)
   - GPU batch 2 ran 2026-08-09 on the renamed fleet; results in the 2026-08-08 history log (section 5)
-    - KEY FINDING: GGML_CUDA_DISABLE_GRAPHS is inert on 10326 (removed upstream); graphs are compile-time only
-      - The intended graphs-off stage therefore ran graphs-ON; it is not a discriminator, just a 3rd clean trial
-      - Default-config fresh-prefill record is now 1 crash / 3 trials; mechanism (#26558 vs #26609) still open
-      - Repo docs promising a graphs-off escape hatch corrected (AGENTS.md, launch.sh, architecture, benchmarking)
+    - RETRACTED 2026-08-09: I claimed GGML_CUDA_DISABLE_GRAPHS was removed upstream and inert. Both false.
+      - It is live at ggml-cuda/common.cuh:1258 (moved there by 090b137e, #18637); presence-only, so =0 also disables
+      - Cause: a `| head -8` truncated the grep that was meant to prove absence; `graphs reused` is llama's counter
+      - The stage is indeterminate, not void: no CUDA-graph debug markers were logged either way (default verbosity)
+      - Doc corrections reverted in AGENTS.md, launch.sh, architecture, benchmarking; history log carries the retraction
+      - Default-config fresh-prefill record stands at 1 crash / 3 trials; mechanism (#26558 vs #26609) still open
     - 35B daily lane: 1 fresh 81,695-token prefill clean, 25.2 tok/s, acceptance 0.733 (n=1, no exposure observed)
     - 31B drafter load: PASS without the 26B's spec-draft-ngl pin (n=1; pin question stays open on evidence)
     - Instruct-entry gate probes post-rename: qwen3.6-27b and qwen3.6-35b-a3b both 200, no guard error, one-word replies
-    - Owed: real graphs-off discriminator needs a rebuild (-DGGML_CUDA_GRAPHS=OFF); repeat trials for every n=1 above
+    - Owed: graphs-off discriminator (runs on the current binary), unconfounded -fa pair, no-MTP control, n>1 repeats
+  - Upstream reporting researched 2026-08-09 (opus): verdict = DO NOT REPORT YET, and never as an AI-written post
+    - llama.cpp CONTRIBUTING.md:25 forbids AI-written bug reports; its AGENTS.md:51 tells autonomous agents not to contribute
+    - So any filing must be the owner's own words; agents supply verified raw material only, never a draft to paste
+    - Our crash is a third thing: #26609 has no MTP; #26558 is a different error under KV saturation on a 0.8B
+    - Best target is #26782 (2026-08-09: same Gemma model + draft-mtp, HIP backend, crashes in prefill, survives -fa off)
+    - Gate before filing: one single-variable toggle that stops it, plus the b9860 known-good re-run on the Gemma config
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch

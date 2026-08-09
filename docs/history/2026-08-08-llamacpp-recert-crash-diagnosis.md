@@ -41,16 +41,22 @@ Repro asset: 340,916-byte synthetic prompt, server-tokenized to 81,163 tokens. M
   - Confound: the overlay changed FA + KV dtype + ctx together; offload state unverified (no layer lines at this verbosity).
 - Verdict so far: consistent with #26609 (flash-attn path), NOT a confirmed isolation; #26558 (graphs) entirely untested.
 
-## 5. Second batch (2026-08-09, post-rename): the graphs discriminator cannot be run on this build
+## 5. Second batch (2026-08-09, post-rename)
 
-- `GGML_CUDA_DISABLE_GRAPHS` no longer exists in llama.cpp at `3653e6d6d`: no such `getenv` in `ggml/src/ggml-cuda/`.
-  - Graphs are compile-time (`GGML_CUDA_GRAPHS`, ON in this build's CMakeCache) and always on for Volta+ at runtime.
-  - `GGML_CUDA_GRAPH_OPT=1` (ggml-cuda.cu:4215) is a separate extra optimization pass, default off - not a disable switch.
-  - So the repo's graphs-off contingency, and upstream #26558's documented workaround, are both unavailable here.
-- Consequence: the "graphs-off" stage ran with graphs ON (log showed `graphs reused` 741/1526/2375, the graphs-on range).
-  - It is therefore not a discriminator, just a third fresh-prefill trial on the default config - which did not crash.
-  - Default-config fresh-prefill record across both batches: 1 crash in 3 trials.
-  - The mechanism question (#26558 graphs vs #26609 flash-attn) stays open; testing graphs-off now needs a rebuild.
+**Correction (2026-08-09, same day): this section first claimed `GGML_CUDA_DISABLE_GRAPHS` had been removed upstream and
+that the graphs discriminator needed a rebuild. Both claims were false. The text below is the corrected version; the
+error and its cause are kept in section 6 because the failure mode is the reusable lesson.**
+
+- `GGML_CUDA_DISABLE_GRAPHS` is alive at `ggml/src/ggml-cuda/common.cuh:1258`, in `ggml_cuda_graph::is_enabled()`.
+  - It moved out of `ggml-cuda.cu` in `090b137e` ("ggml-cuda: refactor cuda graph usage", #18637, 2026-01-06).
+  - It tests presence only (`getenv(...) != nullptr`), so `GGML_CUDA_DISABLE_GRAPHS=0` also disables graphs.
+  - So the repo's graphs-off contingency and upstream #26558's workaround both remain available on this build.
+- Whether the env took effect is **indeterminate** for this batch: the only proof is the `CUDA graph warmup ...`
+  debug lines, which the router's default verbosity does not emit, and neither log carries them.
+  - `graphs reused` (741/1526/2375 here) is llama's own graph-reuse counter (`llama-context.cpp:4139`), not CUDA graphs.
+  - The stage therefore neither confirms nor refutes the graphs mechanism; it stands as one more clean fresh trial.
+  - Default-config fresh-prefill record across both batches: 1 crash in 3 trials (this stage's status unresolved).
+  - The mechanism question (#26558 graphs vs #26609 flash-attn) stays open, and the discriminator is cheap to re-run.
 - Prefix-cache caveat: re-sending an identical prompt to the single-slot router serves from KV cache (`cache_n` ~= prompt).
   - Only `cache_n: 0` requests count as trials; use varied prompts or `cache_prompt: false` for repeat trials.
 - 35B daily lane (`qwen3.6-35b-a3b-mtp-coding`, default config): 1 fresh 81,695-token prefill + 1 cached, 0 crashes.
@@ -59,7 +65,21 @@ Repro asset: 340,916-byte synthetic prompt, server-tokenized to 81,163 tokens. M
   - The 26B sibling's NaN-split loader crash did not reproduce here; n=1, so the pin question stays open on evidence.
 - Instruct-entry gate probes after the rename: `qwen3.6-27b` and `qwen3.6-35b-a3b` both HTTP 200, no guard error text.
   - Both answered "OK." in one word, consistent with the mid-conversation system message surviving `merged_system`; n=1 each.
-- Still owed: a real graphs-off discriminator (rebuild with `-DGGML_CUDA_GRAPHS=OFF`), and multi-trial repeats of all of the above.
+- Still owed: a verified graphs-off discriminator (env works on this binary; confirm via the `CUDA graph warmup` lines
+  at raised verbosity), an unconfounded `-fa on`/`-fa off` pair at fixed ctx and KV type, a no-MTP control on the same
+  prompt, and multi-trial repeats of every n=1 above.
+
+## 6. Method failures worth keeping (both mine, both same-day)
+
+- **A truncated grep cannot prove absence.** The "removed upstream" claim came from `grep -rn ... | head -8`, whose
+  output filled with unrelated `USE_CUDA_GRAPH` hits before reaching the single real match in `common.cuh`.
+  A follow-up grep narrowed to `ggml-cuda.cu` alone and appeared to confirm it. Never `head` a search meant to
+  establish that something does not exist; count matches over the whole tree instead.
+- **A similar-sounding counter is not the signal.** `graphs reused` was read as evidence about CUDA graphs; it is
+  llama's own graph-reuse counter. When testing whether a switch turned something off, verify the absence of that
+  thing's own marker, not a nearby metric that merely shares vocabulary.
+- Upstream match claims need the same discipline: `ggml-cuda.cu:2499` is `cudaStreamSynchronize`, a generic detection
+  point any async fault reaches, so "same site as #26609" is near-vacuous. Section 2's wording overstated it.
 
 ## Provenance and validity
 
