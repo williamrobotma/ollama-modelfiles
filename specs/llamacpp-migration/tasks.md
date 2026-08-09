@@ -257,6 +257,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - The last lane persists in ~/.config/claude-local.last; non-TTY reuses it or fails with the fleet list
       - claude's own --model is not overloaded; every claude arg passes through untouched
       - Re-verified via stub + pty: menu pick, Enter-reuse, non-TTY reuse note, out-of-range abort, passthrough
+      - Simplify review (opus) applied 2026-08-08: decimal 10# index (fixes octal 08/09), off-list picks launch
+        visibly but are not persisted, empty-ini guard, EOF aborts, escape hatch documented in fn + CLAUDE.md
+        - Menu ordering left grouped (canonical ids then aliases); interleaved variant offered, user preference open
+        - Reviewer note: stub/pty-verified only so far; one real interactive + one non-TTY run still owed live
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch
