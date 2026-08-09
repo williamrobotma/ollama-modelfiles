@@ -98,6 +98,11 @@ five fresh trials per arm, one variable changed per arm. Freshness enforced per 
   earlier 981-1391 window. Several landed exactly at the boundary.
 - Baseline rate escalated to 80% here from the earlier 1/3. Unexplained; the agent's hypothesis is repeated
   load/unload cycling within one router session. It applies equally to every arm, so cross-arm comparison holds.
+- Side benefit: the baseline and no-MTP arms are a clean MTP A/B (same GGUF, same 81k prompt, same everything else).
+  - MTP 63.7-67.4 tok/s at draft acceptance 0.70; no-MTP 41.9 tok/s. **MTP is ~1.6x faster when it completes.**
+  - But at 4/5 crashed vs 0/5, expected useful output inverts: ~0.2 x 67 vs 1.0 x 42, so no-MTP wins ~3x on this
+    lane at this prompt size, before counting the 48-54 s reprefill each crash costs. MTP's speed is real; on the
+    12B lane at ~81k its expected value is still negative.
 - **Methodological finding**: `"cache_prompt": false` is silently ignored on `/v1/messages` at this build - a resent
   prompt still reported `cache_read_input_tokens` > 0 with `selected slot by LCP similarity, f_sim_best=1.000`.
   - Freshness had to be forced with `POST /models/unload` between trials, verified per trial in the log.
