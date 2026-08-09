@@ -9,7 +9,10 @@
   - 2026-08-04: `"mcp"` -> `"mcp>=1.9,<2"` - mcp 2.0.0 removed FastMCP, which the script imports.
   - 2026-08-08: `rich` dropped (never imported); `ollama` pinned `>=0.6.2,<1` (the pipx-resolved working version).
     - Both were unbounded, re-resolving from PyPI on every `pipx run` with `OLLAMA_API_KEY` in the environment.
-- Vendored sha256: `4a5248f009c883a3a84accb43672711d2f3c3d13d3829c1176ab019157ee0074`
+  - 2026-08-09: the mcp pin's comment corrected - `Server.tool()` never existed at 1.9; FastMCP removal is the reason.
+- Range pins kept deliberately (user, 2026-08-09): in-range re-resolution on pipx cache expiry is an accepted risk.
+- The script's non-FastMCP fallback branch is dead code under the pin; an mcp 2.x bump means a rewrite, not an unpin.
+- Vendored sha256: `ce6b5744c332f609d23f5a04cbca0c625cd9f35e434cfaabd89902a12d1bf714`
 - Verified 2026-08-04: pipx stdio handshake + live web_search 200 against ollama.com (migration tasks.md, P3).
 - Style is upstream-verbatim: exempt from repo Python rules; do not reformat. Only the dep block may change.
 - Consumer: `~/.config/claude-local.mcp.json` runs it via `pipx run`.

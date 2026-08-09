@@ -20,3 +20,7 @@ This file holds only Claude-Code-specific notes.
   - Vet new community GGUFs per that section's procedure.
 - CUDA graphs run ON fleet-wide, including the MTP models claude-local serves (P1-validated 2026-08-03).
   - Crash history: [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash).
+  - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
+  - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.
+  - fa-path suspected (consistent with #26609, not confirmed); graphs mechanism (#26558) untested.
+  - See [the 2026-08-08 recert-crash log](docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md).

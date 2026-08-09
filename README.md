@@ -9,7 +9,8 @@ Agents should read [AGENTS.md](AGENTS.md) first.
 
 ## Requirements
 
-- A stock llama.cpp build; the build record and rebuild rule live in [llamacpp/README.md](llamacpp/README.md).
+- A stock llama.cpp build; the build record lives in [llamacpp/README.md](llamacpp/README.md).
+  - The rebuild rule lives in `specs/llamacpp-migration/spec.md`'s Rules section.
 - The Hugging Face CLI (`hf`, from `huggingface_hub`) to provision GGUFs.
 - An NVIDIA CUDA GPU. The reference box is an RTX 4070 (12 GB, WSL2); models larger than ~12 GB partial-offload to CPU. Use CUDA 13.1 or 13.3 - 13.2 corrupts Gemma 4 output.
 
@@ -29,6 +30,9 @@ llamacpp/launch.sh
 # 4. Chat (any OpenAI or Anthropic client; Open WebUI runs on :8080)
 curl 127.0.0.1:11433/v1/chat/completions -d '{"model":"gemma4-12b-it-qat","messages":[{"role":"user","content":"hi"}]}'
 ```
+
+Step 3 above runs in the foreground for a quick check.
+For persistent serving, see the runbook in [docs/architecture.md](docs/architecture.md#4-serving-layer-and-its-clients).
 
 Served ids and pinned snapshot paths live in `llamacpp/models.ini`.
 The pinning convention and add-a-model procedure are in [llamacpp/README.md](llamacpp/README.md).

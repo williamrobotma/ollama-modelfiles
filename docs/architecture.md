@@ -83,6 +83,7 @@ FROZEN LEGACY - the Modelfile graph that used to be this mapping layer (see sect
   - Full detail: [AGENTS.md](../AGENTS.md#modelfile-layering-and-naming).
 - Canonical files carried weights plus a second `FROM` for the vision projector, which was silently dropped if omitted.
 - Name parity with the preset was exact at the 2026-08-03 check: 17 ids + 6 aliases == the 23 `ollama list` names.
+  - The preset has since moved to 18 + 8; this parity record is frozen at its 2026-08-03 date, not current.
 
 ## 3. The two MTP mechanisms (they are not the same thing)
 
@@ -98,12 +99,13 @@ QWEN (self-contained)                      GEMMA (target + drafter)
   1.67x (12B pair), 1.54x (26B pair) - measured on the retired lane, not this one.
   Stock b9860 served the Gemma pair at ~1.8x in the 2026-07-17 eval (graphs ON, moderate ctx).
 
-  BOTH now run as router children on stock llama.cpp b9860, CUDA graphs ON fleet-wide.
+  BOTH now run as router children on stock llama.cpp, CUDA graphs ON fleet-wide.
   #24795 is config-gated, not build-gated: graphs-OFF reproduces the Gemma drafter
   load failure, graphs-ON serves it. Never set GGML_CUDA_DISABLE_GRAPHS on this lane.
   P1 (2026-08-03): 36/36 gens across the 12B ctx ladder, 30/30 on the Qwen hammer, 0 crashes.
   26B-A4B exception: its drafter is pinned to CPU (spec-draft-ngl = 0, 241 MiB) because a
-  full GPU reports free=0 -> NaN layer split -> devices.at(1) throws (llama-model.cpp:1291).
+  full GPU reports free=0 -> NaN layer split -> devices.at(1) throws
+  (llama-model.cpp:1291 at b9860-era source; the line moves across builds).
   Upstream #19973 derived that mechanism and closed unfixed; no fix on master, so a
   rebuild would not help.
 ```
@@ -127,7 +129,7 @@ Per-request MTP acceptance and tok/s show up in the router log's `timings` lines
         v                v                                   v                        v
    OPEN WEBUI       OPENCODE 1.16.2                     CLAUDE-LOCAL              CODEX 0.145.0
    0.11.0 on 8080   openai-compatible                   ~/.bashrc fn ->           llamacpp-router
-   OpenAI conn ->   provider, 12 ids                    the 35B coding alias      provider, 12 ids
+   OpenAI conn ->   provider, 12 ids                    lane picked per session   provider, 12 ids
    11433/v1         per-model ctx limits                vendored web-search MCP   fresh threads only
    Ollama conn      no websearch tool                   --disallowedTools=        namespace/web_search
    disabled         exists in this build                WebSearch                 tools DROPPED at 200
@@ -138,6 +140,15 @@ No inbound auth anywhere: the router checks nothing, and it binds 127.0.0.1, as 
 - `OLLAMA_API_KEY` is client-side only and now lives in `~/.config/claude-local.env` (mode 600) for the search MCP.
 - Every client was cut over and validated against the router on 11433.
   - claude-local, OpenCode, and Codex on 2026-08-04; Open WebUI on 2026-08-07.
+- CSRF surface (single home for this analysis; `launch.sh` points here): three unauthenticated endpoints.
+  - `POST /models`, `POST /models/load`, `POST /models/unload`; no `--api-key` is set.
+    - Site: server.cpp:226-228 at the on-disk 10326 source; the line moves across builds.
+  - CORS-simple (no preflight) and `Host` is unvalidated, so a CSRF page or DNS-rebinding attack reaches them.
+  - `load`/`unload` churn force-kills an in-flight generation under `--models-max 1`.
+  - Impact ceiling is low: worst case is a drive-by download into the gitignored `.cache-empty`.
+    - `DELETE /models` needs a CORS preflight to run.
+      - `--cors-origins localhost` won't grant that preflight to an arbitrary page - effectively gated.
+  - The loopback bind (127.0.0.1) is the actual boundary: a same-host threat model, not a remote one.
 
 Per-client detail worth carrying:
 

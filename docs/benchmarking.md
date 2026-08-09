@@ -49,6 +49,8 @@ They still run mechanically against the now-retired Ollama lane.
 Suite scope:
 
 - **qwen**: canonical Qwen 3.6 coding variants.
+  - The 35B-A3B `q4-k-xl` pair (matrix rows 4-5) left the fleet in the 2026-07-27 reduction.
+    - These frozen rows no longer resolve.
 - **gemma**: first-pass, text-only, two models (`gemma4-12b-it-qat`, `gemma4-26b-a4b-it-qat`).
 - **9b-coders**: small coders that fit fully in 12 GB VRAM, benched against the `gemma4-12b-it-qat` baseline.
   - `qwen3.5-9b-coding-ud-q4-k-xl`
@@ -111,6 +113,10 @@ Distilled from the evidence logs; follow the links for the primary-source detail
   - A 30-run graphs-on hammer on the router child came back 30/30 clean, zero crash lines.
   - The upstream MTP x graphs issue remains open but did not reproduce across the Phase 1 checks.
   - See [history/2026-08-03-llamacpp-p1-envelopes.md](history/2026-08-03-llamacpp-p1-envelopes.md).
+  - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
+  - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.
+  - fa-path suspected (consistent with #26609, not confirmed); graphs mechanism (#26558) untested.
+  - See [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 
 ### llama.cpp parity eval (2026-07-17)
 

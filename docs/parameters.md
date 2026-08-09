@@ -3,7 +3,7 @@
 Single authoritative home for the sampling profiles served across the fleet.
 README and AGENTS.md link here instead of duplicating the tables.
 
-Every value is verified against the official sources before it goes into a Modelfile:
+Every value is verified against the official sources before it goes into a `llamacpp/models.ini` entry:
 
 - Gemma 4: <https://unsloth.ai/docs/models/gemma-4>
 - Qwen 3.6: <https://unsloth.ai/docs/models/qwen3.6>

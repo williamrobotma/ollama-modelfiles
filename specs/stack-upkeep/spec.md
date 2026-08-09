@@ -6,6 +6,8 @@ SCAFFOLD - plan in a fresh session.
 
 Keep llama.cpp, Ollama, Open WebUI, and the pinned GGUFs current and tracked. Today versions are pinned ad hoc and drift is found by accident.
 
+Amended 2026-08-08: Ollama tracking is moot post-retirement (stopped + disabled 2026-08-07); drops out at planning.
+
 ## Decide at planning
 
 - What to record, and where.

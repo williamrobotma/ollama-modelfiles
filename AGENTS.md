@@ -36,6 +36,9 @@ The frozen legacy Modelfiles (`modelfiles/<family>/<stem>/`) used three layers v
 
 Stems mirror the exact upstream quant tag verbatim; that convention carries over to new `models.ini` ids.
 
+- Exception (frozen legacy side only): the Queen-27B Modelfile stems predate the `-i1` HF tag.
+  - Served `models.ini` ids carry it (`-i1-q4-k-m`, renamed 2026-08-08 for tag fidelity) - the rule-compliant side.
+
 See [docs/architecture.md](docs/architecture.md) for the full stack diagram.
 
 ## The two MTP mechanisms
@@ -52,7 +55,8 @@ Since 2026-08-07, llama-server with CUDA graphs ON is the serving lane for all M
 The client cutovers are complete; the P4 validation window and gated purge remain open in the spec's tasks.
 Graphs-off reproduces the #24795 drafter load failure (config-gated, not build-gated; still open upstream).
 The 26B pair pins its drafter to CPU (`spec-draft-ngl = 0`) against an upstream full-GPU loader crash.
-Crash matrix and caveats: [docs/history/2026-07-17-llamacpp-eval.md](docs/history/2026-07-17-llamacpp-eval.md).
+Crash matrix and caveats, original characterization: [the 2026-07-17 log](docs/history/2026-07-17-llamacpp-eval.md).
+Newest matrix + live-crash diagnosis: [the 2026-08-08 log](docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 
 ## Parameters
 
@@ -143,12 +147,17 @@ Full detail, ports, and distilled findings: [docs/benchmarking.md](docs/benchmar
 
 The live serve is `llamacpp/launch.sh`: llama-server router mode on `127.0.0.1:11433`.
 Defaults: `--models-max 1` (env `MODELS_MAX`), `--sleep-idle-seconds 86400` (env `SLEEP_IDLE_SECONDS`).
+`--cors-origins localhost` is set unconditionally too, with no env override.
 Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike `/tmp`).
 
 - **`-fa on` and q8_0 KV must stay paired** (`[*]` block): the quantized V-cache hard-fails without flash attention.
 - `ctx-size` is per-entry in `models.ini` and wins; nothing auto-shrinks on OOM (partial offload instead).
 - CUDA graphs run ON fleet-wide (P1-validated); never set `GGML_CUDA_DISABLE_GRAPHS` in the launcher env.
   - Children inherit the router env verbatim, and Gemma MTP needs graphs on.
+  - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
+  - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.
+  - fa-path suspected (consistent with #26609, not confirmed); graphs mechanism (#26558) untested.
+  - See [the 2026-08-08 recert-crash log](docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 - The retired systemd Ollama service (`11434`) stays frozen - stop/disable and purge tracked in Phase 4.
 
 ## WSL disk budget

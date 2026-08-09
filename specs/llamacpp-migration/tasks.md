@@ -203,13 +203,14 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Port 11434 closed; store/binaries/override stay frozen on disk until the purge
   - Validation window starts 2026-08-07; purge eligible ~2026-08-21 on explicit user go
 - [x] Docs rewritten: architecture.md, AGENTS.md, README, CLAUDE.md note, benchmarking.md pending-action dropped
-  - 2026-08-07: six files (those plus openwebui.md and parameters.md touch-ups); all rumdl-clean
+  - 2026-08-07: six files (those plus openwebui.md and parameters.md touch-ups); rumdl-clean then (MD013 carryovers persist)
   - architecture.md redrawn for the router: runbook, frozen-legacy framing, fresh du figures (HF 199G, store 186G)
   - The silent Responses tool-drop folded into architecture.md + openwebui.md; openwebui.md guidance inverted
   - benchmarking.md pending action replaced by the graphs-ON stance with P1 evidence
   - launch.sh pin documented as record-not-assertion (reconciles the spec's pin-enforcement wording)
 - [x] PR #15 review response (2026-08-08): merge-gating comments addressed
   - Applied: README catalog tables deleted (root-cause de-drift); live counts corrected to 20 configs + 9 aliases
+    - (Superseded: the counts moved through 17+8 to 18 configs + 8 aliases at the 2026-08-08 reshape)
   - Spec-class lock lifted by user: spec.md/plan.md carry dated amendments (counts; pin-assert superseded note)
   - q6 aliases reshaped per user: self-identical names dropped; reasoning gains qwen3.6-35b-a3b-reasoning-ud-q6-k
   - launch.sh: --cors-origins localhost added (user picked B4a); overlay/bind comments; build record updated
@@ -246,6 +247,12 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
         - Fixed on audit: Queen probe wording, parameters.md dual-override, 40s -> 48-54s, graphs-ON cell qualifier
         - State moved post-record: all 15 pre-kill spawns crashed (14 illegal-memory + 1 misaligned); a 16th survived
         - Direction-of-error note: every soft spot leaned toward making 9860 look cleaner than its record
+  - Final sweep response (2026-08-09, head 9bdd96e): 6 must-fix + 8 should-fix + nit triage dispatched
+    - Decided (user): MCP range pins KEPT - re-resolution risk accepted and documented; == pins declined
+    - Decided (user): launch.sh gains port preflight, --version log echo, env -u OLLAMA_API_KEY, cache-dir warn
+    - Decided (user): .claude/settings.json deleted (dead config)
+    - Declined: comment in the frozen 35b-a3b-coding Modelfile (freeze policy outranks the nit)
+    - models.ini polish nits (per-entry ctx comments, :89 header length, alias asymmetry) skipped as polish
       - Decided 2026-08-08 (user): downgrading is NOT an option - the current on-disk build is canonical, always
         - Mitigation must be config-side or upstream-forward; the last-known-good record stays a record only
   - Decided 2026-08-08 (user): B6 deferral revoked - "the wrapper change MUST be taken"; fix applied same day
@@ -301,6 +308,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Decided 2026-08-08 (user, "Q6 quants for 35B are now standard. no more others"): unsuffixed 35B aliases
     repointed q5 -> q6 in models.ini (claude-local follows automatically via its alias)
     - Resolved 2026-08-08 (user): the 35B q5 trio deleted from models.ini - fleet is 17 configs + 9 alias names
+      - (The 9 was the arithmetic slip - 8 actual; superseded by the reshape -> 18 configs + 8 aliases)
     - OpenCode + Codex swapped to the q6 ids (catalog, provider list, and the Codex coding default)
       - ctx limits carry over unchanged (coding 200000; reasoning/instruct 262144)
       - Deleted 2026-08-08 (user go): the 35B UD-Q5_K_XL GGUF blob (26G measured) removed from the HF cache

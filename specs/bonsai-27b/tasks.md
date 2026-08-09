@@ -13,6 +13,8 @@ Spec review pending: the two remaining decisions in spec.md (sampling profile, i
 - [ ] Serving-config home known (from `specs/llamacpp-migration`). llamacpp-serving verdict has landed (B).
 - [x] #25707 status re-checked: merged 2026-07-30 (checked 2026-08-03; fork + llama-swap contingency retired).
 - [ ] Rebuild past the merge; migration-spec rebuild rule passed (crash matrix, froggeric, Gemma MTP re-check).
+  - Amended 2026-08-08: gate met build-wise (10326 includes #25707) but 10326 is uncertified (re-cert failed).
+  - Re-evaluate at pickup.
 - [ ] Spec review: sampling-profile and role decisions recorded here.
 
 ## Phase 1 - ternary lane

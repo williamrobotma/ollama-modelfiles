@@ -11,6 +11,8 @@ Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-ve
   - The rebuild triggers the migration spec's rebuild rule: crash matrix re-run, froggeric pair re-validation.
   - Include the Gemma MTP load re-check (docs/history/2026-07-17-llamacpp-eval.md, verdict item 5).
   - Passing the rule moves the last-known-good pin forward (stack-upkeep policy).
+  - Amended 2026-08-08: gate condition met build-wise - on-disk build 10326 includes #25707 (merged 2026-07-30).
+  - 10326 is uncertified: it failed the 2026-08-08 re-cert. Re-evaluate this gate at pickup.
 - Spec review: record the two remaining decisions (sampling profile, intended role) in tasks.md.
   - Ternary path is already resolved upstream (spec.md decision 1).
 

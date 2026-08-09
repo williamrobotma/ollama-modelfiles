@@ -33,6 +33,7 @@ Executes the 2026-07-17 eval verdict (`docs/history/2026-07-17-llamacpp-eval.md`
   - The `35b-a3b-coding` alias repoints to the MTP-q5 coding config; 21 configs + 7 alias names remain.
 - **Build pin**: stay on b9860 (fdb1db877).
   - Re-verified 2026-07-23: no tracked-bug fix merged through b10094; new crash reports exist on newer builds.
+  - Amended 2026-08-08: superseded - the on-disk build is canonical, never downgraded (user decision; record in tasks.md).
 - **Acceptance clients**: Claude Code, Codex CLI, OpenCode blocking; Pi best-effort.
   - VS Code Copilot is out of scope here -> `specs/copilot-byok` (scaffolded this session).
 
@@ -116,6 +117,7 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
 ## Rules
 
 - Stay on b9860. Any rebuild: re-run the crash matrix (eval log 2b) and re-validate the froggeric (template, build) pair.
+  - Amended 2026-08-08: superseded - the on-disk build is canonical, never downgraded (user decision; record in tasks.md).
 - Guarded Qwen GGUFs face OpenAI clients only under the froggeric template (v21.3, snapshot `23a40b0b`, `--jinja`).
 - Never scrape `GET /metrics` on the router - it autoloads models and blocks idle sleep (llama.cpp #23096).
 - Codex threads start fresh per provider - replayed `web_search_call` history 400s on local backends (codex #24612).
