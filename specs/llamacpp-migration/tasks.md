@@ -239,6 +239,11 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
           plus one recorded 200k illegal-memory crash (2026-07-17 eval 2b, pre-repin): revert = experiment, not fix
       - Decided 2026-08-08 (user): downgrading is NOT an option - the current on-disk build is canonical, always
         - Mitigation must be config-side or upstream-forward; the last-known-good record stays a record only
+  - Decided 2026-08-08 (user): B6 deferral revoked - "the wrapper change MUST be taken"; fix applied same day
+    - claude-local now consumes a --model flag: main + tier + subagent vars follow one _cl_model knob
+    - Stub-verified: default, --model X, --model=X, and missing-value abort; flag never reaches claude itself
+    - Discovery en route: the wrapper had been repointed to gemma4-12b-it-qat-mtp for ALL roles (docs said 35B)
+    - Default stays gemma4-12b-it-qat-mtp (owner's standing pin) pending the 35B large-ctx verdict; docs updated
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch

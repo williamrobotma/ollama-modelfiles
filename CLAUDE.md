@@ -5,12 +5,12 @@ This file holds only Claude-Code-specific notes.
 
 ## claude-local
 
-- `claude-local` is a `~/.bashrc` function routing Claude Code to the router (`127.0.0.1:11433/v1/messages`).
-  - Pins `ANTHROPIC_MODEL` + tier/subagent vars to the 35B coding alias (settings.json models otherwise hit the wire).
+- `claude-local [--model <id-or-alias>]` is a `~/.bashrc` function routing Claude Code to the router (11433, `/v1/messages`).
+  - One selector for the whole session (B6 fix, 2026-08-08): the wrapper consumes `--model` and repoints
+    `ANTHROPIC_MODEL` + tier + subagent vars together; the default id lives in the fn (`_cl_model`).
+  - settings.json models otherwise hit the wire verbatim; mid-session `/model` still moves only the main session.
   - Execs `claude` with `--disallowedTools=WebSearch` plus the vendored web-search MCP (`llamacpp/mcp/`, via pipx).
   - Secrets live in `~/.config/claude-local.env` (mode 600); cutover validated 2026-08-04, see the P3 history log.
-  - `--model`/`/model` moves only the main session; the tier + subagent vars stay pinned to the coding alias.
-    - So subagents and background calls keep routing to Qwen regardless of the selected main model.
 - Claude Code sends multiple `system`-role messages mid-conversation.
   - No guard risk on llama-server's `/v1/messages` (verified per-build).
   - The [AGENTS.md gate](AGENTS.md#chat-template-gate-for-community-ggufs) bites OpenAI-endpoint clients.
