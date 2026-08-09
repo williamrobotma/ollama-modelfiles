@@ -244,6 +244,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Stub-verified: default, --model X, --model=X, and missing-value abort; flag never reaches claude itself
     - Discovery en route: the wrapper had been repointed to gemma4-12b-it-qat-mtp for ALL roles (docs said 35B)
     - Default stays gemma4-12b-it-qat-mtp (owner's standing pin) pending the 35B large-ctx verdict; docs updated
+    - Amended same day (user, iterated): NO flag and NO default - selection is a numbered menu, Enter = last lane
+      - The last lane persists in ~/.config/claude-local.last; non-TTY reuses it or fails with the fleet list
+      - claude's own --model is not overloaded; every claude arg passes through untouched
+      - Re-verified via stub + pty: menu pick, Enter-reuse, non-TTY reuse note, out-of-range abort, passthrough
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch

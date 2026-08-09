@@ -141,7 +141,7 @@ No inbound auth anywhere: the router checks nothing, and it binds 127.0.0.1, as 
 
 Per-client detail worth carrying:
 
-- claude-local: the `~/.bashrc` fn exports `ANTHROPIC_BASE_URL` + model vars, all riding its `--model` selector.
+- claude-local: the `~/.bashrc` fn exports `ANTHROPIC_BASE_URL` + model vars, all set by its interactive lane menu.
   - Full detail: [CLAUDE.md](../CLAUDE.md#claude-local).
   - Execs `claude` with both flags in `=VALUE` form - the space form swallows `"$@"` into the deny list.
   - The MCP is the official Ollama web-search script, run via pipx on an `mcp>=1.9,<2` pin.

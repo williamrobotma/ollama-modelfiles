@@ -5,10 +5,12 @@ This file holds only Claude-Code-specific notes.
 
 ## claude-local
 
-- `claude-local [--model <id-or-alias>]` is a `~/.bashrc` function routing Claude Code to the router (11433, `/v1/messages`).
-  - One selector for the whole session (B6 fix, 2026-08-08): the wrapper consumes `--model` and repoints
-    `ANTHROPIC_MODEL` + tier + subagent vars together; the default id lives in the fn (`_cl_model`).
-  - settings.json models otherwise hit the wire verbatim; mid-session `/model` still moves only the main session.
+- `claude-local`: a `~/.bashrc` fn routing Claude Code to the router (11433, `/v1/messages`) via a lane menu.
+  - Lane = the fleet model serving ALL session roles (B6 fix, 2026-08-08): main + tier + subagent vars together.
+  - No flag, no default: the numbered menu (models.ini ids + aliases) picks; Enter re-picks the last lane.
+    - The last lane persists in `~/.config/claude-local.last`; non-TTY reuses it or fails with the list.
+  - Every claude arg passes through untouched (`--model` included); mid-session `/model` moves only the main session.
+  - settings.json models otherwise hit the wire verbatim.
   - Execs `claude` with `--disallowedTools=WebSearch` plus the vendored web-search MCP (`llamacpp/mcp/`, via pipx).
   - Secrets live in `~/.config/claude-local.env` (mode 600); cutover validated 2026-08-04, see the P3 history log.
 - Claude Code sends multiple `system`-role messages mid-conversation.
