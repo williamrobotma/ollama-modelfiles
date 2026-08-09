@@ -237,6 +237,8 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
         - Corrected 2026-08-08 (user): 9860 has NO sustained live mileage - the window opened the day the build moved
         - 9860's actual record: small-n validations (7/7 @16k; 36/36 ladder at 800-token gens; 30/30 hammer)
           plus one recorded 200k illegal-memory crash (2026-07-17 eval 2b, pre-repin): revert = experiment, not fix
+      - Decided 2026-08-08 (user): downgrading is NOT an option - the current on-disk build is canonical, always
+        - Mitigation must be config-side or upstream-forward; the last-known-good record stays a record only
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch
