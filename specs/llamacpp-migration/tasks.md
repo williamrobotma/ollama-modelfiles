@@ -316,6 +316,14 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - Untested and likely exposed the same way: the 26B and 31B Gemma MTP pairs (same target+drafter mechanism)
     - Second upstream bug found: POST /models/unload racing a crashed instance orphans the name in stopping_models,
       so the next instance under that name is force-killed at 10 s (server-models.cpp:1085/:1141/:1042). Reportable.
+  - Re-read 2026-08-09 (user: "are we even sure reverting would fix it?"): NOT A REGRESSION - reverting is unsupported
+    - b9860 has its own recorded instance of this crash: 2026-07-17 eval 2b, Gemma 12B MTP @200k, illegal memory
+      access on gen 5 - the "last known good" build fails the same way at large context
+    - Ollama's older vendored llama.cpp crashed the same way too (2026-07-01, ggml-cuda.cu:104, ~12.5%/run)
+    - The re-cert delta 0/30 vs 2/30 is Fisher p = 0.49: 10326 never demonstrably regressed against 9860
+      - It failed the POLICY gate ("any crash = fail"), which is a different claim from "worse than its predecessor"
+    - What changed this week was workload, not build: no one had run ~81k prompts through an MTP lane before
+    - Pooled across builds, MTP 9/10 vs no-MTP 0/5 is p = 0.002 - MTP is the axis, version is not
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch

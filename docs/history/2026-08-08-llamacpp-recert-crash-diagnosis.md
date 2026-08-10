@@ -121,6 +121,33 @@ five fresh trials per arm, one variable changed per arm. Freshness enforced per 
 - Standing conclusion: on the current canonical build, `gemma4-12b-it-qat-mtp` cannot serve ~81k-token prompts.
   - Untested and likely sharing the exposure: the 26B and 31B Gemma MTP pairs (same target+drafter mechanism).
 
+### This is not a regression, and reverting has no supporting evidence
+
+Re-read of the primary records, prompted by "are we even sure reverting would fix it?" (user, 2026-08-09):
+
+- **b9860 crashed with this signature too.** 2026-07-17 eval, section 2b, Gemma 12B MTP at ctx 200000, graphs ON:
+  "loads; 4 gens OK (~105 tok/s, acceptance 0.745), then `illegal memory access` on gen 5". The last-known-good
+  build has a recorded instance of the same failure at large context.
+- **Ollama's older vendored llama.cpp crashed too**: 2026-07-01, `ggml-cuda.cu:104 illegal memory access` on
+  `qwen3.5-9b-mtp-coding`, rate ~12.5%/run. Same abort macro, different line number (version drift).
+- Upstream #26609 likewise reports its crash as cross-build (b10107, b10243).
+- So the failure spans Ollama-era llama.cpp, b9860, 10326, and 10335 - months of history, not a recent regression.
+
+What actually changed this week was **workload, not build**: nothing had ever pushed ~81k-token prompts through an
+MTP lane. The b9860 "30/30 clean" hammer used ~5k prompts, and the 36/36 ctx ladder used 800-token generations on a
+small fixed prompt - neither touches the failure regime.
+
+Recomputing the two comparisons that matter, pooled across builds:
+
+| Comparison | Result | Fisher exact (two-tailed) |
+|---|---|---|
+| Qwen hammer, 9860 0/30 vs 10326 2/30 | apparent regression | **p = 0.49 - not significant** |
+| Gemma 81k, MTP 9/10 vs no-MTP 0/5 | MTP as trigger | **p = 0.002** |
+
+- The 10326 re-cert failure was a **policy** failure (the rule is "any crash = fail"), not a demonstrated regression
+  against 9860. Both statements are true and should not be conflated.
+- The only intervention with statistical support is removing MTP. Version is not the axis; MTP is.
+
 ### A second, unrelated llama.cpp bug found while running this
 
 `POST /models/unload` arriving at an already-crashed, still-terminating instance orphans the model name in
