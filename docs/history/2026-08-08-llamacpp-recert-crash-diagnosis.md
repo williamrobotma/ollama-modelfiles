@@ -108,7 +108,31 @@ five fresh trials per arm, one variable changed per arm. Freshness enforced per 
   - Freshness had to be forced with `POST /models/unload` between trials, verified per trial in the log.
   - Any future trial counting must verify freshness from the log, never from the request flag.
 
-## 7. Method failures worth keeping (both mine, both same-day)
+## 7. The crash persists on 10335 (2026-08-09, after the user rebuilt)
+
+- Build `74ce15741` (10335), 9 commits past 10326; only 2 touch CUDA and none touch MTP, speculative, or graphs.
+- Same model, same 81,163-token prompt, byte-identical request body (`cmp` clean against the baseline request file).
+- **5/5 fresh trials crashed**, same signature (`illegal memory access`, `ggml_backend_cuda_synchronize`, :2499).
+  - Every trial provably cold (`selected slot by LRU, t_last = -1`, full reprocess); zero cache hits in the whole log.
+  - vs 4/5 on 10326: Fisher exact p = 1.0. No detectable change - the rebuild neither fixed nor worsened it.
+  - Failure-mode mix unchanged: 3 mid-decode, 2 at the prefill->decode transition.
+- No trial completed, so this arm yields no decode figure; the 1.6x MTP A/B stands on the 10326 measurement.
+- Per-build multi-system `/v1/messages` immunity probe on 10335: PASS (200, Anthropic-shaped).
+- Standing conclusion: on the current canonical build, `gemma4-12b-it-qat-mtp` cannot serve ~81k-token prompts.
+  - Untested and likely sharing the exposure: the 26B and 31B Gemma MTP pairs (same target+drafter mechanism).
+
+### A second, unrelated llama.cpp bug found while running this
+
+`POST /models/unload` arriving at an already-crashed, still-terminating instance orphans the model name in
+`stopping_models`, and the **next** instance spawned under that name is force-killed after `stop_timeout` (10 s).
+
+- `tools/server/server-models.cpp:1085` erases the name when the child exits; `:1141` re-inserts it if the unload
+  lands after that erase; nothing removes it afterwards, so `is_stopping()` at `:1042` stays true.
+- Symptom: `W srv operator(): force-killing model instance name=... after 10 seconds timeout`, with no CUDA error.
+- Cost us one trial in each of two consecutive runs. Workaround: poll `/v1/models` and only unload if not already
+  unloaded (a crash auto-unloads). Reportable upstream on its own merits.
+
+## 8. Method failures worth keeping (both mine, both same-day)
 
 - **A truncated grep cannot prove absence.** The "removed upstream" claim came from `grep -rn ... | head -8`, whose
   output filled with unrelated `USE_CUDA_GRAPH` hits before reaching the single real match in `common.cuh`.

@@ -309,6 +309,13 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       MTP, speculative, or CUDA graphs - so no fix for the crash is expected, and #26782 is still open unfixed
     - 26767 is a new fusion path, so it is a fresh variable for the crash matrix rather than a neutral bump
     - Re-cert owed on 10335 per the rebuild rule (GPU-gated); re-running one MTP crash arm would re-scope the evidence
+    - Tested 2026-08-09 (user "go for the test"): the crash PERSISTS on 10335 - 5/5 fresh trials, same signature
+      - vs 4/5 on 10326: Fisher p = 1.0, no change; every trial provably cold, stimulus byte-identical to baseline
+      - Per-build /v1/messages multi-system immunity probe on 10335: PASS
+      - So gemma4-12b-it-qat-mtp cannot serve ~81k prompts on the canonical build; DECISION OWED on the entry
+      - Untested and likely exposed the same way: the 26B and 31B Gemma MTP pairs (same target+drafter mechanism)
+    - Second upstream bug found: POST /models/unload racing a crashed instance orphans the name in stopping_models,
+      so the next instance under that name is force-killed at 10 s (server-models.cpp:1085/:1141/:1042). Reportable.
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch
