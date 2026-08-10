@@ -148,6 +148,31 @@ Recomputing the two comparisons that matter, pooled across builds:
   against 9860. Both statements are true and should not be conflated.
 - The only intervention with statistical support is removing MTP. Version is not the axis; MTP is.
 
+### Uncontrolled variable found 2026-08-09: the GPU is shared with Windows
+
+Observed by the owner with the router down, no llama-server alive, and no compute apps listed:
+`nvidia-smi` reported **4731 MiB / 12282 MiB used**, "No running processes found", 6% utilization.
+On WSL2 the guest cannot see host processes, so that memory is Windows-side.
+
+- Idle baselines recorded across this session: 838, 890, 967, 1023, 1241, 1442 MiB - then 4731 MiB. A ~3.9 GB swing
+  in what is available to llama.cpp, driven entirely from outside the guest.
+- The crashing config reached whole-GPU totals of 11209-11491 MiB against a ~1000 MiB baseline, so model + KV is
+  roughly 10.2-10.5 GB. At a 4731 MiB baseline that config does not fit in 12282 MiB at all.
+- `-ngl` is unset, so layers are fitted to *available* VRAM at load time, and availability can move mid-run.
+- Related documented mechanism on the 26B pair: a fully-used GPU reports free=0 -> NaN layer split -> loader throw
+  (upstream #19973). Same family: VRAM contention.
+- This plausibly explains the crash-rate variability across sittings (1/3, 4/5, 5/5, 13/15 live).
+
+Honest counter-evidence, which keeps this from being a complete explanation:
+
+- Removing MTP took 5/5 -> 0/5 while freeing only ~240 MiB (10967 vs 11209 MiB whole-GPU). A 240 MiB delta flipping
+  the outcome that hard needs the config to sit exactly on a cliff.
+- The flash-attn-off arm ran at a *higher* footprint (11884 MiB) and was clean 0/2.
+
+**Standing consequence: every crash measurement in this document is uncontrolled for free VRAM.** Host-side usage was
+never recorded at trial time, and it demonstrably moved by ~3.9 GB during the session. Before any upstream report,
+and before any further trials, free VRAM must be recorded per trial and the host quiesced or `-ngl` pinned.
+
 ### A second, unrelated llama.cpp bug found while running this
 
 `POST /models/unload` arriving at an already-crashed, still-terminating instance orphans the model name in
