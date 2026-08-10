@@ -153,6 +153,9 @@ Defaults: `--models-max 1` (env `MODELS_MAX`), `--sleep-idle-seconds 86400` (env
 Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike `/tmp`).
 
 - **`-fa on` and q8_0 KV must stay paired** (`[*]` block): the quantized V-cache hard-fails without flash attention.
+- **Capture GPU and host RAM per trial on any GPU run whose numbers you will quote** - the card is shared with
+  Windows and RAM is shared through WSL2, and neither is recoverable after the fact.
+  - Procedure and the commands: [docs/benchmarking.md](docs/benchmarking.md) (Resource capture).
 - `ctx-size` is per-entry in `models.ini` and wins; nothing auto-shrinks on OOM (partial offload instead).
 - CUDA graphs run ON fleet-wide (P1-validated); never set `GGML_CUDA_DISABLE_GRAPHS` in the launcher env.
   - It moved to `ggml-cuda/common.cuh:1258` (`ggml_cuda_graph::is_enabled`) in `090b137e`, and tests presence only:

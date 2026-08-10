@@ -80,6 +80,28 @@ The harness sets `OLLAMA_MODELS=/usr/share/ollama/.ollama/models` (the systemd `
 This lets it see the `ollama create`d models.
 It requires the invoking user to be in the `ollama` group for read access.
 
+## Resource capture (mandatory for crash trials and any GPU run whose numbers get quoted)
+
+The box shares one 12 GB card with Windows and shares host RAM through WSL2, so both budgets move without warning
+and neither is visible from a result file. Capture them per trial, or the trial is uninterpretable later.
+
+Record at three points - before load, after load, and at crash or completion:
+
+```bash
+nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu,clocks_throttle_reasons.active \
+    --format=csv,noheader                      # GPU; the guest cannot see Windows-side consumers
+free -m | sed -n '2p;3p'                       # host RAM and swap (WSL2 shares them)
+```
+
+- Pin `-ngl` explicitly for trials. Unset means layers fit to whatever is free at load time, so the split silently
+  depends on host conditions and two "identical" trials are not identical.
+- Note whether the host was quiescent. A steady-state baseline here is ~1.5 GB GPU; transient host spikes to ~4.7 GB
+  have been observed, which is more than the headroom a 12B at large ctx leaves (~800-1000 MiB).
+- Swap pressure matters as much as VRAM: partial-offload models read weights through host RAM, so a host under
+  memory pressure changes timings and can starve a run that looked fine on VRAM alone.
+- Why this is a rule: the 2026-08-09 crash trials recorded only whole-GPU totals after load, so no crash rate in
+  `history/2026-08-08-llamacpp-recert-crash-diagnosis.md` is controlled for free VRAM or host RAM.
+
 ## Report tool
 
 ```bash

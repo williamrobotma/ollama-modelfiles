@@ -176,8 +176,11 @@ Counter-evidence against contention as the crash mechanism, independent of the a
 - The flash-attn-off arm ran at a *higher* footprint (11884 MiB) and was clean 0/2.
 
 **Standing consequence (reduced but real): free VRAM was still never recorded per trial**, only whole-GPU totals after
-load. Future trials should log free VRAM at load and at crash, and pin `-ngl`, so the variable is controlled rather
-than inferred - and a maintainer will ask for exactly those numbers.
+load, and host RAM was never recorded at all - which matters because partial-offload models read weights through it.
+
+Fixed as protocol rather than intention: `docs/benchmarking.md` (Resource capture) now requires GPU and host-RAM
+snapshots before load, after load, and at crash or completion, plus an explicit `-ngl` pin so two "identical" trials
+really are identical. `AGENTS.md` carries the pointer. Everything in this document predates that rule.
 
 ### A second, unrelated llama.cpp bug found while running this
 
