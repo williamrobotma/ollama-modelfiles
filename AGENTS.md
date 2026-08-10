@@ -76,7 +76,8 @@ The guard: `raise_exception('System message must be at the beginning.')`.
 - Exception: unsloth's Qwen3.6 and 3.5-MTP builds ship `merged_system`.
   - It merges up to two leading system messages and silently drops all others, mid-conversation ones included.
 - On llama-server, the guard fires only on the OpenAI endpoint (`/v1/chat/completions` with `--jinja`).
-  - A multi-system request there returns 400.
+  - A multi-system request there fails with the guard's message; the HTTP status varies by build (400 at 10326,
+    500 at 10335), so identify it by the message text.
   - `/v1/messages` is immune: system folds into one message before the template runs.
   - Under Ollama it stayed unresolved (Jinja never ran, yet 400s happened); moot since the 2026-08-07 retirement.
 
@@ -92,7 +93,9 @@ Vetting (store-reported templates lie - Ollama's `ollama show --template` showed
    - The greps certify the first 30 MB only; template strings sit in the GGUF header well inside that (fleet-verified).
 2. Per GGUF: `head -c 30000000 <file>.gguf | grep -ac 'merged_system'`.
    - Hazard: a hit means silent drops, not a 400 - it never shows up as an error.
-3. Per GGUF: one non-first-`system` request to `/v1/chat/completions` - 400 = guarded.
+3. Per GGUF: one non-first-`system` request to `/v1/chat/completions` - an error naming the guard = guarded.
+   - Match on `System message must be at the beginning`, **not** on the status code: 10326 returned 400 and 10335
+     returns 500 for the same guard. A code-only check reads that 500 as "not guarded" and passes a guarded GGUF.
    - Never cold-load onto a busy GPU; `-ngl 0` is fine.
 4. Per build: one multi-block-`system` request to `/v1/messages` (immunity check).
 

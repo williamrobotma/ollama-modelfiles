@@ -17,7 +17,14 @@
       - The same-day 10326 re-cert FAILED on an unrelated Qwen-MTP crash; build disposition is not this file's
         to state - the record and the canonical-build rule live in `../launch.sh`.
       - Whether this becomes the served pair follows the build disposition, not this probe.
-    - Vendored patched file on build 10335 (on-disk since 2026-08-09): OWED, not yet run - the GPU gate is closed.
+    - Vendored patched file on build 10335: probes PASSED 2026-08-10.
+      - Multi-system `/v1/chat/completions`: 200 on all 3 guarded entries (9B, plus both Queen-27B configs).
+      - All three spent the 32-token cap inside reasoning (empty content): a status-level pass, not visible text.
+        - The 9B answered in content at 10326 and did not here. The cap is the difference, not the template.
+      - Control - same 9B GGUF, no template override, `-ngl 0`: the embedded guard fired, so the override is
+        load-bearing on this build. Sanity check on that same server: a single leading system message returned 200.
+        - **The guard returned HTTP 500 on 10335, not the 400 seen at 10326**, message verbatim
+          `Jinja Exception: System message must be at the beginning.` Vet on the text, never the status code.
     - Re-validate whichever pair is live whenever the build record moves.
   - Serves the guarded Qwen GGUFs to OpenAI-style clients (embedded templates 400 multi-system requests).
     - Covers 3 preset entries: unsloth Qwen3.5-9B non-MTP, plus the two Queen-27B configs sharing one GGUF.

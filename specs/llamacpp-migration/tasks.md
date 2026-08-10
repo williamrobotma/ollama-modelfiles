@@ -354,8 +354,11 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Held by user: OTEL body-log cleanup (B8)
   - Fixed 2026-08-08 (user "1"): the 9-tag whitespace patch is applied to the vendored template; render verified
     - Provenance + new sha recorded in templates/README.md; upstream report (option 2) not taken
-    - Gate re-validation of the patched (template, 10335) pair queued with the build re-cert (GPU-gated)
-      - Re-scoped 2026-08-10 from the superseded 10326 pair; recorded as OWED in templates/README.md
+    - Gate re-validation of the patched (template, 10335) pair: PASSED 2026-08-10
+      - Multi-system /v1/chat/completions returned 200 on all 3 guarded entries; template sha 8daaa08a re-verified
+      - Control (9B, no override, -ngl 0): guard fired, so the override is load-bearing; sanity single-system = 200
+      - FINDING: the guard returns HTTP 500 on 10335, not 400 as at 10326. AGENTS.md gate step 3 now matches on the
+        message text, since a code-only check would read that 500 as "not guarded" and pass a guarded GGUF
     - Online investigation 2026-08-08 (all 66 repo discussions grepped byte-exact): the bug is unreported - novel
     - It is a v21.3 regression: the vulnerable split landed in the repo's last commit (2026-07-02); v21.2 was immune
     - Qwen/unsloth official templates are immune by construction (single string literal); froggeric-only exposure
