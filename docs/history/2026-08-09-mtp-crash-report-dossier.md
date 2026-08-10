@@ -4,6 +4,22 @@ Raw material for a human-written upstream report. llama.cpp forbids AI-written p
 ([CONTRIBUTING.md](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) item 5), so nothing here is a
 draft to paste - it is the verified facts, with a source link for each, to write from.
 
+## Blocked 2026-08-09: do not file yet
+
+The machine is implicated. This box logs the same fault signature - `Graphics SM Warp Exception on (GPC 3, TPC 1):
+Out Of Range Address`, Windows `nvlddmkm` Event ID 13 - with no llama-server running and no CUDA compute client,
+while a +230 MHz core overclock is live. 97% of 680 located GPU exceptions sit on one GPC.
+
+Filing before that is ruled out would attribute to llama.cpp a fault this hardware produces unprompted.
+
+Gate to clear, in order:
+
+1. Set the GPU to stock clocks, idle the desktop, confirm the Id-13 faults stop. Needs no GPU gate.
+2. Re-run the crash matrix at stock. If the crash is gone, there is nothing to file.
+3. If it survives, everything below stands and gets stronger; add a `compute-sanitizer` trace before writing.
+
+Full finding: [2026-08-08-llamacpp-recert-crash-diagnosis.md](2026-08-08-llamacpp-recert-crash-diagnosis.md) section 9.
+
 ## Upstream issues
 
 | Issue | State | Relevance |

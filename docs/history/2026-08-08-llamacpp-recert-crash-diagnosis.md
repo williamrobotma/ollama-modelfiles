@@ -205,6 +205,99 @@ really are identical. `AGENTS.md` carries the pointer. Everything in this docume
 - Upstream match claims need the same discipline: `ggml-cuda.cu:2499` is `cudaStreamSynchronize`, a generic detection
   point any async fault reaches, so "same site as #26609" is near-vacuous. Section 2's wording overstated it.
 
+## 9. Attribution change 2026-08-09: the GPU faults on its own, with no LLM workload
+
+Nothing above is retracted. The crash rates, the MTP gate, and the not-a-regression finding all stand as measured.
+What changes is the **attribution**: there is a local cause that was never checked, and it has to be ruled out first.
+
+### The card logs this document's fault signature while nothing of ours is running
+
+Windows System log, provider `nvlddmkm`, Event ID 13 - the WSL analogue of Xid 13, Graphics Exception. `dmesg` inside
+WSL shows none of it and sees only llama-server's own SIGABRT, because the kernel-mode driver lives Windows-side.
+
+Read 2026-08-09 23:50 EDT over the whole log (oldest event 2026-06-17 22:31:38):
+
+| Figure | Value |
+| --- | --- |
+| Id-13 events, all time | 1122 |
+| of those, carrying an SM location | 680 |
+| on **GPC 3**, any TPC | 660 (97%) |
+| on **GPC 3, TPC 1** specifically | 566 (83%) |
+| warp exceptions by month | 6 (Jun), 145 (Jul), 256 (Aug) |
+
+The two fault names logged are `Out Of Range Address` and `Misaligned Address`. They map exactly onto the two CUDA
+errors recorded here: `illegal memory access` (stages 1-3) and `misaligned address` (stage 4a).
+
+**The control.** Three bursts on 2026-08-09 at 23:16:26, 23:25:19 and 23:26:44, every one
+`Graphics SM Warp Exception on (GPC 3, TPC 1, SM 0/1): Out Of Range Address`, with:
+
+- `curl 127.0.0.1:11433/v1/models` refused, no `llama-server` process, `nvidia-smi --query-compute-apps` empty
+- no llama-server log written under `~/.local/state` or this repo since 18:00
+- the GPU gate closed all evening, so no trial ran
+
+Ordinary Windows desktop use reproduces this document's crash signature on this document's hardware. The desktop
+survives it because the compositor resets per frame; a long-lived CUDA context cannot, so one fault rate reads as
+"nothing wrong" on Windows and as a hard abort in llama.cpp.
+
+### A core overclock is live
+
+- `nvidia-smi --query-gpu=power.limit,power.default_limit` -> `220.00 W, 200.00 W`: a 110% limit is applied right now.
+- In Afterburner's per-GPU profile file, every profile except `[Profile1]` carries `PowerLimit=110` and
+  `CoreClkBoost=230000` (+230 MHz core). `[Profile1]` alone is stock. `MSIAfterburner.exe` runs at startup.
+- So the core is +230 MHz whichever non-stock profile is active. Which one is active is UNVERIFIED from inside WSL and
+  does not matter for the test below, since `[Profile1]` resets core, memory and power together.
+
+A flat core offset shifts the whole V/F curve including its low-voltage points, which is where instability appears
+first - consistent with faults firing under light desktop load.
+
+### What this explains, and the one thing it does not
+
+It explains, better than any software hypothesis has, that **no build ever fixed this**. 9860, 10326, 10335 and
+Ollama's older engine all crash the same way (section 7). A defect in the machine predicts exactly that; an upstream
+regression does not.
+
+It does not explain the **MTP flag gate**: 9/10 with `--spec-type draft-mtp` against 0/5 without, same GGUF, same ctx,
+same prompt (section 6). Marginal silicon is not normally gated on a software flag. The hypothesis worth holding is
+exposure - the MTP path runs a denser kernel mix with rapid draft/verify transitions, so it trips a marginal SM where
+the plain path does not. That is untested. If the MTP gating survives at stock clocks, both causes are real.
+
+Evidence for neither side: the 6/145/256 monthly trend. GPU-hours rose over the same months as the benchmark program,
+so the trend is confounded and is recorded as a bare observation.
+
+### The discriminator, and it needs no GPU gate
+
+Set Afterburner to `[Profile1]`, change nothing else, leave the desktop to idle and browse, then count Id-13 events
+over a comparable window.
+
+- Faults go to zero -> the overclock is the cause, and a crash-matrix re-run is confirmation.
+- Faults persist -> the silicon is marginal independent of clocks, and remediation changes (underclock, or RMA).
+
+A crash-matrix re-run means nothing until that is done. **No upstream report before it**: filing now would attribute
+to llama.cpp a fault this machine produces unprompted.
+
+### Reading this log correctly (a measurement trap)
+
+`Get-WinEvent`'s `.Message` renders **empty** from WSL, because the provider's resource DLL is not loadable there. A
+message-text filter therefore matches nothing and reads as "no such events". The text lives in the event XML:
+
+```powershell
+Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='nvlddmkm';Id=13} |
+  ForEach-Object { ([xml]$_.ToXml()).Event.EventData.Data[1] }
+```
+
+Multi-line PowerShell does not survive `powershell.exe -Command -` over stdin either: it executes line by line and
+silently drops block bodies, exiting 0. Use single-line pipelines.
+
+### Cleared locally (verified at HEAD, for an eventual upstream report)
+
+- Toolkit **13.3.73** (`nvcc --version`; CMakeCache `FIND_PACKAGE_MESSAGE_DETAILS_CUDAToolkit ... [v13.3.73()]`),
+  driver 610.62. Not the 13.2 the repo warns about - and `docs/parameters.md:23` ("**CUDA 13.2 produces corrupted
+  Gemma 4 output.** Use CUDA 13.1 or 13.3") is itself unsourced and speaks only to corrupted output, never crashes.
+- Build config stock: `CMAKE_BUILD_TYPE=Release`, `CMAKE_CUDA_ARCHITECTURES=89` (correct for Ada), `CMAKE_CUDA_FLAGS`
+  empty, `GGML_CUDA_GRAPHS=ON` as intended, `GGML_LTO=OFF`, no `GGML_CUDA_F16`, no fast-math.
+- Agent-reported, not re-verified here: all 7 GGUF blobs sha256-match their HF OIDs; no `GGML_*`/`CUDA_*`/`LD_PRELOAD`
+  in any shell init or the launcher; no GPU limits in `.wslconfig`; no remapped-row failures.
+
 ## Provenance and validity
 
 - Small n throughout: 2 fresh-prefill control trials, 1 fa-off trial; the live loop (15 spawns) is the strongest sample.

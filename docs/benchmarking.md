@@ -91,8 +91,18 @@ Record at three points - before load, after load, and at crash or completion:
 nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu,clocks_throttle_reasons.active \
     --format=csv,noheader                      # GPU; the guest cannot see Windows-side consumers
 free -m | sed -n '2p;3p'                       # host RAM and swap (WSL2 shares them)
+
+# GPU hardware faults, Windows-side. Bracket every trial with this and record the delta.
+/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command \
+    "(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='nvlddmkm';Id=13} -EA 0).Count"
 ```
 
+- The Id-13 delta is what separates a hardware fault from a software bug. This card logs SM warp exceptions on GPC 3
+  with no LLM workload at all, so a crash trial without the delta cannot tell you which one you measured.
+  - `dmesg` cannot see these: the kernel-mode driver is Windows-side, so WSL only shows llama-server's own SIGABRT.
+  - `.Message` renders empty under WSL, so a message-text filter silently matches nothing. Read the event XML.
+  - Location breakdown one-liner and the full finding:
+    [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 - Pin `-ngl` explicitly for trials. Unset means layers fit to whatever is free at load time, so the split silently
   depends on host conditions and two "identical" trials are not identical.
 - Note whether the host was quiescent. A steady-state baseline here is ~1.5 GB GPU; transient host spikes to ~4.7 GB

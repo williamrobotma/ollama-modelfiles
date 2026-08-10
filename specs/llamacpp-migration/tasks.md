@@ -370,6 +370,17 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - Deleted 2026-08-08 (user go): the 35B UD-Q5_K_XL GGUF blob (26G measured) removed from the HF cache
         - Guest / usage 484G -> 459G; q6 + mmproj blobs untouched; host vhdx reclaim folds into the purge step
         - The frozen q5 canonical Modelfile keeps its dead FROM path (build-time only; store copy serves rollback)
+  - Finding 2026-08-09 (verified inline at 23:50): the GPU faults on its own - LOCAL CAUSE LIKELY, upstream blocked
+    - Windows nvlddmkm Event ID 13: 1122 events; of 680 carrying a location, 660 (97%) on GPC 3, 566 on GPC 3 TPC 1
+    - Fault names Out Of Range Address / Misaligned Address = the two CUDA errors recorded in the diagnosis log
+    - Control: 3 bursts at 23:16/23:25/23:26 with router down, no llama-server, no compute apps, no trial that evening
+    - A +230 MHz core OC is live (power.limit 220 W vs default 200 W; Afterburner Profile1 alone is stock)
+    - Explains why no build ever fixed it; does NOT explain the MTP flag gate (exposure hypothesis, untested)
+    - DECISION OWED: set Afterburner Profile1, idle, recount Id-13 (needs no GPU gate) - then re-run the matrix
+    - Cleared: toolkit 13.3.73 (not the 13.2 the repo warns of), arch 89, Release, stock flags, graphs ON
+    - Full record: docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md section 9; dossier gated "do not file"
+  - DECISION OWED on gemma4-12b-it-qat-mtp is HELD pending the stock-clock result (deleting a working config over a
+    hardware defect would be wrong); per-trial capture now mandates an Id-13 delta (docs/benchmarking.md)
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)
