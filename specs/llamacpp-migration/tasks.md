@@ -389,6 +389,13 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - gemma4-12b-it-qat-mtp DECISION is VOID: the entry was never broken, keep it unchanged
     - Upstream dossier CLOSED, nothing filed; 10335 crash matrix PASSES, froggeric (template, 10335) pair still owed
     - Standing rule: keep the GPU at stock clocks; full result in the diagnosis log section 10
+  - DECOMPOSED 2026-08-10 (4 arms, one Afterburner field moved at a time): the core clock offset is the whole cause
+    - core +230 on: 11/11 crashed; core off: 0/15 crashed (Fisher p = 1.3e-07)
+    - memory +1500 has no effect at either core level (p = 1.0 both ways); 110% power limit not implicated
+    - Narrower standing rule: keep the CORE offset at 0. Memory offset and power limit need no change
+    - Mechanism is voltage-for-frequency, not peak clock (peak reads 2805 MHz in crashing and clean arms alike)
+    - Core offset is NOT verifiable from WSL (clamp hides it; voltage.gpu unqueryable) - rests on the owner's change
+    - Id-13 final reading: specific but insensitive and coarser than a trial; a zero delta never means "no fault"
   - Decided 2026-08-10 (user, "1. exit, 2. remove, 3. single-home, 4. collapse all three"): review-sweep judgment calls
     - launch.sh exits on a non-empty LLAMA_CACHE; SLEEP_IDLE_SECONDS/MODELS_MAX env knobs removed (flags are last-win)
     - Build record single-homed in launch.sh, crash status in docs/benchmarking.md; the satellites became pointers

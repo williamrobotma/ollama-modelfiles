@@ -395,6 +395,70 @@ value it branched on, and a stray `{` appeared in the output.
   exactly like a condition that is legitimately false.
 - The harness now stamps any trial with a nonzero `cache_read` as `INVALID-CACHED` instead of letting it pass.
 
+## 11. Decomposed 2026-08-10: it is the core clock offset, and only that
+
+Four arms, same build 10335, same byte-identical request body, same `gemma4-12b-it-qat-mtp` lane. Only Afterburner
+settings changed between them.
+
+| Arm | PowerLimit | Core | Memory | Crashes |
+| --- | --- | --- | --- | --- |
+| Profile 3 | 110 | +230 | +1500 | **6 / 6** |
+| Profile 3, memory zeroed | 110 | +230 | +0 | **5 / 5** |
+| Profile 3, core zeroed | 110 | +0 | +1500 | **0 / 5** |
+| Profile 1 | 100 | +0 | +0 | **0 / 10** |
+
+Collapsed on each factor:
+
+- **Core offset present: 11/11 crashed. Core offset absent: 0/15 crashed. Fisher exact p = 1.3e-07.**
+- Memory offset, holding core at +230: 6/6 vs 5/5. **p = 1.0 - no effect.**
+- Memory offset, holding core at +0: 0/5 vs 0/10. **p = 1.0 - no effect.**
+
+A +1500 MHz memory offset and a 110% power limit are both fine on this card. The +230 MHz core offset is the cause.
+
+### The mechanism is voltage-for-frequency, not peak clock
+
+Peak core clock is **2805 MHz in every arm**, crashing or clean, because Profile 3's curve is clamped flat at
+~2800 MHz from ~1075 mV up. The offset does not raise the ceiling; it raises the frequency demanded at each voltage
+point below it, so the part runs a given clock at less voltage than it needs. That is the classic instability shape
+and it is invisible in any peak-clock reading.
+
+### Verification limits, stated plainly
+
+- The **memory** offset is independently verified: 10251 MHz under load with it off, 11751 MHz with it on - exactly
+  the +1500 delta.
+- The **core** offset is **not** independently verified from inside WSL. Peak clock is clamped identically in both
+  cases, and core voltage is unreadable here: `voltage.gpu` is not a valid `nvidia-smi` query field and
+  `nvidia-smi -q -d VOLTAGE` returns nothing. The core arms rest on the owner's Afterburner change, not on a
+  readback. Afterburner's own monitoring on the Windows side is where that confirmation would come from.
+- Under-load samples trend lower in the core-zeroed arm (2700-2775 MHz) than in the core-on arms (2805 MHz), but at
+  40-75 W against ~174 W, so they sample different load phases and are not a like-for-like comparison.
+
+### Id-13, third and final revision of what it means
+
+Across these arms the counter ran 1122 -> 1137. It is **specific but insensitive, and coarser than a trial**:
+
+- 5 of 6 Profile 3 crashes logged no Id-13 event at all.
+- Trial 3 of the memory-zeroed arm read `delta = 0` while 6 events had landed during the *preceding* teardown and
+  reload, outside the bracket.
+- The clean arms (0/15) logged nothing, and the crashing arms did log faults - so it tracks the condition, not the
+  individual crash.
+
+Use it as confirmation when nonzero. **Never read a zero delta as "no hardware fault."** Section 10's phrasing that
+the crash count and the fault counter "agree" was too strong; they agree in aggregate, not per trial.
+
+### Correction to section 10
+
+Section 10 says "one variable changed - the clocks." Profile 1 and Profile 3 differ in power limit, core offset,
+memory offset **and** curve shape, so that arm changed a profile, not a variable. The single-variable work is this
+section. The `VFCurve=` field in Afterburner's per-GPU cfg is a header, not the curve: it is byte-identical between
+Profile 1 and Profile 3, whose curves are visibly different in the editor. Never compare Afterburner profiles from
+the readable scalars - they are a projection of the profile, not the profile.
+
+### Standing consequence
+
+Keep the **core clock offset at 0** on this card. Memory offset and power limit are not implicated and need no
+change. That is a narrower and cheaper rule than "keep everything at stock", which is what sections 9-10 implied.
+
 ## Provenance and validity
 
 - Small n throughout: 2 fresh-prefill control trials, 1 fa-off trial; the live loop (15 spawns) is the strongest sample.
