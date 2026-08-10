@@ -459,6 +459,62 @@ the readable scalars - they are a projection of the profile, not the profile.
 Keep the **core clock offset at 0** on this card. Memory offset and power limit are not implicated and need no
 change. That is a narrower and cheaper rule than "keep everything at stock", which is what sections 9-10 implied.
 
+## 12. Offset ladder 2026-08-10: +120 MHz adopted as the safe core offset
+
+Same build 10335, same byte-identical request body, same `gemma4-12b-it-qat-mtp` lane throughout. Only the
+Afterburner core offset moved. Memory stayed at +1500 and the power limit at 110% for every rung below, both
+already shown irrelevant in section 11.
+
+| Core offset | Peak core | Trials | Crashes | Note |
+| --- | --- | --- | --- | --- |
+| +230 (clamped ~2800) | 2805 | 11 | **11** | section 11's two arms pooled |
+| +200 (unclamped) | ~3000 | 5 | 2 | |
+| +190 | 2970 | 5 | 1 | |
+| +150 | 2940 | 5 | 1 | 4 clean first, then **the host went down** |
+| +135 | ~2925 | 10 | 0 | stopped early; a 3rd round was voided mid-flight |
+| **+120** | 2910 | **25** | **0** | 1 standalone run + 4 soak rounds, cold load each |
+| +0 | - | 15 | 0 | section 11 |
+
+**Standing rule: keep the core offset at or below +120 MHz.**
+
+- 25 clean trials bound the per-trial failure rate under ~11%; they do not prove zero.
+- **+135 did not fail.** It is simply less proven - 10 clean trials, bounding its rate under ~26%. Adopting +120
+  is the conservative choice between two unfailed rungs, not a finding that +135 is unsafe.
+- The +135 round 3 trials (4 clean) are **void**: the owner had begun changing profiles while they ran.
+
+### The +150 rung took the host down
+
+Not a display-driver reset. Windows logged **Kernel-Power Event 41 at 15:15:39** with last boot **15:15:32** - the
+marker written on the next boot when the previous shutdown was dirty. The nearest TDR (`Display` 4127) was
+15 hours earlier, at 00:24. Event 41 has fired only 4 times in this machine's whole log, and this was the first
+since June. llama-server logged its usual `illegal memory access` first, but that does not establish ordering at
+the driver level.
+
+Consequence: a marginal offset can cost the machine, not just the trial. The other rungs' failures were contained
+to the llama-server process.
+
+### Mechanism, corrected by the owner
+
+The offsets had always been validated **under full load, where the BIOS pins the card near 1100 mV**. LLM inference
+does not live there: decode is memory-bound and low-utilization, and the under-load samples during these arms ran
+19-86 W against the 217 W seen in full prefill. So the workload sits in a voltage band the overclock was never
+validated in, which is why a card that passes stress testing dies on an 81k-token prefill-then-decode.
+
+This also explains why peak clock was useless as a check: the peak is the one region that *was* validated. The BIOS
+clamp at 1100 mV further means every curve's 1125-1250 mV points are drawn but never reached.
+
+### Method notes
+
+- Afterburner's `VFCurve=` cfg field is a header, not the curve - byte-identical between profiles whose curves
+  differ visibly in the editor. Profiles cannot be compared from the cfg; only the curve editor is authoritative.
+- Peak core clock is not a manipulation check when the curve is clamped: it read 2805 MHz in crashing and clean
+  arms alike. Removing the clamp made it usable again (2910-3000 MHz tracked the offset step for step).
+- Core voltage is unreadable from WSL: `voltage.gpu` is not a valid `nvidia-smi` field and `-q -d VOLTAGE` returns
+  nothing. Core-offset changes rest on the owner's Afterburner action, not a readback. Memory offsets *are*
+  verifiable (10251 vs 11751 MHz under load).
+- Disqualifying a rung is cheap and validating one is expensive, so the harness aborts on the first crash. Any
+  nonzero rate disqualifies a serving lane, and four clean trials at a ~20% rate happens ~40% of the time.
+
 ## Provenance and validity
 
 - Small n throughout: 2 fresh-prefill control trials, 1 fa-off trial; the live loop (15 spawns) is the strongest sample.

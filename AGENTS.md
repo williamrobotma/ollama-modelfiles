@@ -162,10 +162,10 @@ Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike
   - Whether it took effect is visible only in the `CUDA graph warmup ...` debug lines, not in `graphs reused`.
     - `graphs reused` is llama's own graph-reuse counter (`llama-context.cpp:4139`), unrelated to CUDA graphs.
   - Children inherit the router env verbatim, and Gemma MTP needs graphs on.
-  - Graphs are not the crash trigger. The large-ctx MTP crashes were this box's +230 MHz GPU core clock offset,
-    isolated 2026-08-10 (core on 11/11 crashed, off 0/15) - keep the core offset at 0; memory offset and power
-    limit are not implicated. Crash status is single-homed in
-    [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash).
+  - Graphs are not the crash trigger. The large-ctx MTP crashes were this box's GPU core clock offset, isolated
+    2026-08-10 (at +230: 11/11 crashed; at +0: 0/15) - **keep the core offset at or below +120 MHz**, the value
+    certified by a 25-trial clean soak. Memory offset and power limit are not implicated. Crash status is
+    single-homed in [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash).
 - The retired systemd Ollama service (`11434`) stays frozen - stop/disable and purge tracked in Phase 4.
 
 ## WSL disk budget

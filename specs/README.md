@@ -22,3 +22,6 @@ Order follows the dependencies; work top-down (stack-upkeep is planned early, ru
 3. **openwebui-wrapup** - end-to-end Open WebUI pass. Runs after step 1 rewires Open WebUI to llama-server, so the final config is validated once.
 4. **stack-upkeep** - version tracking and per-component checks. The chat-template vetting check is already filed in its planning items; run as a recurring cadence.
 5. **copilot-byok** - VS Code Copilot on the llama-server lane (BYOK Custom Endpoint); runs any time after step 1.
+6. **gpu-stability-test** - package the crash matrix as one certifying command. Derives from step 1, which names that
+   matrix as its post-rebuild regression test; a sibling bundle rather than nested, so it does not move to `done/`
+   when step 1 does.

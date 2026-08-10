@@ -21,4 +21,4 @@ This file holds only Claude-Code-specific notes.
   - Vet new community GGUFs per that section's procedure.
 - CUDA graphs run ON fleet-wide, including the MTP models claude-local serves (P1-validated 2026-08-03).
   - Crash status is single-homed: [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash).
-    - Resolved 2026-08-10: the large-ctx MTP crashes were this box's +230 MHz GPU core offset. Keep it at 0.
+    - Resolved 2026-08-10: the large-ctx MTP crashes were this box's GPU core offset. Keep it at or below +120 MHz.

@@ -396,6 +396,14 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Mechanism is voltage-for-frequency, not peak clock (peak reads 2805 MHz in crashing and clean arms alike)
     - Core offset is NOT verifiable from WSL (clamp hides it; voltage.gpu unqueryable) - rests on the owner's change
     - Id-13 final reading: specific but insensitive and coarser than a trial; a zero delta never means "no fault"
+  - CLOSED 2026-08-10 (offset ladder, user drove the profile changes): +120 MHz adopted as the safe core offset
+    - Ladder: +230 11/11 crashed, +200 2/5, +190 1/5, +150 1/5 (and took the host down), +135 0/10, +120 0/25, +0 0/15
+    - +135 did NOT fail - it is less proven (10 vs 25 clean); +120 is the conservative pick between two unfailed rungs
+    - +150's failure was a real host crash: Kernel-Power 41 at 15:15:39, boot 15:15:32, nearest TDR 15 h earlier
+    - Mechanism (owner): offsets were validated under full load where the BIOS pins ~1100 mV; LLM decode runs below
+      that band, so the overclock was never validated where the workload actually sits
+    - Standing rule now in AGENTS.md, CLAUDE.md, docs/benchmarking.md; full ladder in the diagnosis log section 12
+    - Follow-on bundle: specs/gpu-stability-test (packages the matrix as one certifying command)
   - Decided 2026-08-10 (user, "1. exit, 2. remove, 3. single-home, 4. collapse all three"): review-sweep judgment calls
     - launch.sh exits on a non-empty LLAMA_CACHE; SLEEP_IDLE_SECONDS/MODELS_MAX env knobs removed (flags are last-win)
     - Build record single-homed in launch.sh, crash status in docs/benchmarking.md; the satellites became pointers

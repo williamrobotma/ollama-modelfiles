@@ -151,8 +151,12 @@ Distilled from the evidence logs; follow the links for the primary-source detail
   - **Resolved 2026-08-10: the cause was this box's +230 MHz GPU core clock offset, not llama.cpp.**
     - Decomposed over 4 arms, same build and byte-identical prompt: core offset on 11/11 crashed, off 0/15,
       Fisher p = 1.3e-07. Memory offset (+1500) and a 110% power limit have no effect (p = 1.0 each).
-    - **Keep the core clock offset at 0.** Memory offset and power limit need no change.
+    - **Standing rule: keep the GPU core offset at or below +120 MHz.** Certified by a 25-trial clean soak;
+      +135 and up are unproven or failed. Memory offset (+1500) and the 110% power limit need no change.
     - Mechanism is voltage-for-frequency, not peak clock: peak reads 2805 MHz in crashing and clean arms alike.
+      The offsets were validated under full load, where the BIOS pins ~1100 mV; LLM decode runs far below that,
+      in a band the overclock was never validated in.
+    - Offset ladder and the per-rung rates: the 2026-08-10 diagnosis log, section 12.
     - Nothing was filed upstream; no config or version change was needed.
   - See [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 
