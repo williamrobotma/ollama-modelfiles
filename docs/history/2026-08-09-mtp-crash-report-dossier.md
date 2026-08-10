@@ -14,8 +14,11 @@ Filing before that is ruled out would attribute to llama.cpp a fault this hardwa
 
 Gate to clear, in order:
 
-1. Set the GPU to stock clocks, idle the desktop, confirm the Id-13 faults stop. Needs no GPU gate.
-2. Re-run the crash matrix at stock. If the crash is gone, there is nothing to file.
+1. Set the GPU to stock clocks. Done 2026-08-10: `power.limit` reads 200 W, equal to `power.default_limit`.
+   - The idle-fault watch originally queued here is retired - idle windows were already quiet at 220 W, so it
+     discriminates nothing (see the diagnosis log's 2026-08-10 correction).
+2. Re-run the crash matrix at stock with an Id-13 count bracketing every trial. Crash gone -> nothing to file;
+   crash surviving with no Id-13 delta -> the software case is strong.
 3. If it survives, everything below stands and gets stronger; add a `compute-sanitizer` trace before writing.
 
 Full finding: [2026-08-08-llamacpp-recert-crash-diagnosis.md](2026-08-08-llamacpp-recert-crash-diagnosis.md) section 9.

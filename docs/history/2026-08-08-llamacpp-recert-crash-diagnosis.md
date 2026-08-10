@@ -238,6 +238,7 @@ errors recorded here: `illegal memory access` (stages 1-3) and `misaligned addre
 Ordinary Windows desktop use reproduces this document's crash signature on this document's hardware. The desktop
 survives it because the compositor resets per frame; a long-lived CUDA context cannot, so one fault rate reads as
 "nothing wrong" on Windows and as a hard abort in llama.cpp.
+**Rate claim corrected 2026-08-10 - see the correction two subsections below; read them together.**
 
 ### A core overclock is live
 
@@ -264,7 +265,44 @@ the plain path does not. That is untested. If the MTP gating survives at stock c
 Evidence for neither side: the 6/145/256 monthly trend. GPU-hours rose over the same months as the benchmark program,
 so the trend is confounded and is recorded as a bare observation.
 
-### The discriminator, and it needs no GPU gate
+### Correction 2026-08-10: the fault rate tracks LLM workload, not desktop use
+
+"Ordinary Windows desktop use reproduces this document's crash signature" overstated the rate. Hourly Id-13 buckets
+over the four days to 2026-08-10 02:52:
+
+| Hour bucket | Events | What was running |
+| --- | --- | --- |
+| 2026-08-08 02-09 | 405 | the re-cert crash session |
+| 2026-08-08 13-20 | 361 | the live crash-loop and the diagnosis batches |
+| 2026-08-09 12 | 2 | - |
+| 2026-08-09 23 | 12 | the zero-workload control above |
+| 2026-08-10 00-02 | 0 | idle |
+
+780 events in four days, and 766 of them fall inside documented GPU-LLM sessions. All of 2026-08-09 produced 14,
+while the overclock was confirmed live at 23:50 that night. **Idle windows were already quiet at 220 W**, so a quiet
+idle window at stock clocks discriminates nothing.
+
+Two claims survive, narrowed:
+
+- The 23:16-23:26 burst did occur with no `llama-server` process, no CUDA compute client, and no trial running. That
+  rules out **llama.cpp**, not GPU compute in general - Firefox and dwm held GPU memory and were never checked for
+  compute work (video decode, WebGL). "No LLM workload" is what was verified; "no GPU compute" was not.
+- The spatial concentration - 97% of located events on GPC 3 - is untouched by any of this.
+
+### The discriminator, superseded 2026-08-10
+
+The passive idle watch below is retired: it cannot separate the hypotheses, for the reason in the correction above.
+The stock-clock **crash matrix**, with an Id-13 delta bracketing every trial, replaces it. Pre-registered reading:
+
+| Outcome | Reading |
+| --- | --- |
+| 0/10 crashes | against 9/10, Fisher p ~ 0.0001 - the overclock was the cause and there is nothing to file |
+| crashes persist, Id-13 fires | marginal silicon independent of clocks; remediation changes, still nothing to file |
+| crashes persist, **no** Id-13 delta | the software case gets much stronger - this is what unblocks the dossier |
+
+The third row is why the Id-13 bracket matters more than the crash count.
+
+### The original discriminator (retired, kept for the record)
 
 Set Afterburner to `[Profile1]`, change nothing else, leave the desktop to idle and browse, then count Id-13 events
 over a comparable window.
