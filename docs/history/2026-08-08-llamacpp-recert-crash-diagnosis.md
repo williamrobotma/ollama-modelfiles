@@ -336,6 +336,65 @@ silently drops block bodies, exiting 0. Use single-line pipelines.
 - Agent-reported, not re-verified here: all 7 GGUF blobs sha256-match their HF OIDs; no `GGML_*`/`CUDA_*`/`LD_PRELOAD`
   in any shell init or the launcher; no GPU limits in `.wslconfig`; no remapped-row failures.
 
+## 10. RESOLVED 2026-08-10: the overclock was the cause. Nothing goes upstream.
+
+Stock clocks (`power.limit` 200 W == `power.default_limit`), build 10335, everything else identical. Ten fresh trials.
+
+| Arm | Crashes | Fresh trials | Fisher exact (two-tailed) |
+| --- | --- | --- | --- |
+| **Same build 10335**, OC on (section 7) | 5 | 5 | - |
+| **Same build 10335, stock clocks (this run)** | **0** | **10** | **p = 0.00033** |
+| Pooled MTP-on baseline, OC on (sections 6-7) | 9 | 10 | - |
+| Stock clocks, MTP on (this run) | 0 | 10 | **p = 0.00012** |
+
+The same-build row is the claim: same binary, byte-identical request body, one variable changed - the clocks.
+
+This was the pre-registered outcome for "the overclock was the cause and there is nothing to file."
+
+### Why this is the same experiment, not a similar one
+
+- Same request body (`iso/r1-req.json`), same served id, `input_tokens = 81163` on all ten trials - Stage 1's figure.
+- Same GGUF snapshot `980b060c`; the entry carries `--spec-type draft-mtp`, `--spec-draft-n-max 2`, and
+  `--model-draft .../mtp-gemma-4-12B-it.gguf`, read from `/v1/models` `status.args`, not assumed.
+- MTP genuinely ran: `draft acceptance = 0.787-0.822` per trial in the router log (Stage 1 logged 0.702).
+- Every trial cold: `cache_read_input_tokens = 0`, full 81163-token prefill, and `POST /models/unload` verified
+  returning `unloaded` between trials.
+- `grep -ciE 'illegal memory access|CUDA error|misaligned address|GGML_ABORT'` over the router log: **0**.
+- **Id-13 stayed flat at 1122 across all ten trials.** An hour of the exact workload that produced 766 GPU faults
+  during the 2026-08-08 sessions produced zero.
+
+That last line is the independent confirmation: the crash count and the hardware fault counter agree, and they are
+measured through completely separate channels (the process's own exit status, and the Windows kernel-mode driver).
+
+### What it settles
+
+- **The dossier is closed - nothing is filed upstream.** The crash was this machine's overclock, not a llama.cpp bug.
+- **`gemma4-12b-it-qat-mtp` stays in the fleet unchanged.** The DECISION OWED on that entry is void: the config was
+  never broken, the card was. Deleting or ctx-capping it would have been a fix aimed at the wrong layer.
+- The MTP flag gate no longer needs a software explanation. MTP's denser kernel mix and rapid draft/verify
+  transitions are what pushed a core running +230 MHz past stable, where the plain decode path did not.
+- The 10335 **crash matrix passes** at stock. The froggeric (template, 10335) pair re-validation is still owed.
+
+### Residuals, stated
+
+- n = 10 on one machine. The result is a within-box causal claim, not a general one about overclocked Adas.
+- The twelve idle-time faults of 2026-08-09 23:16-23:26 are not addressed by this run, which only shows the
+  workload-driven faults stopped. Whether idle faults recur at stock wants a passive recheck in about a week.
+- The trials ran at 51-63 C with `clocks_throttle_reasons.active = 0x0` throughout, so no thermal or power capping
+  silently made this arm easier than the baseline.
+
+### Method failure worth keeping (third of the night, same shape)
+
+The first attempt was aborted after two trials. Its unload guard tested `.status`, but `/v1/models` returns
+`.status` as an *object* - the value is at `.status.value`. The comparison was simply never true, so every unload was
+skipped in silence, and trial 2 returned `input_tokens = 5` with `cache_read_input_tokens = 81158`: the entire prompt
+served from cache, no prefill, not a data point. It was caught in 90 seconds only because the harness logged the raw
+value it branched on, and a stray `{` appeared in the output.
+
+- Rule: log the value a condition branches on, not just the branch taken. A condition that is silently false looks
+  exactly like a condition that is legitimately false.
+- The harness now stamps any trial with a nonzero `cache_read` as `INVALID-CACHED` instead of letting it pass.
+
 ## Provenance and validity
 
 - Small n throughout: 2 fresh-prefill control trials, 1 fa-off trial; the live loop (15 spawns) is the strongest sample.

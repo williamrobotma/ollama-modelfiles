@@ -4,7 +4,19 @@ Raw material for a human-written upstream report. llama.cpp forbids AI-written p
 ([CONTRIBUTING.md](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) item 5), so nothing here is a
 draft to paste - it is the verified facts, with a source link for each, to write from.
 
-## Blocked 2026-08-09: do not file yet
+## CLOSED 2026-08-10: do not file. The cause was local.
+
+At stock clocks the crash is gone: **0 crashes in 10 fresh trials**, same build 10335 and byte-identical request
+body that crashed **5/5** with a +230 MHz core overclock live (Fisher two-tailed p = 0.00033). The GPU logged no
+`nvlddmkm` Id-13 fault at all across the run, against 766 during the 2026-08-08 sessions.
+
+Nothing below is filed upstream. The evidence stays for the record, and because the environment section is a useful
+preemption list should a genuine llama.cpp bug ever need reporting from this box. Full result and residuals:
+[2026-08-08-llamacpp-recert-crash-diagnosis.md](2026-08-08-llamacpp-recert-crash-diagnosis.md) section 10.
+
+Everything below this line was written while the cause was still believed to be upstream. Read it in that light.
+
+## Superseded: the gate as it stood on 2026-08-09
 
 The machine is implicated. This box logs the same fault signature - `Graphics SM Warp Exception on (GPC 3, TPC 1):
 Out Of Range Address`, Windows `nvlddmkm` Event ID 13 - with no llama-server running and no CUDA compute client,

@@ -382,6 +382,13 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Full record: docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md section 9; dossier gated "do not file"
   - DECISION OWED on gemma4-12b-it-qat-mtp is HELD pending the stock-clock result (deleting a working config over a
     hardware defect would be wrong); per-trial capture now mandates an Id-13 delta (docs/benchmarking.md)
+  - RESOLVED 2026-08-10 (user set stock clocks, gate opened): the crash was this box's +230 MHz core overclock
+    - Same build 10335, byte-identical request body: 5/5 crashes with the OC, 0/10 fresh trials at stock, p = 0.00033
+    - Id-13 flat at 1122 across the whole run - zero GPU faults under an hour of the workload that made 766 on 08-08
+    - MTP genuinely engaged (draft acceptance 0.787-0.822; spec-type/model-draft read from /v1/models status.args)
+    - gemma4-12b-it-qat-mtp DECISION is VOID: the entry was never broken, keep it unchanged
+    - Upstream dossier CLOSED, nothing filed; 10335 crash matrix PASSES, froggeric (template, 10335) pair still owed
+    - Standing rule: keep the GPU at stock clocks; full result in the diagnosis log section 10
   - Decided 2026-08-10 (user, "1. exit, 2. remove, 3. single-home, 4. collapse all three"): review-sweep judgment calls
     - launch.sh exits on a non-empty LLAMA_CACHE; SLEEP_IDLE_SECONDS/MODELS_MAX env knobs removed (flags are last-win)
     - Build record single-homed in launch.sh, crash status in docs/benchmarking.md; the satellites became pointers

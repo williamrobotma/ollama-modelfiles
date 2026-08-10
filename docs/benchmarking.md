@@ -148,7 +148,10 @@ Distilled from the evidence logs; follow the links for the primary-source detail
   - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
   - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.
   - Isolated 2026-08-09: MTP is the trigger (p = 0.002). CUDA graphs were tested and are not (p = 0.50).
-  - Attribution moved 2026-08-09 to a local GPU hardware fault; no upstream filing until a stock-clock test clears it.
+  - **Resolved 2026-08-10: the cause was a +230 MHz core overclock on this box, not llama.cpp.**
+    - Same build, byte-identical prompt: 5/5 crashes with the overclock, 0/10 at stock (p = 0.00033).
+    - The GPU's own fault counter agrees - zero `nvlddmkm` Id-13 events across the stock run.
+    - Keep the GPU at stock clocks. Nothing was filed upstream; no config or version change was needed.
   - See [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 
 ### llama.cpp parity eval (2026-07-17)
