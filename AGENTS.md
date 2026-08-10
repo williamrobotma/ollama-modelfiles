@@ -45,20 +45,19 @@ See [docs/architecture.md](docs/architecture.md) for the full stack diagram.
 
 ## The two MTP mechanisms
 
-Speculative decoding via a draft model - two different shapes:
+Speculative decoding via a draft model - two shapes, wired differently in `models.ini`:
 
-- **Qwen (self-contained)**: one GGUF with embedded MTP tensors; served with `spec-type = draft-mtp` alone.
-  Measured ~1.65x (9B, Ollama-era); 98-121 tok/s on the router child (P1 hammer).
-- **Gemma (target + separate drafter)**: main GGUF plus a `mtp-gemma-4-*.gguf` drafter (~250 MB, in the QAT repos).
-  Wired via `model-draft =` plus `spec-type = draft-mtp`; measured 1.67x (12B) / 1.54x (26B) on the Ollama-era lane.
+- **Qwen (self-contained)**: one GGUF with embedded MTP tensors; `spec-type = draft-mtp` alone.
+- **Gemma (target + separate drafter)**: adds an explicit `model-draft =` (~250 MB, in the QAT repos).
+  - No auto-discovery for local paths: without `model-draft` the child dies at load.
 
-History: Ollama's Gemma `DRAFT` lane crashed on-box while stock b9860 served the same pair at ~1.8x (2026-07-17 eval).
-Since 2026-08-07, llama-server with CUDA graphs ON is the serving lane for all MTP models.
-The client cutovers are complete; the P4 validation window and gated purge remain open in the spec's tasks.
-Graphs-off reproduces the #24795 drafter load failure (config-gated, not build-gated; still open upstream).
-The 26B pair pins its drafter to CPU (`spec-draft-ngl = 0`) against an upstream full-GPU loader crash.
-Crash matrix and caveats, original characterization: [the 2026-07-17 log](docs/history/2026-07-17-llamacpp-eval.md).
-Newest matrix + live-crash diagnosis: [the 2026-08-08 log](docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
+Two config rules that are easy to break:
+
+- The 26B pair pins its drafter to CPU (`spec-draft-ngl = 0`) against an upstream full-GPU loader crash.
+- Graphs-off reproduces the #24795 drafter load failure (config-gated, not build-gated; still open upstream).
+
+Mechanism, diagram, and measured speedups: [docs/architecture.md](docs/architecture.md) section 3.
+Crash status: [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash).
 
 ## Parameters
 
@@ -99,7 +98,7 @@ Vetting (store-reported templates lie - Ollama's `ollama show --template` showed
 
 Guarded fleet GGUFs ([gate evidence 2026-07-23](docs/history/2026-07-23-chat-template-refresh.md)):
 
-- Current: unsloth Qwen3.5-9B non-MTP and Queen-27B, backing the 3 `chat-template-file` preset entries.
+- Current: unsloth Qwen3.5-9B non-MTP and Queen-27B; which entries they back is listed in `templates/README.md`.
   - OBLITERATUS-27B and Qwopus3.5-9B-coder left the fleet in the 2026-07-27 reduction.
 - `merged_system` carriers (step 2 grep, 2026-08-08): unsloth Qwen3.5-9B-MTP + Qwen3.6 27B, 27B-MTP, 35B-A3B-MTP, 35B-A3B.
   - 5 GGUFs backing 7 preset entries (multi-entry GGUFs: 35B-A3B-MTP x2, 27B x2); step 1 clean on all.
@@ -148,8 +147,8 @@ Full detail, ports, and distilled findings: [docs/benchmarking.md](docs/benchmar
 ## Serving env constraints
 
 The live serve is `llamacpp/launch.sh`: llama-server router mode on `127.0.0.1:11433`.
-Defaults: `--models-max 1` (env `MODELS_MAX`), `--sleep-idle-seconds 86400` (env `SLEEP_IDLE_SECONDS`).
-`--cors-origins localhost` is set unconditionally too, with no env override.
+Defaults: `--models-max 1`, `--sleep-idle-seconds 86400`, and `--cors-origins localhost`.
+There are no env overrides: pass the flag to `launch.sh` instead (it is emitted before `"$@"`, and last wins).
 Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike `/tmp`).
 
 - **`-fa on` and q8_0 KV must stay paired** (`[*]` block): the quantized V-cache hard-fails without flash attention.
@@ -163,11 +162,8 @@ Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike
   - Whether it took effect is visible only in the `CUDA graph warmup ...` debug lines, not in `graphs reused`.
     - `graphs reused` is llama's own graph-reuse counter (`llama-context.cpp:4139`), unrelated to CUDA graphs.
   - Children inherit the router env verbatim, and Gemma MTP needs graphs on.
-  - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
-  - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.
-  - Isolated 2026-08-09: MTP is the trigger (p = 0.002). CUDA graphs were tested and are not (p = 0.50).
-  - Attribution moved 2026-08-09 to a local GPU hardware fault; no upstream filing until a stock-clock test clears it.
-  - See [the 2026-08-08 recert-crash log](docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
+  - Graphs are not the crash trigger; MTP is. Crash status is single-homed in
+    [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash) - read it before acting on an MTP lane.
 - The retired systemd Ollama service (`11434`) stays frozen - stop/disable and purge tracked in Phase 4.
 
 ## WSL disk budget

@@ -127,7 +127,7 @@ Distilled from the evidence logs; follow the links for the primary-source detail
 
 ### MTP speedups (decode throughput)
 
-- Qwen 3.5 9B self-draft MTP: ~1.65x.
+- Qwen 3.5 9B self-draft MTP: ~1.65x; 98-121 tok/s on the router child (P1 hammer, 2026-08-03).
   - See [history/2026-06-23-qwen3.5-9b-mtp-bench.md](history/2026-06-23-qwen3.5-9b-mtp-bench.md).
 - Gemma 4 MTP via Ollama `DRAFT`: 1.67x on the 12B pair, 1.54x on the 26B pair.
   - See [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md).

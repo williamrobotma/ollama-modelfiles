@@ -5,7 +5,7 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
 
 ## Layout
 
-- `launch.sh` - launcher: absolute `build/bin` path, `LLAMA_CACHE` redirect, and the build record (last known good)
+- `launch.sh` - launcher: absolute `build/bin` path, `LLAMA_CACHE` redirect, and the build record (its single home)
 - `models.ini` - the fleet, one `[section]` per config
 - `templates/` - froggeric v21.3 `chat_template.jinja` for guarded GGUFs (provenance in `templates/README.md`)
 - `mcp/` - vendored web-search MCP server for claude-local, run via pipx (provenance in `mcp/README.md`)
@@ -27,7 +27,7 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
    Keys the `[*]` section already carries (min-p, n-predict, penalties, top-p) need only per-entry overrides.
 3. Vet the embedded chat template per the AGENTS.md chat-template gate; guarded -> `chat-template-file` froggeric.
    - Preset values get no interpolation (`common/preset.cpp:304-330`): the path is a literal absolute string.
-     - Cloning to another machine means hand-editing the 3 guarded entries' paths.
+     - Cloning to another machine means hand-editing the guarded entries' paths.
    - A CLI `--chat-template-file` is no per-entry fix: base CLI args merge into every entry (`server-models.cpp:551`).
      - It would force one template onto the whole fleet, not just the guarded entries.
 4. MTP lane: `spec-type = draft-mtp` + `spec-draft-n-max = 2` (+ `model-draft` for Gemma drafters).

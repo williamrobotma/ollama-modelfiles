@@ -9,7 +9,7 @@ Agents should read [AGENTS.md](AGENTS.md) first.
 
 ## Requirements
 
-- A stock llama.cpp build; the build record lives in [llamacpp/README.md](llamacpp/README.md).
+- A stock llama.cpp build; the build record is single-homed in the header comment of `llamacpp/launch.sh`.
   - The rebuild rule lives in `specs/llamacpp-migration/spec.md`'s Rules section.
 - The Hugging Face CLI (`hf`, from `huggingface_hub`) to provision GGUFs.
 - An NVIDIA CUDA GPU. The reference box is an RTX 4070 (12 GB, WSL2); models larger than ~12 GB partial-offload to CPU. Use CUDA 13.1 or 13.3 - 13.2 corrupts Gemma 4 output.

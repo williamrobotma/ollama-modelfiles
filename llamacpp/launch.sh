@@ -27,11 +27,15 @@ fi
 # resolve through the cache.
 export LLAMA_CACHE="$DIR/.cache-empty"
 mkdir -p "$LLAMA_CACHE"
-[ -z "$(ls -A "$LLAMA_CACHE")" ] || echo "launch.sh: WARNING: $LLAMA_CACHE is not empty - unexpected files present" >&2
+if [ -n "$(ls -A "$LLAMA_CACHE")" ]; then
+    echo "launch.sh: $LLAMA_CACHE is not empty - a stray GGUF would join the served fleet" >&2
+    exit 1
+fi
 
-# SLEEP_IDLE_SECONDS=30 ./launch.sh for the sleep-idle smoke; default matches
-# Ollama's KEEP_ALIVE=24h. MODELS_MAX default 1: a lone resident child gets the
-# whole GPU (P3 pressure findings, 2026-08-07).
+# --sleep-idle-seconds 86400 matches Ollama's KEEP_ALIVE=24h; --models-max 1 gives a lone
+# resident child the whole GPU (P3 pressure findings, 2026-08-07).
+# Override either on the command line (./launch.sh --sleep-idle-seconds 30 for the sleep-idle
+# smoke): both handlers are last-wins and these flags are emitted before "$@".
 # Extra args pass through, but they overlay EVERY preset entry (router CLI args
 # merge into each model's config) and cannot move the bind (trailing --host/--port wins).
 # --cors-origins localhost limits browser reads; the unauthenticated management endpoints (POST /models,
@@ -39,8 +43,8 @@ mkdir -p "$LLAMA_CACHE"
 "$BIN" --version >&2
 exec env -u OLLAMA_API_KEY -u HF_TOKEN "$BIN" \
     --models-preset "$DIR/models.ini" \
-    --sleep-idle-seconds "${SLEEP_IDLE_SECONDS:-86400}" \
-    --models-max "${MODELS_MAX:-1}" \
+    --sleep-idle-seconds 86400 \
+    --models-max 1 \
     --cors-origins localhost \
     "$@" \
     --host 127.0.0.1 --port 11433

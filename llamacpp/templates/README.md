@@ -14,8 +14,8 @@
     - Vendored patched file on build 10326: probes PASSED 2026-08-08.
       - Multi-system `/v1/chat/completions`: 200 + no guard 400 on both guarded GGUFs; the 9B answered in content.
       - Queen spent its 32-token cap inside reasoning (empty content): a status-level pass, not visible text.
-      - The same-day 10326 re-cert FAILED on an unrelated Qwen-MTP crash, but the on-disk build stays canonical
-        regardless (user rule 2026-08-08: downgrading is never an option).
+      - The same-day 10326 re-cert FAILED on an unrelated Qwen-MTP crash; build disposition is not this file's
+        to state - the record and the canonical-build rule live in `../launch.sh`.
       - Whether this becomes the served pair follows the build disposition, not this probe.
     - Vendored patched file on build 10335 (on-disk since 2026-08-09): OWED, not yet run - the GPU gate is closed.
     - Re-validate whichever pair is live whenever the build record moves.

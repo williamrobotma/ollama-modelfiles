@@ -79,7 +79,7 @@ Ids name the lane (family-size-profile), never the quant: the quant lives in the
 Aliases resolve inside request bodies but never appear as `/v1/models` ids, so point UI pickers at canonical ids.
 
 - The profile a child actually serves is visible at `/props?model=<id>`; the router's own `/props` returns dummies.
-- Guarded GGUFs (3 entries) take `chat-template-file` = the pinned froggeric template in `llamacpp/templates/`.
+- Guarded GGUFs take `chat-template-file` = the pinned froggeric template in `llamacpp/templates/`.
 - Add-a-model procedure and the alias policy: [llamacpp/README.md](../llamacpp/README.md).
 
 FROZEN LEGACY - the Modelfile graph that used to be this mapping layer (see section 1):
@@ -123,8 +123,9 @@ Per-request MTP acceptance and tok/s show up in the router log's `timings` lines
 ```text
               llamacpp/launch.sh -> llama-server --models-preset llamacpp/models.ini
               user-mode, detached (setsid nohup) - NO daemon, no systemd unit
-              --models-max 1 (MODELS_MAX)   one resident child owns the whole 12 GiB GPU; LRU evicts
-              --sleep-idle-seconds 86400 (SLEEP_IDLE_SECONDS)   24 h idle, then the child sleeps
+              --models-max 1               one resident child owns the whole 12 GiB GPU; LRU evicts
+              --sleep-idle-seconds 86400   24 h idle, then the child sleeps
+              (no env overrides; pass the flag to launch.sh, last wins)
               LLAMA_CACHE -> an empty dir, so models.ini is the entire served fleet
                                    127.0.0.1:11433
                                         |
@@ -183,7 +184,7 @@ Runbook:
 FROZEN LEGACY: the Ollama lane's service env carried `KEEP_ALIVE=24h`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`.
 
 - All three now live in the router: `--sleep-idle-seconds 86400` and the `[*]` `flash-attn` / `cache-type-*` keys.
-- The FA + q8_0 pairing rule carried over unchanged: a quantized V-cache fails to load without flash attention.
+- The FA + q8_0 pairing rule carried over unchanged; the mandate is in AGENTS.md, the decision in parameters.md.
 
 ## 5. Disk reality (the lesson baked into the design)
 

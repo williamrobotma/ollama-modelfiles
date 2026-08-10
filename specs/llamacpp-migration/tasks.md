@@ -382,6 +382,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Full record: docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md section 9; dossier gated "do not file"
   - DECISION OWED on gemma4-12b-it-qat-mtp is HELD pending the stock-clock result (deleting a working config over a
     hardware defect would be wrong); per-trial capture now mandates an Id-13 delta (docs/benchmarking.md)
+  - Decided 2026-08-10 (user, "1. exit, 2. remove, 3. single-home, 4. collapse all three"): review-sweep judgment calls
+    - launch.sh exits on a non-empty LLAMA_CACHE; SLEEP_IDLE_SECONDS/MODELS_MAX env knobs removed (flags are last-win)
+    - Build record single-homed in launch.sh, crash status in docs/benchmarking.md; the satellites became pointers
+    - Also collapsed: MTP mechanisms -> architecture.md s3, FA+q8_0 -> AGENTS.md, guarded count -> templates/README.md
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)
