@@ -154,24 +154,30 @@ Observed by the owner with the router down, no llama-server alive, and no comput
 `nvidia-smi` reported **4731 MiB / 12282 MiB used**, "No running processes found", 6% utilization.
 On WSL2 the guest cannot see host processes, so that memory is Windows-side.
 
-- Idle baselines recorded across this session: 838, 890, 967, 1023, 1241, 1442 MiB - then 4731 MiB. A ~3.9 GB swing
-  in what is available to llama.cpp, driven entirely from outside the guest.
-- The crashing config reached whole-GPU totals of 11209-11491 MiB against a ~1000 MiB baseline, so model + KV is
-  roughly 10.2-10.5 GB. At a 4731 MiB baseline that config does not fit in 12282 MiB at all.
+**Scope correction, same day**: the 4731 MiB reading was taken *after* every trial in this document had finished, and
+the owner confirms the expected steady-state host load is ~1.5 GB (measured 1569 MiB minutes later). Idle readings
+taken around the trials themselves were 838-1442 MiB. So the spike was transient and the trials ran at the normal
+operating point - **host contention does not explain the recorded crash rates**, and the earlier framing of a
+"~3.9 GB swing during the session" overstated it.
+
+What remains true and worth carrying:
+
+- The card is shared with Windows and the guest's `nvidia-smi` cannot see host processes, so headroom is not ours alone.
+- The crashing config reached whole-GPU totals of 11209-11491 MiB of 12282, i.e. **~800-1000 MiB of headroom** at the
+  normal baseline. That is thin, and a transient host spike of the size actually observed (4731 MiB) would not fit.
 - `-ngl` is unset, so layers are fitted to *available* VRAM at load time, and availability can move mid-run.
 - Related documented mechanism on the 26B pair: a fully-used GPU reports free=0 -> NaN layer split -> loader throw
   (upstream #19973). Same family: VRAM contention.
-- This plausibly explains the crash-rate variability across sittings (1/3, 4/5, 5/5, 13/15 live).
 
-Honest counter-evidence, which keeps this from being a complete explanation:
+Counter-evidence against contention as the crash mechanism, independent of the above:
 
 - Removing MTP took 5/5 -> 0/5 while freeing only ~240 MiB (10967 vs 11209 MiB whole-GPU). A 240 MiB delta flipping
   the outcome that hard needs the config to sit exactly on a cliff.
 - The flash-attn-off arm ran at a *higher* footprint (11884 MiB) and was clean 0/2.
 
-**Standing consequence: every crash measurement in this document is uncontrolled for free VRAM.** Host-side usage was
-never recorded at trial time, and it demonstrably moved by ~3.9 GB during the session. Before any upstream report,
-and before any further trials, free VRAM must be recorded per trial and the host quiesced or `-ngl` pinned.
+**Standing consequence (reduced but real): free VRAM was still never recorded per trial**, only whole-GPU totals after
+load. Future trials should log free VRAM at load and at crash, and pin `-ngl`, so the variable is controlled rather
+than inferred - and a maintainer will ask for exactly those numbers.
 
 ### A second, unrelated llama.cpp bug found while running this
 
