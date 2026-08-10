@@ -16,7 +16,8 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
   - The quant lives in the `model =` path alone, so promoting a new quant is a path edit: no rename, no client churn.
 - An alias is an `alias =` key on its owning entry (comma-separated for several); request bodies resolve it.
   - Aliases now exist only for profile defaults; the fleet has one (`qwen3.6-35b-a3b-coding` -> the MTP coding lane).
-  - An alias must never equal a section name: llama-server drops the collision silently.
+  - An alias must never equal *its own* section name: that self-collision is silently ignored (reload skips self).
+    - A collision with another entry's name or alias is loud instead - startup throws, reload warns and skips.
 - `/v1/models` lists canonical ids only, so `.data[].id` pickers never show aliases; point UI clients at canonical ids.
 
 ## Add a model

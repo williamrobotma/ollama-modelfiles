@@ -147,7 +147,8 @@ Distilled from the evidence logs; follow the links for the primary-source detail
   - See [history/2026-08-03-llamacpp-p1-envelopes.md](history/2026-08-03-llamacpp-p1-envelopes.md).
   - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
   - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.
-  - fa-path suspected (consistent with #26609, not confirmed); graphs mechanism (#26558) untested.
+  - Isolated 2026-08-09: MTP is the trigger (p = 0.002). CUDA graphs were tested and are not (p = 0.50).
+  - Attribution moved 2026-08-09 to a local GPU hardware fault; no upstream filing until a stock-clock test clears it.
   - See [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 
 ### llama.cpp parity eval (2026-07-17)

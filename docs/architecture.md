@@ -148,7 +148,9 @@ No inbound auth anywhere: the router checks nothing, and it binds 127.0.0.1, as 
   - claude-local, OpenCode, and Codex on 2026-08-04; Open WebUI on 2026-08-07.
 - CSRF surface (single home for this analysis; `launch.sh` points here): three unauthenticated endpoints.
   - `POST /models`, `POST /models/load`, `POST /models/unload`; no `--api-key` is set.
-    - Site: server.cpp:226-228 at the on-disk 10326 source; the line moves across builds.
+    - Site: server.cpp:226-228 in the on-disk source; the line moves across builds.
+    - An `--api-key` would not close `POST`/`DELETE /models`: `get_public_endpoints` holds `/models` and is tested
+      by path with no method check (server-http.cpp:197, :215), so only `load`/`unload` would end up behind it.
   - CORS-simple (no preflight) and `Host` is unvalidated, so a CSRF page or DNS-rebinding attack reaches them.
   - `load`/`unload` churn force-kills an in-flight generation under `--models-max 1`.
   - Impact ceiling is low: worst case is a drive-by download into the gitignored `.cache-empty`.
@@ -171,7 +173,11 @@ Runbook:
 
 - The log directory has to exist first: `mkdir -p ~/.local/state`.
 - Start: `setsid nohup ~/Developer/ollama-modelfiles/llamacpp/launch.sh > ~/.local/state/llama-router.log 2>&1 &`
-- Stop: kill the router pid - the children die with it.
+  - Then record the pid: `echo $! > ~/.local/state/llama-router.pid`; confirm it is the listener with
+    `ss -ltnp | grep 11433` (under interactive job control `$!` can be a short-lived `setsid` wrapper).
+- Stop: `kill "$(cat ~/.local/state/llama-router.pid)"` - the children die with it.
+  - Never `pgrep`/`pkill` for it instead: that has twice killed a router someone else started
+    ([.claude/rules/lessons.md](../.claude/rules/lessons.md)).
 - Monitor: the `status` field in `/v1/models` (loaded / sleeping / unloaded), the log's `timings` lines, `nvidia-smi`.
 
 FROZEN LEGACY: the Ollama lane's service env carried `KEEP_ALIVE=24h`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`.
@@ -210,5 +216,5 @@ Two pins to keep in mind:
 
 - `models.ini` hard-pins absolute snapshot paths, so an `hf download` of a newer repo commit lands in a *new* snapshot.
   - The preset keeps serving the old, still-cached one until the path is edited - a deliberate two-step, not drift.
-- `launch.sh` records b9860 (fdb1db877) as the last-known-good build; it is a record, not an assertion.
+- `launch.sh` records the on-disk build and its re-cert state; it is a record, not an assertion.
   - The version abort was removed 2026-08-03; rebuilds re-certify per the migration spec's rebuild rule.

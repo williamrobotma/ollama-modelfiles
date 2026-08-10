@@ -14,6 +14,8 @@ BIN=/home/wma/Developer/llama.cpp/build/bin/llama-server
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Refuse to launch over a live router (router-operations lesson: live-probe 11433 first, every time).
+# Fail closed if curl is missing: a probe that cannot run must not read as "nothing is listening".
+command -v curl >/dev/null || { echo "launch.sh: curl not found - cannot probe for a live router" >&2; exit 1; }
 if curl -s --max-time 2 http://127.0.0.1:11433/v1/models >/dev/null 2>&1; then
     echo "launch.sh: 127.0.0.1:11433 already answers - refusing to launch over a live router" >&2
     exit 1
@@ -35,7 +37,7 @@ mkdir -p "$LLAMA_CACHE"
 # --cors-origins localhost limits browser reads; the unauthenticated management endpoints (POST /models,
 # /models/load, /models/unload) stay CSRF-reachable - full analysis: docs/architecture.md (security section).
 "$BIN" --version >&2
-exec env -u OLLAMA_API_KEY "$BIN" \
+exec env -u OLLAMA_API_KEY -u HF_TOKEN "$BIN" \
     --models-preset "$DIR/models.ini" \
     --sleep-idle-seconds "${SLEEP_IDLE_SECONDS:-86400}" \
     --models-max "${MODELS_MAX:-1}" \

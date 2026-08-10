@@ -165,7 +165,8 @@ Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike
   - Children inherit the router env verbatim, and Gemma MTP needs graphs on.
   - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
   - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.
-  - fa-path suspected (consistent with #26609, not confirmed); graphs mechanism (#26558) untested.
+  - Isolated 2026-08-09: MTP is the trigger (p = 0.002). CUDA graphs were tested and are not (p = 0.50).
+  - Attribution moved 2026-08-09 to a local GPU hardware fault; no upstream filing until a stock-clock test clears it.
   - See [the 2026-08-08 recert-crash log](docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 - The retired systemd Ollama service (`11434`) stays frozen - stop/disable and purge tracked in Phase 4.
 
@@ -188,6 +189,8 @@ This runs on WSL2; the guest disk is an `ext4.vhdx` on the Windows `F:` drive th
 
 - [README.md](README.md) - what/why, quickstart, model catalog, repo map.
 - [llamacpp/README.md](llamacpp/README.md) - the serving lane: preset layout, alias policy, add-a-model.
+- [llamacpp/templates/README.md](llamacpp/templates/README.md) - vendored chat templates: shas, validated pairs.
+- [llamacpp/mcp/README.md](llamacpp/mcp/README.md) - the vendored web-search MCP server claude-local loads.
 - [docs/architecture.md](docs/architecture.md) - the stack: source of truth, layering, MTP, serving, disk.
 - [docs/parameters.md](docs/parameters.md) - sampling profiles, mandates, verification sources.
 - [docs/benchmarking.md](docs/benchmarking.md) - suite mechanics, ports, distilled findings.
