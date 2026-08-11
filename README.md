@@ -11,7 +11,8 @@ Agents should read [AGENTS.md](AGENTS.md) first.
 - A stock llama.cpp build; the build record is single-homed in the header comment of `llamacpp/launch.sh`.
   - The rebuild rule lives in `specs/llamacpp-migration/spec.md`'s Rules section.
 - The Hugging Face CLI (`hf`, from `huggingface_hub`) to provision GGUFs.
-- An NVIDIA CUDA GPU. The reference box is an RTX 4070 (12 GB, WSL2); models larger than ~12 GB partial-offload to CPU. Use CUDA 13.1 or 13.3 - 13.2 corrupts Gemma 4 output.
+- An NVIDIA CUDA GPU (reference box: RTX 4070, 12 GB, WSL2); models larger than ~12 GB partial-offload to CPU.
+  CUDA version mandates: [docs/parameters.md](docs/parameters.md).
 
 ## Quickstart
 
@@ -38,8 +39,8 @@ The pinning convention and add-a-model procedure are in [llamacpp/README.md](lla
 
 ## Model catalog
 
-The served fleet is defined by `llamacpp/models.ini` - 18 configs + 1 alias name as of 2026-08-09.
-List the live ids with `curl -s 127.0.0.1:11433/v1/models`; each entry's serving profile lives in the INI itself.
+The served fleet is defined by `llamacpp/models.ini`; each entry's serving profile lives in the INI itself.
+List the live ids with `curl -s 127.0.0.1:11433/v1/models`.
 Families: Gemma 4 (thinking; vision via mmproj), Qwen 3.6 coders, Qwen 3.5 small coders, and an uncensored track.
 
 - Small coders: Qwen 3.6's smallest GGUF is 27B (offloads), so the resident coding line is Qwen 3.5 dense.
@@ -57,7 +58,8 @@ Canonical Unsloth models use an Unsloth Dynamic ("UD-") quant, which is not stan
 
 - **UD-** = Unsloth Dynamic: every layer gets a custom quant type based on a 1.5M+ token calibration set.
 - **Q4_K_XL / Q5_K_XL** = the **XL** suffix keeps embedding and output weights at Q8_0 for better accuracy.
-- Gemma 4 QAT repos publish only UD-Q4_K_XL (QAT already targets ~Q4); standard Q4_0 degrades Top-1 from ~89% to ~74% and is larger.
+- Gemma 4 QAT repos publish only UD-Q4_K_XL (QAT already targets ~Q4).
+  - Standard Q4_0 degrades Top-1 from ~89% to ~74% and is larger.
 - Community abliterated models are not Unsloth, so their tags are plain Q4_K_M or i1-Q4_K_M, not UD-*.
 - See [Unsloth Dynamic 2.0 GGUFs](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs).
 
@@ -78,15 +80,8 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in
 
 ## Benchmarking
 
-Three dry-run-by-default suites (`qwen`, `gemma`, `9b-coders`) time decode throughput against the retired Ollama lane.
-The cross-engine `llamacpp-parity` suite covers the live lane. Nothing runs without `--execute`.
-
-```bash
-benchmarks/qwen/run.sh            # print the plan (dry-run)
-benchmarks/qwen/run.sh --execute  # run it
-```
-
-Ports, isolated serves, and distilled findings (MTP speedups, the CUDA-graphs crash, throughput costs): [docs/benchmarking.md](docs/benchmarking.md).
+Dry-run-by-default suites under `benchmarks/` - three frozen Ollama suites plus the live-engine `llamacpp-parity`.
+Commands, ports, and distilled findings: [docs/benchmarking.md](docs/benchmarking.md).
 
 ## More
 

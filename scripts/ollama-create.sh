@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Legacy Ollama build layer (frozen; retires at the P4 purge - specs/llamacpp-migration).
+# Usage: scripts/ollama-create.sh [modelfiles/<family>/<stem>]
+#   No arg = build every Modelfile; resolution order canonical -> layered -> alias is automatic,
+#   and building an alias builds its canonical dependency first.
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "$0")/.." && pwd)"

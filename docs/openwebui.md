@@ -29,12 +29,9 @@ Evidence logs:
 ## Connection: OpenAI-compat at 11433, not native Ollama (inverted from the old guidance)
 
 - Connect over the OpenAI connection to `http://127.0.0.1:11433/v1`, the router's OpenAI-compatible endpoint.
-  - This reverses the old rule (native Ollama, not `/v1`); the reason for that rule no longer applies here.
-- `open_webui/utils/payload.py:70` applies only non-None params, so sampling neutrality holds at the source.
-  - Unset chat params never enter the request body; the router's launch-time profiles govern instead.
-- Historical reason for the old rule: Ollama's `/v1` (`openai.go`) injected `temperature=1.0`/`top_p=1.0`.
-  - When the client omitted them, silently overriding the Modelfile's sampling (verified at v0.31.1).
-  - That was Ollama-side behavior specific to Ollama's own `/v1` shim, not to llama-server or Open WebUI.
+- `open_webui/utils/payload.py:70` applies only non-None params, so sampling neutrality holds at the source:
+  unset chat params never enter the request body; the router's launch-time profiles govern instead.
+  (The old native-Ollama-only rule guarded an Ollama `/v1` shim behavior that no longer applies; see the logs.)
 
 ## Recommended connection settings
 

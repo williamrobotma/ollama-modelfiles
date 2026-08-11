@@ -205,7 +205,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Frozen harnesses left as-is (benchmarks matrices hold retired Ollama names; Modelfiles stay frozen)
     - Open WebUI: 3 live names in stored chats break on resume (the DB already held 5 dead names pre-rename)
   - GPU batch 2 ran 2026-08-09 on the renamed fleet; results + the GGML_CUDA_DISABLE_GRAPHS retraction are in the
-    2026-08-08 history log (section 5); the graphs-env facts live in AGENTS.md (Serving env constraints)
+    2026-08-08 history log (section 5); the graphs-env facts live in AGENTS.md (Serving) + docs/benchmarking.md
     - 31B drafter load: PASS without the 26B's spec-draft-ngl pin (n=1; pin question stays open on evidence)
     - Instruct-entry gate probes post-rename: qwen3.6-27b and qwen3.6-35b-a3b both 200, no guard error
   - Upstream research, isolation batch, and the 10335 build move (2026-08-09): MTP isolated as the trigger axis
@@ -314,6 +314,14 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Synced script hardened (user: all three): plugin kill-switch fails closed, python parse aborts visibly,
       unprintable router ids skipped with a warning; OLLAMA_API_KEY inheritance accepted + documented (mcp/README.md)
     - Dedup applied (user: pointers win over round-1's models.ini restatements); CLAUDE.md cut to a pure pointer
+  - Simplify round (2026-08-11, 2 opus lenses, user: "go ahead on all"): the synced script rewritten (110 -> ~100
+    lines; real bug fixed - the empty-fleet guard never fired; dead fallbacks -> fail-visibly indexing; control-char
+    filter dropped as guarding no trust boundary; plugin build hoisted above the menu; alias rows show status);
+    AGENTS.md restyled to the instruction register (~240 -> ~130 lines, 15 -> 9 sections, all dated/evidence lines
+    routed to verified homes - Firefox/Karpathy/Cherny references, user-directed); legacy narrative + archaeology
+    trimmed across README, architecture, benchmarking, parameters (DiffusionGemma cut), openwebui; 5 must-move
+    orphan candidates relocated first (merged_system inventory -> llamacpp/README.md, graphs-reused note ->
+    benchmarking.md, Modelfile scheme -> architecture.md s2, ollama-create.sh usage header, LLAMA_ARG_* citation)
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)

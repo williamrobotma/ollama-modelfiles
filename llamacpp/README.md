@@ -23,6 +23,15 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
     - A collision with another entry's name or alias is loud instead - startup throws, reload warns and skips.
 - `/v1/models` lists canonical ids only, so `.data[].id` pickers never show aliases; point UI clients at canonical ids.
 
+## Chat-template exposure (fleet inventory)
+
+- Guarded GGUFs (embedded guard, served under the froggeric override): unsloth Qwen3.5-9B non-MTP and
+  mradermacher Queen-27B - 2 GGUFs backing the 3 `chat-template-file` entries.
+- `merged_system` carriers (silently drop mid-conversation system messages; no override - accepted 2026-08-08,
+  no client sends them): unsloth Qwen3.5-9B-MTP + Qwen3.6 27B, 27B-MTP, 35B-A3B, 35B-A3B-MTP -
+  5 GGUFs backing 7 entries.
+- Vet procedure: the AGENTS.md chat-template gate; validated (template, build) pairs: `templates/README.md`.
+
 ## Add a model
 
 1. `hf download` into the HF cache; use the pinned snapshot path in `model =` (never a bare repo id).

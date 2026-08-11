@@ -84,11 +84,10 @@ Aliases resolve inside request bodies but never appear as `/v1/models` ids, so p
 
 FROZEN LEGACY - the Modelfile graph that used to be this mapping layer (see section 1):
 
-- Three-layer scheme (canonical -> layered/derived -> thin alias) via `scripts/ollama-create.sh`.
-  - Full detail: [AGENTS.md](../AGENTS.md#modelfile-layering-and-naming).
+- Three layers via `scripts/ollama-create.sh`: canonical (quant-suffixed stem, full parameter block, absolute
+  `FROM` path) -> layered/derived (`FROM` a local model name, then overrides - e.g. a coding profile on an MTP
+  base, or a `DRAFT` line) -> thin alias (unsuffixed stem, one `FROM <canonical>` line to repoint defaults).
 - Canonical files carried weights plus a second `FROM` for the vision projector, which was silently dropped if omitted.
-- Name parity with the preset was exact at the 2026-08-03 check: 17 ids + 6 aliases == the 23 `ollama list` names.
-  - The preset has since moved to 18 + 1; this parity record is frozen at its 2026-08-03 date, not current.
 
 ## 3. The two MTP mechanisms (they are not the same thing)
 
@@ -125,7 +124,8 @@ Per-request MTP acceptance and tok/s show up in the router log's `timings` lines
               user-mode, detached (setsid nohup) - NO daemon, no systemd unit
               --models-max 1               one resident child owns the whole 12 GiB GPU; LRU evicts
               --sleep-idle-seconds 86400   24 h idle, then the child sleeps
-              (no env overrides; pass the flag to launch.sh, last wins)
+              (no launcher env knobs; llama-server itself honors LLAMA_ARG_* env vars,
+               common/arg.cpp .set_env - keep them unset; pass flags to launch.sh, last wins)
               LLAMA_CACHE -> an empty dir, so models.ini is the entire served fleet
                                    127.0.0.1:11433
                                         |

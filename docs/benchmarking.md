@@ -36,27 +36,18 @@ Each Ollama suite's `run.sh` sets its suite name and sources `common.sh`.
 
 ## Running
 
-The commands below cover the frozen qwen/gemma/9b-coders suites.
-They still run mechanically against the now-retired Ollama lane.
+Everything is dry-run by default - nothing runs without `--execute`:
 
-- Everything is dry-run by default: nothing runs without `--execute`.
-- `benchmarks/qwen/run.sh` prints the plan and the exact `ollama run --verbose` commands it would run.
-- `benchmarks/qwen/run.sh --list` lists the configured models and prompts.
-- `benchmarks/qwen/run.sh --execute` actually runs the matrix. Nothing touches Ollama without `--execute`.
-- `benchmarks/all.sh` runs all three suites sequentially (safe - see the port note).
-- Executed runs write raw logs and timing under `benchmark-results/<timestamp>/` (gitignored).
+```bash
+benchmarks/<suite>/run.sh            # print the plan and the exact commands it would run
+benchmarks/<suite>/run.sh --list     # configured models and prompts
+benchmarks/<suite>/run.sh --execute  # run the matrix
+benchmarks/all.sh                    # qwen, gemma, 9b-coders sequentially (safe - see the port note)
+```
 
-Suite scope:
-
-- **qwen**: canonical Qwen 3.6 coding variants.
-  - The 35B-A3B `q4-k-xl` pair (matrix rows 4-5) left the fleet in the 2026-07-27 reduction.
-    - These frozen rows no longer resolve.
-- **gemma**: first-pass, text-only, two models (`gemma4-12b-it-qat`, `gemma4-26b-a4b-it-qat`).
-- **9b-coders**: small coders that fit fully in 12 GB VRAM, benched against the `gemma4-12b-it-qat` baseline.
-  - `qwen3.5-9b-coding-ud-q4-k-xl`
-  - `qwen3.5-9b-mtp-coding-ud-q4-k-xl` (self-draft variant)
-  - `qwopus3.5-9b-coder-q4-k-m` (community finetune)
-    - Left the fleet in the 2026-07-27 reduction; this frozen row no longer resolves.
+Executed runs write raw logs and timing under `benchmark-results/<timestamp>/` (gitignored).
+The three Ollama suites are frozen against the retired lane; some matrix rows reference models deleted at the
+2026-07-27 fleet reduction and no longer resolve (each suite's `matrix.tsv` is authoritative).
 
 ## Isolated serves and ports
 
@@ -105,6 +96,8 @@ free -m | sed -n '2p;3p'                       # host RAM and swap (WSL2 shares 
   - `.Message` renders empty under WSL, so a message-text filter silently matches nothing. Read the event XML.
   - Location breakdown one-liner and the full finding:
     [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
+- Whether CUDA graphs took effect is visible only in the `CUDA graph warmup ...` debug lines; `graphs reused`
+  in the timings is llama's own graph-reuse counter (`llama-context.cpp:4139`), unrelated to CUDA graphs.
 - Pin `-ngl` explicitly for trials. Unset means layers fit to whatever is free at load time, so the split silently
   depends on host conditions and two "identical" trials are not identical.
 - Note whether the host was quiescent. A steady-state baseline here is ~1.5 GB GPU; transient host spikes to ~4.7 GB
@@ -136,32 +129,19 @@ Distilled from the evidence logs; follow the links for the primary-source detail
 
 ### MTP crash investigation (resolved: GPU core overclock)
 
-- MTP models with CUDA graphs on crashed ~12.5% per run (illegal memory access) on the Ollama lane.
-  - Reproduced with a 30-run hammer.
-  - See [history/2026-07-01-mtp-graphs-crash.md](history/2026-07-01-mtp-graphs-crash.md).
-- Ollama-era decision (retired): kept `GGML_CUDA_DISABLE_GRAPHS=1` serve-wide to dodge the MTP crash above.
-  - See [history/2026-07-01-mtp-graphs-crash.md](history/2026-07-01-mtp-graphs-crash.md).
-- Current stance (llama-server lane): CUDA graphs run ON fleet-wide, deliberately.
-  - Validated in Phase 1 of specs/llamacpp-migration (2026-08-03).
-  - The 12B MTP ctx ladder ran 36/36 clean generations through 200k ctx.
-  - A 30-run graphs-on hammer on the router child came back 30/30 clean, zero crash lines.
-  - The upstream MTP x graphs issue remains open but did not reproduce across the Phase 1 checks.
-  - See [history/2026-08-03-llamacpp-p1-envelopes.md](history/2026-08-03-llamacpp-p1-envelopes.md).
-  - Amended 2026-08-08: build 10326 failed re-cert (Qwen hammer 2/30).
-  - It also crash-looped live at ~88k ctx on the Gemma 12B MTP lane.
-  - Isolated 2026-08-09: MTP is the trigger (p = 0.002). CUDA graphs were tested and are not (p = 0.50).
-  - **Resolved 2026-08-10: the cause was this box's +230 MHz GPU core clock offset, not llama.cpp.**
-    - Decomposed over 4 arms, same build and byte-identical prompt: core offset on 11/11 crashed, off 0/15,
-      Fisher p = 1.3e-07. The memory offset (+1500) has no effect (p = 1.0 at either core level); the 110%
-      power limit had no single-variable arm and is not implicated.
-    - **Standing rule: keep the GPU core offset at or below +120 MHz.** Certified by a 25-trial clean soak;
-      +135 and up are unproven or failed. Memory offset (+1500) and the 110% power limit need no change.
-    - Mechanism is voltage-for-frequency, not peak clock: peak reads 2805 MHz in crashing and clean arms alike.
-      The offsets were validated under full load, where the BIOS pins ~1100 mV; LLM decode runs far below that,
-      in a band the overclock was never validated in.
-    - Offset ladder and the per-rung rates: the 2026-08-08 diagnosis log (extended through 2026-08-10), section 12.
-    - Nothing was filed upstream; no config or version change was needed.
-  - See [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
+- **Resolved 2026-08-10: the large-ctx MTP crashes were this box's GPU core clock offset, not llama.cpp.**
+  - **Standing rule: keep the GPU core offset at or below +120 MHz** (certified by a 25-trial clean soak;
+    +135 and up are unproven or failed). The memory offset and power limit are not implicated; nothing was
+    filed upstream, and no config or build change was needed.
+  - Mechanism is voltage-for-frequency, not peak clock: the overclock was validated under full load (~1100 mV);
+    LLM decode runs below that band, where it was never validated.
+- Current stance: CUDA graphs run ON fleet-wide, deliberately (P1-validated; graphs were disproven as the
+  trigger during the investigation).
+  - The Ollama-era serve kept graphs off to dodge what was then read as an MTP x graphs crash
+    ([history/2026-07-01-mtp-graphs-crash.md](history/2026-07-01-mtp-graphs-crash.md)).
+- Full arc - re-cert failure, live crash-loop, isolation batch, decomposition, offset ladder:
+  [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md)
+  sections 1-12, plus [history/2026-08-09-mtp-crash-report-dossier.md](history/2026-08-09-mtp-crash-report-dossier.md).
 
 ### llama.cpp parity eval (2026-07-17)
 
