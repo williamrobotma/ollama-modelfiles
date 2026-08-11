@@ -71,6 +71,12 @@ The live serve is `llamacpp/launch.sh` - llama-server router mode on `127.0.0.1:
   ([why](docs/benchmarking.md#mtp-crash-investigation-resolved-gpu-core-overclock)).
 - **Capture GPU + host RAM per trial on any GPU run whose numbers you will quote** - both are shared with
   Windows and unrecoverable after the fact; procedure: [docs/benchmarking.md](docs/benchmarking.md) (Resource capture).
+- Router discipline (runbook: [docs/architecture.md](docs/architecture.md) section 4):
+  - `launch.sh` refuses to start over a live router - honor the refusal, never work around it.
+  - Probe 11433 before any stop or parse-check (`curl -s 127.0.0.1:11433/v1/models`); an answer may be a
+    router you did not start - report and ask.
+  - Kill only a PID from your own launch, never pgrep/pkill; trust a readout only after your own instance's
+    log says it bound.
 - WSL disk: budget against `df -h /mnt/f`, never the guest `df /` - the vhdx grows and never shrinks by
   itself, and bulk downloads have crashed the host. After big deletions: `wsl --shutdown` + `Optimize-VHD`.
 
@@ -127,3 +133,6 @@ The test: the lane you picked is the model every session role is talking to.
 
 Markdown: rumdl enforces `.rumdl.toml` (120-col, check-only, never `--fix`); `docs/history/` is excluded as
 immutable. Soft-wrap only - fix a long line by cutting or splitting ideas, never a mid-idea break.
+
+Name sets, never their size - written counts drift; the one sanctioned count is a file's own header total
+(e.g. `llamacpp/models.ini:1`), checked against the file whenever touched.

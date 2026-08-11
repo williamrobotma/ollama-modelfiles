@@ -13,6 +13,10 @@ Spec-driven work bundles. Each `<feature>/` holds `spec.md` (its Acceptance defi
 - Refer to a spec by name; this file maps a name to its location.
 - Inside a bundle, use plain-text or backtick paths, not `](relative)` links, so the bundle can move to `done/` without rewriting links.
 
+## Scaffold shape
+
+Short `##` sections (goal / decisions / done-when), one idea per bullet, ~15-30 lines total.
+
 ## In-flight sequence
 
 Order follows the dependencies; work top-down (stack-upkeep is planned early, run late - see step 4).

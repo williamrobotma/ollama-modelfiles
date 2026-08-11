@@ -185,7 +185,7 @@ Runbook:
     `ss -ltnp | grep 11433` (under interactive job control `$!` can be a short-lived `setsid` wrapper).
 - Stop: `kill "$(cat ~/.local/state/llama-router.pid)"` - the children die with it.
   - Never `pgrep`/`pkill` for it instead: that has twice killed a router someone else started
-    ([.claude/rules/lessons.md](../.claude/rules/lessons.md)).
+    ([AGENTS.md](../AGENTS.md) Serving).
 - Monitor: the `status` field in `/v1/models` (loaded / sleeping / unloaded), the log's `timings` lines, `nvidia-smi`.
 
 FROZEN LEGACY: the Ollama lane's service env carried `KEEP_ALIVE=24h`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`.

@@ -14,7 +14,7 @@ set -euo pipefail
 BIN=/home/wma/Developer/llama.cpp/build/bin/llama-server
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Refuse to launch over a live router (router-operations lesson: live-probe 11433 first, every time).
+# Refuse to launch over a live router (AGENTS.md Serving: live-probe 11433 first, every time).
 # Fail closed if curl is missing: a probe that cannot run must not read as "nothing is listening".
 command -v curl >/dev/null || { echo "launch.sh: curl not found - cannot probe for a live router" >&2; exit 1; }
 if curl -s --max-time 2 http://127.0.0.1:11433/v1/models >/dev/null 2>&1; then
