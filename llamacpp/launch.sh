@@ -42,8 +42,9 @@ fi
 # --cors-origins localhost limits browser reads; the unauthenticated management endpoints (POST /models,
 # /models/load, /models/unload) stay CSRF-reachable - full analysis: docs/architecture.md section 4 (CSRF surface).
 "$BIN" --version >&2
-# The env scrub is load-bearing: HF_TOKEN feeds POST /models downloads (server-models.cpp), so scrubbing both
-# secrets caps a CSRF-triggered download at public repos.
+# The env scrub is load-bearing, for two different reasons: HF_TOKEN feeds POST /models downloads
+# (server-models.cpp), so scrubbing it caps a CSRF-triggered download at public repos; OLLAMA_API_KEY is never
+# read by llama-server - it is scrubbed to keep the MCP client credential out of the env every child inherits.
 exec env -u OLLAMA_API_KEY -u HF_TOKEN "$BIN" \
     --models-preset "$DIR/models.ini" \
     --sleep-idle-seconds 86400 \

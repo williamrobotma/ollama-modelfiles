@@ -71,15 +71,13 @@ ALIAS (a key on its owning entry, never its own section)
       alias = qwen3.6-35b-a3b-coding
 ```
 
-Ids name the lane, never the quant: the quant lives in the `model =` path only (id grammar: `llamacpp/README.md`).
+Ids name the lane, never the quant: the quant lives in the `model =` path only (grammar + rationale: `llamacpp/README.md`).
 
-- Changing quant is a path edit - no rename, no client churn, so aliases now serve only profile-defaults.
 - The one surviving alias points the unsuffixed coding name at the MTP coding lane.
 
 Aliases resolve inside request bodies but never appear as `/v1/models` ids, so point UI pickers at canonical ids.
-(Each `/v1/models` entry does carry its `aliases` as a field - `server-models.cpp` `get_router_models` - which is
-how the claude-local menu lists them.)
 
+- Each entry does carry its `aliases` as a field; the claude-local menu reads it ([AGENTS.md](../AGENTS.md#claude-local)).
 - The profile a child actually serves is visible at `/props?model=<id>`; the router's own `/props` returns dummies.
 - Guarded GGUFs take `chat-template-file` = the pinned froggeric template in `llamacpp/templates/`.
 - Add-a-model procedure and the alias policy: [llamacpp/README.md](../llamacpp/README.md).
@@ -160,18 +158,19 @@ No inbound auth anywhere: the router checks nothing, and it binds 127.0.0.1, as 
     - The download lands in `.cache-empty` and joins the served fleet (cache-sourced models are served).
     - The now-non-empty cache dir wedges the next `launch.sh` (fail-closed guard) until cleared by hand.
     - The bytes grow the never-shrinking vhdx (bulk downloads have crashed the host twice - AGENTS.md, disk budget).
-    - `launch.sh` scrubs `OLLAMA_API_KEY`/`HF_TOKEN` from the child env (`env -u`), so a triggered download is
-      capped at public repos.
+    - `launch.sh` scrubs both secrets from the child env (`env -u`): dropping `HF_TOKEN` caps a triggered
+      download at public repos; dropping `OLLAMA_API_KEY` (which llama-server never reads) keeps the MCP client
+      credential out of the server's inherited env.
     - `DELETE /models` needs a CORS preflight to run.
       - `--cors-origins localhost` won't grant that preflight to an arbitrary page - effectively gated.
   - The loopback bind (127.0.0.1) is the actual boundary: a same-host threat model, not a remote one.
 
 Per-client detail worth carrying:
 
-- claude-local: the synced `~/.claude/bin/claude-local` (the `~/.bashrc` fn is a shim) exports
-  `ANTHROPIC_BASE_URL` + model vars, all set by its interactive lane menu.
+- claude-local: picks a lane per session and exports `ANTHROPIC_BASE_URL` + the model vars.
   - Full spec: [AGENTS.md](../AGENTS.md#claude-local).
-  - Execs `claude` with both flags in `=VALUE` form - the space form swallows `"$@"` into the deny list.
+  - Execs `claude` with all three flags (`--settings`, `--disallowedTools`, `--mcp-config`) in `=VALUE` form -
+    the space form swallows `"$@"` into the deny list.
   - The MCP is the official Ollama web-search script, run via pipx on an `mcp>=1.9,<2` pin.
 - Open WebUI: started on demand, no background service, OpenAI connection at 11433 ([openwebui.md](openwebui.md)).
 - Codex: llama-server silently skips Responses tools typed `namespace` or `web_search` and still returns 200.

@@ -74,7 +74,7 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in
 | `docs/` | Topic docs; `docs/history/` holds immutable dated session logs. |
 | `specs/<feature>/` | Spec + tasks (plus plan when needed) for in-flight work; executed by the run-spec skill. |
 | `specs/done/<feature>/` | Completed bundles (spec.md Acceptance met), filed here by the run-spec skill. |
-| `AGENTS.md` / `CLAUDE.md` | Canonical agent instructions; thin Claude-specific shim. |
+| `AGENTS.md` / `CLAUDE.md` | Canonical agent instructions (incl. the claude-local spec); CLAUDE.md is `@AGENTS.md`. |
 
 ## Benchmarking
 

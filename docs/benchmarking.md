@@ -99,8 +99,8 @@ free -m | sed -n '2p;3p'                       # host RAM and swap (WSL2 shares 
 
 - The Id-13 delta is one-directional: a nonzero delta confirms a hardware fault; a zero delta proves nothing
   (the counter is specific but insensitive, and coarser than a trial). Never read zero as "software bug".
-  - Nearly all recorded events sat inside GPU-LLM sessions (766 of the 780 with a location); the one verified
-    no-LLM burst rules out llama.cpp specifically, not GPU compute.
+  - Nearly all recorded events sat inside GPU-LLM sessions (766 of the 780 recorded in the four-day window);
+    the one verified no-LLM burst rules out llama.cpp specifically, not GPU compute.
   - `dmesg` cannot see these: the kernel-mode driver is Windows-side, so WSL only shows llama-server's own SIGABRT.
   - `.Message` renders empty under WSL, so a message-text filter silently matches nothing. Read the event XML.
   - Location breakdown one-liner and the full finding:

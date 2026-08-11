@@ -26,7 +26,7 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
 ## Add a model
 
 1. `hf download` into the HF cache; use the pinned snapshot path in `model =` (never a bare repo id).
-2. New `[section]` named like the fleet (family-size-variant, no quant): profile sampling + ctx from `docs/parameters.md`.
+2. New `[section]` named per the grammar above: profile sampling + ctx from `docs/parameters.md`.
    Keys the `[*]` section already carries (min-p, n-predict, penalties, top-p) need only per-entry overrides.
 3. Vet the embedded chat template per the AGENTS.md chat-template gate; guarded -> `chat-template-file` froggeric.
    - Preset values get no interpolation (`common/preset.cpp:304-330`): the path is a literal absolute string.

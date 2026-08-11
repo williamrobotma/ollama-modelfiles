@@ -26,6 +26,6 @@
         - **The guard returned HTTP 500 on 10335, not the 400 seen at 10326**, message verbatim
           `Jinja Exception: System message must be at the beginning.` Vet on the text, never the status code.
     - Re-validate whichever pair is live whenever the build record moves.
-  - Serves the guarded Qwen GGUFs to OpenAI-style clients (embedded templates reject multi-system requests
-    with the guard message; the HTTP status varies by build - vet on the text).
+  - Serves the guarded Qwen GGUFs to OpenAI-style clients (their embedded templates reject multi-system
+    requests - the vet rule above).
     - Covers 3 preset entries: unsloth Qwen3.5-9B non-MTP, plus the two Queen-27B configs sharing one GGUF.

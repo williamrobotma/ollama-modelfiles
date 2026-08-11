@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Canonical instructions for any coding agent working in this repo - read this first.
-Deep detail lives in `docs/`; `CLAUDE.md` is a thin pointer here (this repo owns everything about running
+Deep detail lives in `docs/`; `CLAUDE.md` is just `@AGENTS.md` (this repo owns everything about running
 things locally, Claude Code included, so even the Claude-specific material is homed here).
 
 ## What this repo is
@@ -41,8 +41,7 @@ The frozen legacy Modelfiles (`modelfiles/<family>/<stem>/`) used three layers v
 
 Served ids name the lane and never the quant (2026-08-09); the id grammar lives in [llamacpp/README.md](llamacpp/README.md).
 
-- The quant lives in the `model =` path alone, so promoting a new quant is a path edit - no rename, no client churn.
-  - This retires the older rule that stems mirror the upstream quant tag; the frozen Modelfile stems still carry them.
+- This retires the older rule that stems mirror the upstream quant tag; the frozen Modelfile stems still carry them.
 - Aliases exist for profile defaults only, never as quant-free stand-ins for a quant-carrying id.
 
 See [docs/architecture.md](docs/architecture.md) for the full stack diagram.
@@ -187,21 +186,23 @@ The implementation is the synced `~/.claude/bin/claude-local`; the `~/.bashrc` f
   - Pinning `ANTHROPIC_MODEL` is required: settings.json's model otherwise reaches the wire verbatim.
 - No flag, no default: the numbered menu picks; Enter re-picks the last lane.
   - Menu source = the live router (`GET /v1/models` ids + their `aliases` fields; repo-independent, user rule
-    2026-08-10), each lane with its status (loaded / sleeping / unloaded; listing is read-only).
-    Router down -> the menu fails with a clear message; there is no file fallback.
+    2026-08-10).
+  - Each lane shows its status (loaded / sleeping / unloaded); listing is read-only.
+  - Router down -> the menu fails with a clear message; there is no file fallback.
   - Sorting is the whole ordering rule: the naming convention lands each alias beside its canonical for free.
   - The last lane persists in `~/.config/claude-local.last`; non-TTY reuses it or fails with the list.
   - Any entry that is not a menu number is taken as a lane name verbatim (escape hatch); the router 404s
     visibly on a typo.
 - Every claude arg passes through untouched (`--model` included); mid-session `/model` moves only the main session.
-- Every plugin is disabled per-session (`--settings` override built from settings.json at launch, never stale).
+- Every plugin is disabled per-session (`--settings` override built from `~/.claude/settings.json` at launch,
+  never stale); the script always exports the dummy `ANTHROPIC_AUTH_TOKEN` (the router checks nothing).
 - Execs `claude` with `--disallowedTools=WebSearch` plus the vendored web-search MCP (`llamacpp/mcp/`, via pipx)
-  when `~/.config/claude-local.mcp.json` exists (WSL); machines without it launch plain.
-- Secrets live in `~/.config/claude-local.env` (mode 600); cutover validated 2026-08-04, see the P3 history log.
-  - That env file also sets `OTEL_LOG_RAW_API_BODIES` (B8, held by user): each session recreates world-readable
-    raw request/response body logs under `/tmp/claude-bodies`.
-- It rides `/v1/messages`, which is immune to the multi-system guard - the chat-template gate above bites
-  OpenAI-endpoint clients only.
+  when `~/.config/claude-local.mcp.json` exists (WSL); machines without it launch with the plugin override only.
+  - Only this MCP branch sources `~/.config/claude-local.env` (mode 600: `OLLAMA_API_KEY` plus claude env knobs;
+    cutover validated 2026-08-04, see the P3 history log).
+  - That env file also arms `OTEL_LOG_RAW_API_BODIES` -> `/tmp/claude-bodies` (B8, held by user). Whether logging
+    actually fires is gated by telemetry settings - UNVERIFIED live (the dir is absent; check at the owed live run).
+- Rides `/v1/messages` (immune to the multi-system guard - see the chat-template gate above).
 
 ## WSL disk budget
 
@@ -219,6 +220,8 @@ This runs on WSL2; the guest disk is an `ext4.vhdx` on the Windows `F:` drive th
 - Soft-wrap only: never break a line mid-idea - fix long lines by cutting redundancy or splitting into real sub-bullets.
 
 ## Doc map
+
+The claude-local launcher spec is [a section of this file](#claude-local), not a separate doc.
 
 - [README.md](README.md) - what/why, quickstart, model catalog, repo map.
 - [llamacpp/README.md](llamacpp/README.md) - the serving lane: preset layout, alias policy, add-a-model.

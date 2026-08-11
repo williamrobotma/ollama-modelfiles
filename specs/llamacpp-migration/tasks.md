@@ -106,27 +106,38 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 - [x] claude-local rewired: base URL 11433, tier vars, `--disallowedTools WebSearch`, web-search MCP
   - Applied 2026-08-04 (user consent); deviation: `=` flag form required (the space form eats `"$@"`)
   - MCP: per-invocation `--mcp-config` only, pipx runs the vendored script; pins + provenance: `llamacpp/mcp/README.md`
+    - Negative-check: nothing registered globally (`~/.claude.json` had no mcpServers)
 - [x] `OLLAMA_API_KEY` moved to a user-readable env file for the MCP
   - Copied (not moved) 2026-08-04: the spec freezes the systemd override until the P4 purge; env file is mode 600
 - [x] claude-local validated: tool loop, live MCP search, body-log check, cache hits, WebFetch
   - 2026-08-04: 9/9 PASS on the live router; blocker fixed en route (`ANTHROPIC_MODEL` now pinned - settings.json's
     literal model otherwise hits the wire); validation detail in the P3 log
+    - WebSearch verified absent on the wire: `web_search_20250305` count 0 across all 21 body-log files
+    - Side result (n=1, moot since the 2026-08-10 crash closure): MTP x graphs-on served 10 requests to 26.2k ctx,
+      graphs reused to 1030, zero crashes
 - [x] Open WebUI on OpenAI connection 11433; fleet in picker; search-enabled chat passes
   - Prepped 2026-08-04 (0.11.0 first start over a backup); browser cutover, search chats, and family-chat DB
     verification done 2026-08-07 (chats cross-matched to the router log verbatim) - full detail in the P3 log
   - Sampling neutrality closed at source (`payload.py:70`); connection research settled external + chat-completions,
-    Provider=llama.cpp recommended (reasoning round-trip + Loaded/Eject); guidance lives in docs/openwebui.md
+    Provider=llama.cpp recommended (reasoning round-trip + Loaded/Eject; sites: middleware.py:2059-2073 ->
+    misc.py:437-439 at 0.11.0); guidance lives in docs/openwebui.md
   - Findings dispatched (mechanism + evidence in the P3 log): 26B drafter NaN-split crash root-caused, fixed by
     `spec-draft-ngl = 0` + `--models-max 1` (user go; both live in models.ini/launch.sh); dense-offloader ~2-3 tok/s
     attribution corrected (offload-bound, not residency); 35B `/` repetition loop = sampling degeneracy, regenerate
     escapes; models-max 1 force-kills an in-flight generation on switch after 10 s
 - [x] OpenCode provider block + context limits; search-tool behavior recorded
-  - Applied + validated 2026-08-04 (12-model provider, real tool-loop session); no websearch tool exists in 1.16.2
-  - Upstream client bug found (`opencode run` drops final stdout text; stored text intact) - detail in the P3 log
+  - Applied + validated 2026-08-04 (12-model provider, real tool-loop session, requests hit 11433 with no #5674
+    symptom); no websearch tool exists in 1.16.2
+  - Upstream client bug found (`opencode run` drops final stdout text; stored text intact via export; 4/4 sessions,
+    TUI untested) - detail in the P3 log
 - [x] Codex custom provider (Responses, fresh threads); tool loop tested or upstream-blocked documented
   - Applied + validated 2026-08-04 (tool loop via exec_command; `/v1/responses` -> canonical child; #10635 dead)
+    - Auth caveats: the ambient ChatGPT credential rode along; authless-without-login and the env_key fallback
+      stay unvalidated (P3 log carries the first; the env_key clause survives here)
+    - Cleanup: the trust entry Codex self-wrote for the validation sandbox was removed; marketplace drift left as-is
   - Finding: llama-server silently skips `namespace`/`web_search` Responses tools at 200 - Codex MCP fails
     invisibly; folded into architecture.md at the P4 docs rewrite; auth + phone-home caveats in the P3 log
+    - #26977's zero hits = the path was never exercised, not fixed - the risk at plan.md's Watch list stays open
 - [x] Pi best-effort config tried or explicitly deferred
   - Explicitly deferred 2026-08-07 (user: "defer pi for now"); Pi is not installed here, so nothing was rewired
   - No Pi config landed in the repo; wire it from `llamacpp/models.ini` at pickup - does not gate P4
@@ -156,6 +167,8 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Build record: on-disk moved to 10326 (3653e6d6d, 2026-08-07); its failed re-cert (Qwen hammer 2/30) plus the
     same-day ~88k-ctx live crash-loop opened the crash investigation - consolidated in the CLOSED entry below;
     per-stage evidence in the diagnosis log sections 1-8
+    - Power caveat kept: 9860's 30/30 hammer had ~11% pass-by-luck odds at a true 7%/run; the blamed design
+      predates 9860 - so that clean run never certified the build
     - Post-mortem audit 2026-08-08 (1 opus + 2 sonnet, adversarial) of the "weeks of crash-free mileage" claim:
       provenance traced (spec future-tense read as past evidence, cross-model conflation), 14-commit sweep
       (15 confirmed / 2 overstated / 4 refuted / 3 unverifiable), fixes applied at head
@@ -216,9 +229,10 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Executed 2026-08-08 (GPU-gate closed, config-side): models.ini 18 + 8, OpenCode/Codex swapped, doc counts moved
       - Download complete (29.3G blob, snapshot a483e9e6); stale 16.9G .incomplete removed
       - New-GGUF gate greps: guard 0, merged_system 7 - joins the carriers (now 5 GGUFs / 7 entries)
-  - GPU-window diagnosis queue (2026-08-08): every queued stage since completed across the 2026-08-09 batch and
-    the 2026-08-10 resolution (amended 2026-08-10: the "stages still owed" note was stale); the per-build
-    /v1/messages probe stays standing whenever the build moves; stage evidence in the diagnosis log
+  - GPU-window diagnosis queue (2026-08-08): every queued stage since completed (the 35B large-ctx bound on n=1)
+    across the 2026-08-09 batch and the 2026-08-10 resolution (amended 2026-08-10: the "stages still owed" note
+    was stale); the per-build /v1/messages probe stays standing whenever the build moves; evidence in the
+    diagnosis log
   - Resolved 2026-08-08 (user): merged_system exposure accepted + documented (5 GGUFs / 7 entries post-reshape)
     - Those entries would silently drop mid-conversation system messages on /v1/chat/completions (no error surfaces)
     - No live exposure: the one multi-system client rides /v1/messages; OpenAI-endpoint clients send leading-only
@@ -248,14 +262,12 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
         - Guest / usage 484G -> 459G; q6 + mmproj blobs untouched; host vhdx reclaim folds into the purge step
         - The frozen q5 canonical Modelfile keeps its dead FROM path (build-time only; store copy serves rollback)
   - Crash investigation CLOSED 2026-08-10: the cause was this box's +230 MHz GPU core clock offset, nothing upstream
-    - Arc: GPC-3 Id-13 fault clusters pointed local (2026-08-09, diagnosis log section 9); stock clocks took the
-      same build + byte-identical body from 5/5 crashes to 0/10 (p = 0.00033, section 10); 4-arm decomposition
-      isolated the core offset alone (11/11 vs 0/15, p = 1.3e-07; memory offset and power limit clear, section 11)
+    - Arc: Id-13 fault clusters pointed local (diagnosis log section 9); stock clocks cleared the byte-identical
+      repro (section 10); the 4-arm decomposition isolated the core offset alone (section 11)
     - Mechanism: voltage-for-frequency below the validated band - the OC was validated under full load (~1100 mV),
       LLM decode runs lower; peak clock reads identically in crashing and clean arms
-    - Ladder CLOSED: +120 MHz adopted as the safe core offset (25-trial clean soak; +135 unfailed but less proven;
-      +150 took the host down) - standing rule in AGENTS.md + docs/benchmarking.md (the CLAUDE.md copy
-      dissolved at the 2026-08-10 thin-shim move)
+    - Ladder CLOSED: +120 MHz adopted as the safe core offset - standing rule + per-rung stats in AGENTS.md and
+      docs/benchmarking.md
     - Caveat kept: the core offset is NOT verifiable from WSL (clamp hides it) - the rule rests on the owner's
       Afterburner profile; the Id-13 delta is one-directional (nonzero = hardware fault, zero proves nothing)
     - gemma4-12b-it-qat-mtp DECISION VOID (the entry was never broken, kept unchanged); dossier CLOSED, nothing
@@ -290,6 +302,18 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       menu render (ids + alias + status), index/Enter/verbatim/00/out-of-range picks, non-TTY reuse and no-last
       failure, router-down message, MCP branch flags, env-file fail-closed: all PASS
       - One real interactive + one non-TTY live run against the live router still owed (carried forward)
+  - Post-commit sweep on f1b8696 (2026-08-11, 4 opus lenses + an inline permission-scope null): all 35 prior items
+    verified resolved with zero regressions; the new findings were dispatched on user go (all four tiers approved)
+    - REVERSED item 29: the .cache-empty ignore is restored - un-ignoring made bare-hex blob downloads
+      commit-eligible while *.gguf still hid the symlinks; launch.sh's fail-closed guard is the real control.
+      .claude/worktrees/ joined the tracked ignores
+    - Fixed in round-1 text: the 766/780 qualifier (four-day window, not the located subset); the env -u rationale
+      split (HF_TOKEN caps downloads; OLLAMA_API_KEY is unread by llama-server); the spec now scopes env-file
+      sourcing to the MCP branch, names the dummy auth token, and marks B8 firing UNVERIFIED (telemetry-gated)
+    - Collapse orphans restored inline above (P3 log:6-7 names this file the surviving record for 2026-08-04)
+    - Synced script hardened (user: all three): plugin kill-switch fails closed, python parse aborts visibly,
+      unprintable router ids skipped with a warning; OLLAMA_API_KEY inheritance accepted + documented (mcp/README.md)
+    - Dedup applied (user: pointers win over round-1's models.ini restatements); CLAUDE.md cut to a pure pointer
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)

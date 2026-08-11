@@ -376,6 +376,14 @@ cscope.po.out
 
 .svn/
 
-# Claude Code project-level runtime state (plugin toggles, local overrides) - never repo config
+# Claude Code project-local state. Ignoring settings.json is this repo's deliberate deviation from the
+# usual checked-in-project-settings convention (here it carries only plugin/runtime state); settings.local.json
+# and agent worktrees are per-machine.
 .claude/settings.json
 .claude/settings.local.json
+.claude/worktrees/
+
+# llama.cpp router: empty LLAMA_CACHE redirect target. Kept ignored on purpose: launch.sh fails closed on a
+# non-empty dir (the real stray-GGUF control), while un-ignoring would make bare-hex blob downloads
+# commit-eligible (they dodge the *.gguf ignore) without surfacing .gguf symlinks (still hidden by it).
+llamacpp/.cache-empty/
