@@ -1,21 +1,24 @@
 # Plan: Bonsai-27B onboarding
 
-Blocked until `specs/llamacpp-migration` builds the serving lane (`specs/done/llamacpp-serving` landed its verdict).
+Blocked until `specs/llamacpp-migration` builds the llama.cpp serving stack.
+`specs/done/llamacpp-serving` landed its verdict.
 
 Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-verify research.md facts at run time.
 
-## Phase 0 - gate check + rebuild
+`Verify:` marks the check that closes the step it is nested under.
+
+## Phase 0 - prerequisite check + rebuild
 
 - Confirm the serving-config home from `specs/llamacpp-migration` exists and is documented.
-- Rebuild llama.cpp past the #25707 merge (2026-07-30); this is the remaining ternary gate.
+- Rebuild llama.cpp past the #25707 merge (2026-07-30); this is the remaining prerequisite for ternary.
   - The rebuild triggers the migration spec's rebuild rule: crash matrix re-run, froggeric pair re-validation.
   - Include the Gemma MTP load re-check (docs/history/2026-07-17-llamacpp-eval.md, verdict item 5).
   - Passing the rule moves the last-known-good pin forward (stack-upkeep policy).
-  - Amended 2026-08-08: gate condition met build-wise - on-disk build 10326 includes #25707 (merged 2026-07-30).
-  - 10326 is uncertified: it failed the 2026-08-08 re-cert. Re-evaluate this gate at pickup.
+  - Amended 2026-08-08: the prerequisite is met build-wise - on-disk build b10326 includes #25707 (merged 2026-07-30).
+  - b10326 is uncertified: it failed the 2026-08-08 re-cert. Re-evaluate this prerequisite at pickup.
   - Amended 2026-08-10: the re-cert failures were this box's GPU core overclock, resolved (docs/benchmarking.md).
-    On-disk 10335 passed the crash matrix + froggeric pair, so the cert gate is met at 10335; re-evaluate at
-    pickup only if the build record has moved again.
+    - On-disk b10335 passed the crash matrix + froggeric pair, so the certification requirement is met at b10335.
+    - Re-evaluate at pickup only if the build record has moved again.
 - Spec review: record the two remaining decisions (sampling profile, intended role) in tasks.md.
   - Ternary path is already resolved upstream (spec.md decision 1).
 
@@ -41,8 +44,8 @@ Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-ve
 - VRAM/ctx envelope on the 4070: resident footprint at the Modelfile-class contexts.
   - Verify: `nvidia-smi` figures in the results dir.
 - Long-context ceiling: community figures put ternary at 13.7 GiB at 100K ctx.
-  - Establish the actual resident ceiling with the lane's KV quantization before claiming long-ctx support.
-- Optional: mmproj load + one vision smoke (first `--mmproj` use on this lane).
+  - Establish the actual resident ceiling with the serving stack's KV quantization before claiming long-ctx support.
+- Optional: mmproj load + one vision smoke (the first `--mmproj` use on the llama.cpp serving stack).
 
 ## Phase 3 - 1-bit comparison
 
@@ -59,11 +62,11 @@ Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-ve
 - docs/parameters.md: Bonsai-27B profile section (values + source URLs + the repeat_penalty stance).
 - docs/benchmarking.md: the new rows and distilled findings; watch items alongside the llamacpp watch list.
   - #25707 resolved (merged 2026-07-30); #13668 still watched.
-- research.md: append a dated resolution note per gated fact (merged / still open / superseded).
+- research.md: append a dated resolution note per blocked fact (merged / still open / superseded).
 
 ## Risks / notes
 
 - Vendor quality and speed numbers are unbenched marketing until Phase 2/3 - do not promote the model on them.
 - DSpark can be a net slowdown on some hardware (-37% on DGX Spark); treat the drafter as an experiment, not a default.
-- (Retired 2026-08-03) Fork lane: #25707 merged, so upstream is the only lane; no second engine to maintain.
+- (Retired 2026-08-03) The fork option: #25707 merged, so upstream is the only engine; no second engine to maintain.
 - VRAM contention while benchmarking: same posture as the parity suite (idle the systemd Ollama during runs).

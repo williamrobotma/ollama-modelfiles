@@ -1,6 +1,6 @@
 # Parameter reference
 
-Single authoritative home for the sampling profiles served across the fleet.
+This file defines the sampling profiles served across the fleet.
 README and AGENTS.md link here instead of duplicating the tables.
 
 Every value is verified against the official sources before it goes into a `llamacpp/models.ini` entry:
@@ -24,7 +24,7 @@ silently picking one - see the Qwen `presence_penalty` note below.
 - **Gemma 4 thinking is engine-scoped.** The trigger is `<|think|>` at the start of the system prompt.
   - How it gets there differs by engine, so never assume one mechanism carries over.
   - llama.cpp (`--jinja`): the template injects it when the `enable_thinking` kwarg is true, and llama.cpp defaults it true.
-  - Ollama (retired lane): never ran the GGUF's Jinja, so a Modelfile `SYSTEM <|think|>` directive supplied it literally.
+  - Ollama (the retired stack): never ran the GGUF's Jinja, so a Modelfile `SYSTEM <|think|>` line supplied it literally.
 - **Qwen 3.6 thinking** is enabled by default.
   - Disable at launch with `--reasoning off` (`-rea off`; INI key `reasoning = off`), or with `/no_think` in the prompt.
     - The `--chat-template-kwargs` launch spelling for `enable_thinking` is deprecated on the pinned build.
@@ -112,23 +112,17 @@ Under Ollama the profile's values were set but thinking could not actually be di
 ## Serving flags (llama.cpp)
 
 The tables above are sampling only. These are the launch-side flags a served model also needs.
-Under Ollama they came from the service env; `llamacpp/models.ini` hoists them fleet-wide in its `[*]` block.
+Under Ollama they came from the service env. Now `llamacpp/models.ini` sets them fleet-wide in its `[*]` block.
 
 | Flag | Value | Note |
 |---|---|---|
 | `-fa` | `on` | In both vendors' recommended commands; pairs with quantized KV, which fails to load without it |
-| `-ctk` / `-ctv` | q8_0 | Fleet-wide, decided 2026-08-03 from the on-box KL probe - see the caveat below |
+| `-ctk` / `-ctv` | q8_0 | KV cache type, settled fleet-wide (decided 2026-08-03 from the on-box KL probe). Numbers and reasoning are in `history/2026-08-03-llamacpp-p1-envelopes.md`. The earlier third-party lead stays directional context only: it was one unreplicated run, on BF16 GGUFs rather than the QAT/UD quants this fleet serves. |
 | `-np` | 1 | Vendor MTP cards state `-np > 1` is unsupported with MTP |
 | `--jinja` | required | Thinking kwargs and chat templates do nothing without it |
 | `--spec-type` | `draft-mtp` | MTP lanes only |
 | `--spec-draft-n-max` | 2 | Vendor cards give 2 for Qwen3.6 MTP and 4 for Gemma 4; the repo runs 2 pending a bench |
-| `--mmproj` | non-MTP vision entries | Coexists with MTP on b9860 but costs the MTP lane ~35-40% decode - see below |
+| `--mmproj` | non-MTP vision entries | Coexists with MTP on build b9860, per the 2026-07-28 P0 probe. The resident projector costs the MTP lane ~35-40% decode (n<=3, one GGUF). |
 
-- KV cache type is settled: q8_0 fleet-wide (decided 2026-08-03).
-  - Numbers and reasoning live in `history/2026-08-03-llamacpp-p1-envelopes.md`.
-- The earlier third-party lead stays directional context only.
-  - It was one unreplicated run, on BF16 GGUFs rather than the QAT/UD quants this fleet serves.
-- `--mmproj` and MTP coexist on b9860, per the 2026-07-28 P0 probe.
-  - The resident projector costs the MTP lane ~35-40% decode (n<=3, one GGUF).
-- The fleet splits for speed, not necessity: MTP entries carry no `mmproj`.
-  - Vision lives on the non-MTP sibling (9B, 27B) or the 35B-A3B instruct canonical, serving plain (no `--spec-type`).
+MTP entries carry no `mmproj`: the fleet splits for speed, not necessity.
+Vision lives on the non-MTP sibling (9B, 27B) or the 35B-A3B instruct canonical, serving plain (no `--spec-type`).

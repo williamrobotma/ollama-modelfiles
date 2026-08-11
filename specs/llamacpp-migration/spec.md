@@ -3,33 +3,50 @@
 Vetted 2026-07-23; evidence log: `docs/history/2026-07-23-llamacpp-migration-planning.md`.
 Executes the 2026-07-17 eval verdict (`docs/history/2026-07-17-llamacpp-eval.md`): retire Ollama, serve from stock llama-server.
 
+## Current state
+
+What is settled, after every dated amendment below.
+
+- **Serving**: stock llama-server in router mode, `--models-preset` INI, on `127.0.0.1:11433`.
+- **Config home**: the git-tracked top-level `llamacpp/` directory.
+- **Build**: the b9860 pin is superseded - the on-disk build is canonical and is never downgraded (2026-08-08).
+- **Fleet size**: amended repeatedly since the 2026-07-27 reduction; `llamacpp/models.ini:1` carries the count.
+- **Web search**: `WebSearch` is denied in claude-local; search is served by Ollama's web-search MCP.
+- **Ollama**: staged retirement - stop and disable first, purge only after the validation window.
+
+The sections below record how each decision got here.
+`Amended YYYY-MM-DD:` marks a later change to the item it sits under.
+
 ## Decisions (locked at planning review, 2026-07-23)
 
-- **Switching: native router mode** (`--models-preset` INI, `--sleep-idle-seconds`); standalone scripts are the escape hatch.
+- **Switching: native router mode** (`--models-preset` INI, `--sleep-idle-seconds`).
+  - Standalone scripts are the fallback.
   - llama-swap is the named contingency (~half a day to port the config).
   - Triggers here: a Phase-0 protocol smoke fails, or the Qwen-MTP graphs-on hammer fails.
   - Third trigger is bonsai decision 1: "build the PrismML fork" means adopting llama-swap before ternary onboards.
     - Router children spawn only from the router's own binary (`server-models.cpp`, b9860); a fork build cannot be a child.
     - "Wait for #25707" (the other option) keeps router mode sufficient - ternary would be a normal GGUF entry.
-    - The gate lives early in `specs/bonsai-27b` deliberately - ternary is one of the reasons for this migration.
+    - The decision sits early in `specs/bonsai-27b` deliberately - ternary is one of the reasons for this migration.
 - **Posture**: launcher script first, no daemon; a systemd unit is a post-validation follow-up.
   - Router port `127.0.0.1:11433` (8080 = Open WebUI, 11434 = Ollama until retired, 11435-11438 = benchmarks).
 - **Config home**: new top-level `llamacpp/` dir - preset INI, launcher, template files, notes.
   - Git-tracked, peer of `modelfiles/`; bonsai-27b lands here. No secrets in the repo.
 - **Web-search parity**: deny `WebSearch` in claude-local; serve search via Ollama's web-search MCP (Brave MCP fallback).
   - Verified: Claude Code fulfills WebSearch by a sub-request to the model server carrying `web_search_20250305`.
-  - Ollama's daemon executes that tool mid-generation; stock llama-server turns it into a hollow function tool.
+  - Ollama's daemon executes that tool mid-generation.
+  - Stock llama-server turns it into a function tool declaration that never executes.
   - Left enabled it would fabricate results silently, hence the deny. The MCP needs only `OLLAMA_API_KEY`, no daemon.
   - Open WebUI's Brave search is client-side and unaffected; Codex, Copilot, and Pi need nothing.
 - **Ollama: staged retirement.**
   - Stop + disable after blocking clients validate; keep binary + store as rollback for a ~2-week validation window.
-  - Purge is the gated final task: uninstall, delete the 232G store, retire `modelfiles/` + create script, compact vhdx.
+  - The purge runs last, blocked until that validation window closes.
+  - The purge itself: uninstall, delete the 232G store, retire `modelfiles/` + create script, compact vhdx.
   - Everything Ollama-side stays frozen (not edited, not deleted) until that purge.
-  - The pending graphs-off systemd fix (docs/benchmarking.md) is cancelled as moot.
+  - The pending graphs-off systemd fix (docs/benchmarking.md) no longer applies (Ollama no longer serves).
 - **Prune** (skip migration; delete at purge; ~60G HF-cache reclaim):
   - `models--noctrex--Qwopus3.5-9B-Coder-MTP` (15G): orphaned, no Modelfile ever referenced it.
   - `35b-a3b-mtp-ud-q4-k-xl` + `35b-a3b-mtp-coding-ud-q4-k-xl`: superseded by the q5 pair (~23G blob).
-  - Non-MTP `35b-a3b-coding-ud-q4-k-xl` lane (22G repo): unused by any integration.
+  - Non-MTP `35b-a3b-coding-ud-q4-k-xl` entry (22G repo): unused by any integration.
   - The `35b-a3b-coding` alias repoints to the MTP-q5 coding config; 21 configs + 7 alias names remain.
 - **Build pin**: stay on b9860 (fdb1db877).
   - Re-verified 2026-07-23: no tracked-bug fix merged through b10094; new crash reports exist on newer builds.
@@ -50,10 +67,10 @@ Evidence log: `docs/history/2026-07-25-llamacpp-preflight.md`. These refine the 
 - **Router mode cannot do per-model env.** Children inherit the router's environment verbatim, so CUDA graphs is a
   router-wide setting.
   - This is why a Qwen-MTP graphs-on failure is a contingency trigger rather than a per-model tuning fix.
-  - The escape hatch is a standalone process outside the router; `llamacpp/` must define where those scripts live.
-- **Gemma thinking moves from a `SYSTEM` directive to a template kwarg**, which llama.cpp defaults on. The six
-  `SYSTEM <|think|>` directives do not migrate, and Phase 0 confirms the behavior on the wire before Phase 2 relies on
-  it.
+  - The fallback is a standalone process outside the router; `llamacpp/` must define where those scripts live.
+- **Gemma thinking moves from a `SYSTEM` directive to a template kwarg**, which llama.cpp defaults on.
+  - The six `SYSTEM <|think|>` directives do not migrate.
+  - Phase 0 confirms the behavior in a live response before Phase 2 relies on it.
 - **Sampling stays neutral across the cutover** so any behavior change is attributable to the engine.
   - Gemma entries pin `min_p 0.0` against llama-server's `0.05` injection.
   - Qwen thinking-general keeps `presence_penalty 0.0` despite the 35B-A3B card's `1.5`; the A/B is a follow-up.
@@ -75,16 +92,18 @@ Decided at the first execution session's review; these supersede the specific lo
   - Fix: `launch.sh` sets `LLAMA_CACHE` to an empty directory (first in the cache resolution order,
     `common/hf-cache.cpp:43`). Preset entries are absolute paths and never resolve through the cache.
   - Phase 0 verifies a preset entry loads and generates under the redirect, not just that `/v1/models` is clean.
-- **Keep-set narrowed; deletion pulled forward** (supersedes "delete at purge" for these items): OBLITERATUS
-  (3 configs + 1 alias), Qwopus (config + Jackrong repo), noctrex repo, 35B q4 MTP pair, and the non-MTP 35B lane
-  are deleted now - Modelfiles, Ollama models, and HF cache (~89G) together. Queen-27B and the heretic pair stay.
+- **Kept models narrowed; deletion pulled forward** (supersedes "delete at purge" for these items).
+  - Deleted now: OBLITERATUS (3 configs + 1 alias), Qwopus (config + Jackrong repo), and the noctrex repo.
+  - Deleted with them: the 35B q4 MTP pair and the non-MTP 35B entry.
+  - Each deletion covers all three places: Modelfile, Ollama model, and HF cache (~89G together).
+  - Queen-27B and the heretic pair stay.
   - Fleet becomes **17 configs + 6 alias names** (was 21 + 7).
     - Amended 2026-08-08: the q6 trio replaced the 35B q5 trio -> 17 configs + 8 alias names.
     - Amended 2026-08-08 (reshape): blank-instruct ids, 27B instruct entry, Queen i1 tags -> 18 configs + 8 aliases.
     - Amended 2026-08-09: quants removed from served ids; the alias layer collapses -> 18 configs + 1 alias name.
   - `35b-a3b-coding` alias repoints to `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` and is rebuilt under Ollama.
     - Amended 2026-08-10: superseded by the q6 standard + alias collapse; the surviving alias is
-      `qwen3.6-35b-a3b-coding` on the MTP q6 lane (models.ini is current).
+      `qwen3.6-35b-a3b-coding` on the MTP q6 entry (models.ini is current).
   - Guarded fleet drops to 2 GGUFs (unsloth 9B non-MTP, Queen-27B); froggeric applies to the 3 entries they back
     (Queen-27B backs both `queen-27b-*` configs - corrected 2026-07-28, was "two entries").
   - Phase 4 purge shrinks to: Ollama uninstall + 232G store, `modelfiles/` + create-script retirement, vhdx compact.
@@ -92,7 +111,8 @@ Decided at the first execution session's review; these supersede the specific lo
   ~16k-token wikitext segment, f16-cache baseline vs q8_0; read the tool's numbers as-is, no pooling.
   - Also record the f16-vs-q8_0 VRAM delta at fixed ctx - the input the ctx ladder actually needs.
   - q8_0 KL small -> keep q8_0 fleet-wide; a ~0.1 signal -> Gemma entries serve f16 and the ladder runs at f16.
-  - Qwen is probed only if Gemma surprises. No f8 cache type exists on b9860; bf16 is 16-bit (no VRAM win).
+  - Qwen is probed only if the Gemma result is outside the decision rule.
+  - No f8 cache type exists on b9860; bf16 is 16-bit (no VRAM win).
   - `llama-perplexity` must be built first; sha256 `llama-server` before and after to prove the pin untouched.
 - **`--models-max` stays stock (4) for now**; the Phase 0 smoke records actual second-model behavior on 12 GB.
 
@@ -113,10 +133,10 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
 
 1. Phase 0 - router smokes on 11433 with a 3-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.
 2. Phase 1 - Gemma MTP ctx probe (ladder above known-stable 16k, crash matrix, graphs ON); Qwen-MTP graphs-on hammer.
-3. Phase 2 - full-fleet preset: 17 configs + 6 aliases (since amended - dated chain in Scope; models.ini is
-   current), full flags, mmproj, drafters, froggeric on guarded.
+3. Phase 2 - full-fleet preset: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on guarded.
+   - Since amended: the dated chain is under Execution revisions, and `llamacpp/models.ini` is current.
 4. Phase 3 - client cutovers: claude-local, Open WebUI, OpenCode, Codex, Pi (best-effort).
-5. Phase 4 - staged retirement: stop + disable, docs rewrite, validation window, gated purge + prune.
+5. Phase 4 - staged retirement: stop + disable, docs rewrite, validation window, then purge + prune.
 
 ## Rules
 
@@ -137,15 +157,15 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
   - <https://github.com/ggml-org/llama.cpp/issues/26017> - Gemma E4B MTP CUDA crash on b10090.
   - <https://github.com/ggml-org/llama.cpp/issues/25618> - draft-MTP greedy divergence on quantized targets (correctness).
   - <https://github.com/ggml-org/llama.cpp/issues/25828> - closed, same crash family, resolution unknown.
-- <https://github.com/ggml-org/llama.cpp/pull/25707> - ternary gate (bonsai); open, blocked, needs rebase (2026-07-23).
+- <https://github.com/ggml-org/llama.cpp/pull/25707> - ternary prerequisite (bonsai); open, blocked, needs rebase (2026-07-23).
 - <https://github.com/mostlygeek/llama-swap/issues/946> - TTL race deadlock; matters only if a contingency trigger fires.
 
 ## Done when
 
 - Every non-pruned model serves from router mode via `llamacpp/`, launched by one script.
-- Blocking clients validated on the lane:
+- Blocking clients validated against the router:
   - claude-local: real session with tool loops, prefix-cache hits, MCP web search working, WebSearch denied.
-  - Codex: tool loop tested; if upstream-broken, documented and the Ollama gate holds until resolved.
+  - Codex: tool loop tested; if upstream-broken, documented and Ollama stays running until it is resolved.
   - OpenCode: sessions work with per-model context limits set.
   - Open WebUI: search-enabled chat smoke passes on the OpenAI connection.
 - Gemma MTP serves at the probed ctx ceiling, graphs ON; results recorded in a dated history log.

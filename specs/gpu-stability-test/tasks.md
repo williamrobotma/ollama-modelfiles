@@ -1,7 +1,10 @@
 # Tasks - gpu-stability-test
 
-Resume point. Source harness to port: the 2026-08-10 session scratch (`stock-matrix.sh` + `soak-120.sh`), whose
-behaviour is described in spec.md's "Must carry". The ladder that produced it: docs/history 2026-08-08 log, section 12.
+Status legend: [ ] pending, [x] done. Resume point for this feature.
+
+Source harness to port: the 2026-08-10 session scratch (`stock-matrix.sh` + `soak-120.sh`).
+Its behaviour is described in spec.md's "Must carry".
+The ladder that produced it: docs/history 2026-08-08 log, section 12.
 
 - [ ] `benchmarks/gpu-stability/run.sh` - dry-run by default, `--list`, `--execute`, `TRIALS` and soak mode
 - [ ] Prompt generator: seed -> target token count, prints the body sha256; no blob committed

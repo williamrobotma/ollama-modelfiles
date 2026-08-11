@@ -4,16 +4,17 @@ Status legend: [ ] pending, [x] done. This file is the resume point for the feat
 
 DRAFT 2026-07-17, reworked 2026-08-03 (ternary first-class) - not started.
 
-Blocked on `specs/llamacpp-migration` (the serving lane + config home; llamacpp-serving verdict landed).
+Blocked on `specs/llamacpp-migration` (the serving stack + config home; llamacpp-serving verdict landed).
 
 Spec review pending: the two remaining decisions in spec.md (sampling profile, intended role).
 
-## Phase 0 - gate check + rebuild
+## Phase 0 - prerequisite check + rebuild
 
 - [ ] Serving-config home known (from `specs/llamacpp-migration`). llamacpp-serving verdict has landed (B).
 - [x] #25707 status re-checked: merged 2026-07-30 (checked 2026-08-03; fork + llama-swap contingency retired).
 - [ ] Rebuild past the merge; migration-spec rebuild rule passed (crash matrix, froggeric, Gemma MTP re-check).
-  - Amended 2026-08-08: gate met build-wise (10326 includes #25707) but 10326 is uncertified (re-cert failed).
+  - Amended 2026-08-08: the prerequisite is met build-wise (build b10326 includes #25707).
+  - Amended 2026-08-08: b10326 is uncertified - the re-cert failed.
   - Re-evaluate at pickup.
 - [ ] Spec review: sampling-profile and role decisions recorded here.
 

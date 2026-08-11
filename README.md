@@ -1,18 +1,18 @@
 # ollama-modelfiles
 
 Local LLM serving config for a single 12 GB GPU, organized by model family and use profile.
-The live lane is stock llama.cpp in router mode ([llamacpp/](llamacpp/README.md), port 11433).
+The live serving stack is stock llama.cpp in router mode ([llamacpp/](llamacpp/README.md), port 11433).
 The Ollama Modelfiles are the retired legacy build layer, frozen on disk until the post-migration purge.
 Every served GGUF is a pinned Hugging Face cache snapshot (`hf download`; mostly [Unsloth](https://unsloth.ai) builds).
 Agents should read [AGENTS.md](AGENTS.md) first.
 
 ## Requirements
 
-- A stock llama.cpp build; the build record is single-homed in the header comment of `llamacpp/launch.sh`.
-  - The rebuild rule lives in `specs/llamacpp-migration/spec.md`'s Rules section.
+- A stock llama.cpp build. The build record is defined in the header comment of `llamacpp/launch.sh`.
+  - The rebuild rule is in `specs/llamacpp-migration/spec.md`'s Rules section.
 - The Hugging Face CLI (`hf`, from `huggingface_hub`) to provision GGUFs.
-- An NVIDIA CUDA GPU (reference box: RTX 4070, 12 GB, WSL2); models larger than ~12 GB partial-offload to CPU.
-  CUDA version mandates: [docs/parameters.md](docs/parameters.md).
+- An NVIDIA CUDA GPU (reference box: RTX 4070, 12 GB, WSL2). Models larger than ~12 GB partial-offload to CPU.
+  - The CUDA version mandates are in [docs/parameters.md](docs/parameters.md).
 
 ## Quickstart
 
@@ -34,19 +34,25 @@ curl 127.0.0.1:11433/v1/chat/completions -d '{"model":"gemma4-12b-it-qat","messa
 Step 3 above runs in the foreground for a quick check.
 For persistent serving, see the runbook in [docs/architecture.md](docs/architecture.md#4-serving-layer-and-its-clients).
 
-Served ids and pinned snapshot paths live in `llamacpp/models.ini`.
+Served ids and pinned snapshot paths are defined in `llamacpp/models.ini`.
 The pinning convention and add-a-model procedure are in [llamacpp/README.md](llamacpp/README.md).
 
 ## Model catalog
 
-The served fleet is defined by `llamacpp/models.ini`; each entry's serving profile lives in the INI itself.
+The served fleet is defined by `llamacpp/models.ini`, which also holds each entry's serving flags.
 List the live ids with `curl -s 127.0.0.1:11433/v1/models`.
-Families: Gemma 4 (thinking; vision via mmproj), Qwen 3.6 coders, Qwen 3.5 small coders, and an uncensored track.
+The fleet spans these families:
 
-- Small coders: Qwen 3.6's smallest GGUF is 27B (offloads), so the resident coding line is Qwen 3.5 dense.
-- Uncensored: community abliterated builds (plain Q4/i1-Q4, not UD-*); abliteration can dent reasoning/tool-calling.
-  - Verify on-task; all must pass the [chat-template gate](AGENTS.md#chat-template-gate-for-community-ggufs).
-- Ids no longer carry quant tags (the quant lives only in the `model =` path); aliases now serve only profile-defaults.
+- Gemma 4: thinking, with vision via mmproj.
+- Qwen 3.6 coders.
+- Qwen 3.5 small coders. Qwen 3.6's smallest GGUF is 27B (offloads), so the resident coding line is
+  Qwen 3.5 dense.
+- An uncensored track of community abliterated builds (plain Q4/i1-Q4, not UD-*). Abliteration can dent
+  reasoning and tool-calling.
+  - Verify on-task. All of them must pass the [chat-template gate](AGENTS.md#chat-template-gate-for-community-ggufs).
+
+Ids no longer carry quant tags. The quant appears only in the `model =` path.
+Aliases now serve only profile defaults.
 
 ### Roadmap
 
@@ -63,13 +69,14 @@ Canonical Unsloth models use an Unsloth Dynamic ("UD-") quant, which is not stan
 - Community abliterated models are not Unsloth, so their tags are plain Q4_K_M or i1-Q4_K_M, not UD-*.
 - See [Unsloth Dynamic 2.0 GGUFs](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs).
 
-Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in [docs/parameters.md](docs/parameters.md).
+Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) are defined in
+[docs/parameters.md](docs/parameters.md).
 
 ## Repo map
 
 | Path | What |
 |---|---|
-| `llamacpp/` | The live serving lane: `models.ini` preset, `launch.sh`, pinned templates, vendored MCP. |
+| `llamacpp/` | The live serving stack: `models.ini` preset, `launch.sh`, pinned templates, vendored MCP. |
 | `modelfiles/<family>/<stem>/Modelfile` | Legacy Ollama build layer (frozen until purge); name = `<family>-<stem>`. |
 | `scripts/` | `ollama-create.sh` (legacy build), `repro-mtp-graphs.sh` (crash repro). |
 | `benchmarks/` | Three frozen-Ollama suites + `llamacpp-parity` (live engine), shared `common.sh`, `report.py`, `all.sh`. |
@@ -81,7 +88,7 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) live in
 ## Benchmarking
 
 Dry-run-by-default suites under `benchmarks/` - three frozen Ollama suites plus the live-engine `llamacpp-parity`.
-Commands, ports, and distilled findings: [docs/benchmarking.md](docs/benchmarking.md).
+Commands, ports, and distilled findings are in [docs/benchmarking.md](docs/benchmarking.md).
 
 ## More
 

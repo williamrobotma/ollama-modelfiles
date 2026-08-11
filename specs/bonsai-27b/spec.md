@@ -1,4 +1,4 @@
-# Bonsai-27B onboarding (llama.cpp lane; ternary first-class)
+# Bonsai-27B onboarding (llama.cpp serving stack; ternary first-class)
 
 ## Why
 
@@ -6,34 +6,34 @@
   - Vendor-claimed retention 94.6%.
   - Small enough to run fully resident on the 12 GB 4070; the 27B class currently partial-offloads.
     - Source: docs/history/2026-07-17-llamacpp-eval.md section 7.
-- **Ternary is first-class (decision 2026-08-03, user)**: onboarded directly, not via a 1-bit interim lane.
+- **Ternary is first-class (decision 2026-08-03, user)**: onboarded directly, not via a 1-bit interim phase.
   - The stepping-stone rationale expired when #25707 merged (2026-07-30); the upstream block is gone.
-  - Q1_0 stays as a bench comparison, not an onboarding phase. It remains runnable on stock b9860.
+  - Q1_0 stays as a bench comparison, not an onboarding phase. It remains runnable on stock build b9860.
   - Q1_0 shares ternary's file layout, drafter, and template family.
 - Ollama cannot load either variant (bundled ggml lacks type 41; verified on-box).
-  - So this feature lives entirely on the llama.cpp serving lane built in `specs/llamacpp-migration`.
-  - No Modelfile, no keep-set entry.
+  - So this feature lives entirely on the llama.cpp serving stack built in `specs/llamacpp-migration`.
+  - No Modelfile, and no entry in the Ollama model store.
 
 ## Known facts
 
 See [research.md](research.md) in this bundle - verification status marked per claim. The hard ones:
 
 - Q1_0 runs on stock llama.cpp b9860 with CUDA kernels (on-box verified).
-- Ternary fast CUDA was gated on ggml-org/llama.cpp [PR #25707](https://github.com/ggml-org/llama.cpp/pull/25707) (group-64).
-  - Merged upstream 2026-07-30 (checked 2026-08-03) - the remaining gate is an on-box rebuild past it.
+- Ternary fast CUDA was blocked on ggml-org/llama.cpp [PR #25707](https://github.com/ggml-org/llama.cpp/pull/25707) (group-64).
+  - Merged upstream 2026-07-30 (checked 2026-08-03) - the remaining prerequisite is an on-box rebuild past it.
   - The `Q2_g64` GGUF is the upstream-compatible file; the fork's g128 formats will never be upstream.
 - DSpark is a classic separate drafter (`-md`, not `--spec-type draft-mtp`).
   - Community speedups range +33% to -37% by hardware - it must be A/B'd, not assumed.
 - Vendor retention numbers put agentic tool use as the weakest domain.
   - Relevant because the daily drivers here are agentic coding.
 
-## Dependencies / gates
+## Prerequisites
 
-1. `specs/llamacpp-migration` builds the serving lane and fixes where non-Ollama models are configured.
+1. `specs/llamacpp-migration` builds the serving stack and fixes where non-Ollama models are configured.
    - `specs/done/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict.
-   - This spec adds a model to that lane; it creates no new serving machinery.
-2. Ternary: PR #25707 merged 2026-07-30; the remaining gate is the on-box rebuild (migration spec rebuild rule).
-3. Watch only (not gates): [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen a Modelfile path someday.
+   - This spec adds a model to that stack; it creates no new serving machinery.
+2. Ternary: PR #25707 merged 2026-07-30; the remaining prerequisite is the on-box rebuild (migration spec rebuild rule).
+3. Watch only, not a prerequisite: [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen a Modelfile path someday.
 
 ## Decisions at spec review
 
@@ -48,7 +48,7 @@ See [research.md](research.md) in this bundle - verification status marked per c
 
 ## Acceptance
 
-- **Ternary (first-class)**: Ternary-Bonsai-27B serves on the llama.cpp lane's fast CUDA path, template-vetted.
+- **Ternary (first-class)**: Ternary-Bonsai-27B serves on the llama.cpp stack's fast CUDA path, template-vetted.
   - Served from a pinned HF-cache snapshot; full profile flags verified via `/props`.
   - Benched against 1-bit and `qwen3.6-27b-coding` (same base) in the parity suite's shape.
   - A written serving-role verdict exists.
@@ -60,5 +60,5 @@ See [research.md](research.md) in this bundle - verification status marked per c
   - The Anthropic path is structurally immune; the OpenAI path is the risk.
 - docs/parameters.md gains a Bonsai-27B profile section with source URLs.
   - Benchmarking notes and watch items (#25707, #13668) recorded.
-- Ollama untouched: no Modelfiles, keep-set policy intact, disk budgeted against `/mnt/f`.
-  - Downloads: ~10.2 GB for the ternary lane, ~5.6 GB more for the 1-bit comparison (no second mmproj).
+- Ollama untouched: no Modelfiles, its model-store keep policy intact, disk budgeted against `/mnt/f`.
+  - Downloads: ~10.2 GB for ternary, ~5.6 GB more for the 1-bit comparison (no second mmproj).

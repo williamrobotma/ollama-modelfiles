@@ -15,23 +15,24 @@ Evidence logs:
   - The launcher `~/.local/bin/openwebui` runs it on demand, in the foreground; Ctrl+C stops it.
 - `DATA_DIR=~/.open-webui` is pinned in the launcher. This is load-bearing.
   - The pipx-venv default `DATA_DIR` lives *inside* the venv and is destroyed by `pipx upgrade` (per `env.py`).
-  - That trap already ate one install - admin account plus 7 chats were recovered via an sqlite backup.
+  - That default already destroyed one install - the admin account plus 7 chats were recovered via an sqlite backup.
 
-## Config lives in the DB, not env
+## Settings live in the DB, not env
 
 - All settings live in `webui.db` (SQLite under `DATA_DIR`), edited through the Admin UI at 127.0.0.1:8080.
 - Env vars only *seed* the DB on first launch and are then ignored ("PersistentConfig" semantics).
   - To change a setting later, use the Admin UI, not env.
 - Verified DB state (2026-08-07): OpenAI connection to `http://127.0.0.1:11433/v1`; Ollama connection disabled.
   - Connection is external, bearer auth with a dummy key, no model filter, no passthrough params.
-- The picker shows the canonical router ids (18 as of 2026-08-08) plus Open WebUI's own built-in "Arena Model".
+- The picker shows the canonical router ids plus Open WebUI's own built-in "Arena Model".
+  - The count is the header total in `llamacpp/models.ini:1`.
 
 ## Connection: OpenAI-compat at 11433, not native Ollama (inverted from the old guidance)
 
 - Connect over the OpenAI connection to `http://127.0.0.1:11433/v1`, the router's OpenAI-compatible endpoint.
-- `open_webui/utils/payload.py:70` applies only non-None params, so sampling neutrality holds at the source:
-  unset chat params never enter the request body; the router's launch-time profiles govern instead.
-  (The old native-Ollama-only rule guarded an Ollama `/v1` shim behavior that no longer applies; see the logs.)
+- `open_webui/utils/payload.py:70` applies only non-None params, so sampling stays neutral at the source.
+  - Unset chat params never enter the request body, and the router's launch-time profiles govern instead.
+- The old native-Ollama-only rule guarded an Ollama `/v1` shim behavior that no longer applies; see the logs.
 
 ## Recommended connection settings
 
@@ -66,5 +67,5 @@ Evidence logs:
 
 - Controls > Advanced Params: rows tagged `(Ollama)` are dead on this connection.
   - Untagged rows reach the router only when explicitly set.
-- A per-chat `repeat_penalty` ~1.05 is the escape hatch if a model falls into a repetition loop.
+- A per-chat `repeat_penalty` ~1.05 is the fallback if a model falls into a repetition loop.
   - The fleet profiles deliberately carry no repeat penalty.

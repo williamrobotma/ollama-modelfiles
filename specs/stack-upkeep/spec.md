@@ -4,9 +4,11 @@ SCAFFOLD - plan in a fresh session.
 
 ## Goal
 
-Keep llama.cpp, Ollama, Open WebUI, and the pinned GGUFs current and tracked. Today versions are pinned ad hoc and drift is found by accident.
+Keep llama.cpp, Ollama, Open WebUI, and the pinned GGUFs current and tracked.
+Today versions are pinned ad hoc, and drift is found by accident.
 
-Amended 2026-08-08: Ollama tracking is moot post-retirement (stopped + disabled 2026-08-07); drops out at planning.
+Amended 2026-08-08: Ollama tracking no longer applies now that Ollama is retired (stopped and disabled 2026-08-07).
+Ollama tracking drops out at planning.
 
 ## Decide at planning
 
@@ -27,12 +29,12 @@ A short procedure doc exists and each component has a named check. No new servic
 
 - The client ecosystem is migrating toward OpenAI's Responses API; this stack deliberately holds Chat Completions.
   - Held: llama-server's Responses path has no stream timings and no stored threads (Codex runs fresh threads only).
-  - And it silently drops web_search/namespace-typed tools with HTTP 200 (the invisible Codex MCP failure).
+  - It also silently drops web_search/namespace-typed tools with HTTP 200 (the invisible Codex MCP failure).
   - Choices held: Open WebUI api_type (docs/openwebui.md) and OpenCode stay on Chat Completions; Codex is Responses-native.
   - Flip triggers: llama-server Responses gains timings, tool-type errors, and state; or a client degrades Chat Completions.
   - The update posture above means no version pin protects these choices: re-check at every rebuild and client upgrade.
 
-## Version snapshot (2026-08-03)
+## Version snapshot 2026-08-03 (superseded - do not act on)
 
 Superseded once planning starts.
 
