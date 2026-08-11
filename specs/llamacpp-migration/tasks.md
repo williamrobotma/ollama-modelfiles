@@ -301,7 +301,8 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Wrapper verification: the actual synced script tested under a scratch HOME + pty with stubbed curl/claude -
       menu render (ids + alias + status), index/Enter/verbatim/00/out-of-range picks, non-TTY reuse and no-last
       failure, router-down message, MCP branch flags, env-file fail-closed: all PASS
-      - One real interactive + one non-TTY live run against the live router still owed (carried forward)
+      - One real interactive + one non-TTY live run against the live router still owed (carried forward);
+        the 2026-08-11 script rewrite re-verified meanwhile via an 11-check stub matrix (final sweep, PR #15)
   - Post-commit sweep on f1b8696 (2026-08-11, 4 opus lenses + an inline permission-scope null): all 35 prior items
     verified resolved with zero regressions; the new findings were dispatched on user go (all four tiers approved)
     - REVERSED item 29: the .cache-empty ignore is restored - un-ignoring made bare-hex blob downloads
@@ -325,4 +326,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)
+  - [ ] Same pass: demote the Ollama benchmark suites and the AGENTS.md Commands block - both unrunnable once
+        the binary and store go
 - [ ] Disk numbers and final state recorded in a dated docs/history log
+- [ ] At spec close: prune the spec.md Watch list to still-live issues (entries are as-recorded, not re-checked)

@@ -26,10 +26,9 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
 ## Chat-template exposure (fleet inventory)
 
 - Guarded GGUFs (embedded guard, served under the froggeric override): unsloth Qwen3.5-9B non-MTP and
-  mradermacher Queen-27B - 2 GGUFs backing the 3 `chat-template-file` entries.
+  mradermacher Queen-27B - the GGUFs backing the `chat-template-file` entries.
 - `merged_system` carriers (silently drop mid-conversation system messages; no override - accepted 2026-08-08,
-  no client sends them): unsloth Qwen3.5-9B-MTP + Qwen3.6 27B, 27B-MTP, 35B-A3B, 35B-A3B-MTP -
-  5 GGUFs backing 7 entries.
+  no client sends them): unsloth Qwen3.5-9B-MTP + Qwen3.6 27B, 27B-MTP, 35B-A3B, 35B-A3B-MTP.
 - Vet procedure: the AGENTS.md chat-template gate; validated (template, build) pairs: `templates/README.md`.
 
 ## Add a model
