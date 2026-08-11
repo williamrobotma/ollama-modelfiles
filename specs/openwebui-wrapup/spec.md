@@ -25,7 +25,9 @@ Vet per the AGENTS.md gate procedure (`ollama show --template` is retired - it s
 - `qwen3.5-queen-27b-coding`: done 2026-07-23 - guarded; froggeric-validated (see the 2026-07-23 history log).
 - `gemma4-31b-it-heretic`: still unvetted.
 
-Record pass/fail per model in the model catalog (README) or docs/openwebui.md. A model that fails the gate is unusable from multi-system clients (claude-local, and Open WebUI's own system-message stacking) - note it, do not silently keep it as such a target.
+Record pass/fail per model in docs/openwebui.md (the README catalog tables were deleted 2026-08-08).
+A failing model is unusable from multi-system clients (claude-local, Open WebUI's own system-message stacking).
+Note it; do not silently keep it as such a target.
 
 ### 3. Default model visibility
 

@@ -21,6 +21,8 @@ One command answers two questions: is the GPU stable at the current clocks, and 
 
 - Live-probe 11433 and abort on a live router; capture own PID at launch and never `pgrep`/`pkill`.
 - Bracket every trial with `nvlddmkm` Id-13, `nvidia-smi`, and `free -m`.
+  - The Id-13 delta is one-directional: nonzero confirms a hardware fault; zero proves nothing (insensitive,
+    coarser than a trial).
 - Unload between trials guarded on `.status.value`, logging the result - `.status` is an object, not a string.
 - Freshness assertion: `cache_read_input_tokens = 0` or the trial is void and says so.
 - Log the value a condition branches on, not just the branch taken.

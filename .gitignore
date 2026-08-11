@@ -376,5 +376,6 @@ cscope.po.out
 
 .svn/
 
-# llama.cpp router: empty LLAMA_CACHE redirect target
-llamacpp/.cache-empty/
+# Claude Code project-level runtime state (plugin toggles, local overrides) - never repo config
+.claude/settings.json
+.claude/settings.local.json

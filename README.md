@@ -3,7 +3,6 @@
 Local LLM serving config for a single 12 GB GPU, organized by model family and use profile.
 The live lane is stock llama.cpp in router mode ([llamacpp/](llamacpp/README.md), port 11433).
 The Ollama Modelfiles are the retired legacy build layer, frozen on disk until the post-migration purge.
-The 2026-07-27 fleet reduction already deleted 8 of them (a recorded spec supersede, not freeze drift).
 Every served GGUF is a pinned Hugging Face cache snapshot (`hf download`; mostly [Unsloth](https://unsloth.ai) builds).
 Agents should read [AGENTS.md](AGENTS.md) first.
 

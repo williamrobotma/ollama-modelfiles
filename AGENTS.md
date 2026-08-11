@@ -1,6 +1,8 @@
 # AGENTS.md
 
-Canonical, tooling-agnostic instructions for any coding agent working in this repo. Read this first. Claude-Code-specific notes live in `CLAUDE.md`; deep detail lives in `docs/`.
+Canonical instructions for any coding agent working in this repo - read this first.
+Deep detail lives in `docs/`; `CLAUDE.md` is a thin pointer here (this repo owns everything about running
+things locally, Claude Code included, so even the Claude-specific material is homed here).
 
 ## What this repo is
 
@@ -32,10 +34,12 @@ The frozen legacy Modelfiles (`modelfiles/<family>/<stem>/`) used three layers v
 
 - **Canonical** (quant-suffixed stem, e.g. `35b-a3b-mtp-ud-q5-k-xl`): full parameter block, absolute `FROM` path.
   - Was the source of truth; `llamacpp/models.ini` is now.
-- **Layered / derived**: `FROM` a local model name (inherits weights + params), then overrides or adds directives (e.g. a coding profile layered on an MTP base, or a `DRAFT` line).
-- **Thin alias** (unsuffixed stem, e.g. `35b-a3b-coding`): a single `FROM <canonical model name>` line so the default can be repointed without renaming the family.
+- **Layered / derived**: `FROM` a local model name (inherits weights + params), then overrides or adds directives.
+  - E.g. a coding profile layered on an MTP base, or a `DRAFT` line.
+- **Thin alias** (unsuffixed stem, e.g. `35b-a3b-coding`): a single `FROM <canonical model name>` line.
+  - It lets the default repoint without renaming the family.
 
-Served ids name the lane and never the quant (2026-08-09): `<family>-<size>[-mtp][-profile]`, blank profile = instruct.
+Served ids name the lane and never the quant (2026-08-09); the id grammar lives in [llamacpp/README.md](llamacpp/README.md).
 
 - The quant lives in the `model =` path alone, so promoting a new quant is a path edit - no rename, no client churn.
   - This retires the older rule that stems mirror the upstream quant tag; the frozen Modelfile stems still carry them.
@@ -57,18 +61,22 @@ Two config rules that are easy to break:
 - Graphs-off reproduces the #24795 drafter load failure (config-gated, not build-gated; still open upstream).
 
 Mechanism, diagram, and measured speedups: [docs/architecture.md](docs/architecture.md) section 3.
-Crash status: [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash).
+Crash status: [docs/benchmarking.md](docs/benchmarking.md#mtp-crash-investigation-resolved-gpu-core-overclock).
 
 ## Parameters
 
-Never change a sampling value from memory. All profiles, mandates, and the verification-source URLs are in [docs/parameters.md](docs/parameters.md). The two hard rules:
+Never change a sampling value from memory.
+All profiles, mandates, and the verification-source URLs are in [docs/parameters.md](docs/parameters.md).
+The two hard rules:
 
 - **Qwen `repeat_penalty` must be exactly 1.0** - any other value causes structural garbage in code output.
 - **CUDA 13.2 corrupts Gemma 4 output** - use CUDA 13.1 or 13.3.
 
 ## Chat-template gate for community GGUFs
 
-Some clients send multiple `system`-role messages mid-conversation (for example, Claude Code sends a top-level system message plus session-hook and skill/reminder system messages). A model's embedded Jinja `chat_template` must tolerate non-first and repeated system messages, or every such request fails.
+Some clients send multiple `system`-role messages mid-conversation.
+(For example, Claude Code sends a top-level system message plus session-hook and skill/reminder system messages.)
+The embedded Jinja `chat_template` must tolerate non-first and repeated system messages, or every such request fails.
 
 The guard: `raise_exception('System message must be at the beginning.')`.
 
@@ -76,15 +84,13 @@ The guard: `raise_exception('System message must be at the beginning.')`.
 - Exception: unsloth's Qwen3.6 and 3.5-MTP builds ship `merged_system`.
   - It merges up to two leading system messages and silently drops all others, mid-conversation ones included.
 - On llama-server, the guard fires only on the OpenAI endpoint (`/v1/chat/completions` with `--jinja`).
-  - A multi-system request there fails with the guard's message; the HTTP status varies by build (400 at 10326,
-    500 at 10335), so identify it by the message text.
+  - A multi-system request there fails with the guard's message (identify it by the text - see Vetting step 3).
   - `/v1/messages` is immune: system folds into one message before the template runs.
   - Under Ollama it stayed unresolved (Jinja never ran, yet 400s happened); moot since the 2026-08-07 retirement.
 
 Standing rule: serve guarded Qwen GGUFs to OpenAI-style clients under a guard-free template.
 
 - Fix: `--jinja --chat-template-file` with froggeric's `chat_template.jinja`, validated once per (template, build) pair.
-  - Validated-pair record: [llamacpp/templates/README.md](llamacpp/templates/README.md).
 - Don't wait for an official fix: Qwen says the guard is by design (re-role later system messages to user).
 
 Vetting (store-reported templates lie - Ollama's `ollama show --template` showed one that never ran):
@@ -101,7 +107,7 @@ Vetting (store-reported templates lie - Ollama's `ollama show --template` showed
 
 Guarded fleet GGUFs ([gate evidence 2026-07-23](docs/history/2026-07-23-chat-template-refresh.md)):
 
-- Current: unsloth Qwen3.5-9B non-MTP and Queen-27B; which entries they back is listed in `templates/README.md`.
+- Current: unsloth Qwen3.5-9B non-MTP and mradermacher Queen-27B; which entries they back is listed in `templates/README.md`.
   - OBLITERATUS-27B and Qwopus3.5-9B-coder left the fleet in the 2026-07-27 reduction.
 - `merged_system` carriers (step 2 grep, 2026-08-08): unsloth Qwen3.5-9B-MTP + Qwen3.6 27B, 27B-MTP, 35B-A3B-MTP, 35B-A3B.
   - 5 GGUFs backing 7 preset entries (multi-entry GGUFs: 35B-A3B-MTP x2, 27B x2); step 1 clean on all.
@@ -139,7 +145,7 @@ Suites live under `benchmarks/<suite>/` and are dry-run by default - they print 
 benchmarks/qwen/run.sh            # print the plan (dry-run)
 benchmarks/qwen/run.sh --list     # list configured models and prompts
 benchmarks/qwen/run.sh --execute  # actually run the matrix
-benchmarks/all.sh                 # all suites, sequential
+benchmarks/all.sh                 # the three Ollama suites, sequential (parity runs alone)
 ```
 
 The runtime A/B spins up isolated alternate-port serves.
@@ -151,7 +157,8 @@ Full detail, ports, and distilled findings: [docs/benchmarking.md](docs/benchmar
 
 The live serve is `llamacpp/launch.sh`: llama-server router mode on `127.0.0.1:11433`.
 Defaults: `--models-max 1`, `--sleep-idle-seconds 86400`, and `--cors-origins localhost`.
-There are no env overrides: pass the flag to `launch.sh` instead (it is emitted before `"$@"`, and last wins).
+The launcher takes no env knobs: pass the flag to `launch.sh` instead (defaults are emitted before `"$@"`, last wins).
+llama-server itself honors `LLAMA_ARG_*` env vars (common/arg.cpp) - leave them unset so the flags stay the whole story.
 Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike `/tmp`).
 
 - **`-fa on` and q8_0 KV must stay paired** (`[*]` block): the quantized V-cache hard-fails without flash attention.
@@ -165,11 +172,36 @@ Recommended log home: `~/.local/state/llama-router.log` (survives reboot, unlike
   - Whether it took effect is visible only in the `CUDA graph warmup ...` debug lines, not in `graphs reused`.
     - `graphs reused` is llama's own graph-reuse counter (`llama-context.cpp:4139`), unrelated to CUDA graphs.
   - Children inherit the router env verbatim, and Gemma MTP needs graphs on.
-  - Graphs are not the crash trigger. The large-ctx MTP crashes were this box's GPU core clock offset, isolated
-    2026-08-10 (at +230: 11/11 crashed; at +0: 0/15) - **keep the core offset at or below +120 MHz**, the value
-    certified by a 25-trial clean soak. Memory offset and power limit are not implicated. Crash status is
-    single-homed in [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash).
+  - Graphs are not the crash trigger: the large-ctx MTP crashes were this box's GPU core clock offset (resolved
+    2026-08-10) - **keep the core offset at or below +120 MHz**. Evidence and status are single-homed in
+    [docs/benchmarking.md](docs/benchmarking.md#mtp-crash-investigation-resolved-gpu-core-overclock).
 - The retired systemd Ollama service (`11434`) stays frozen - stop/disable and purge tracked in Phase 4.
+
+## claude-local
+
+The launcher for running Claude Code against the router; this section is the canonical spec.
+The implementation is the synced `~/.claude/bin/claude-local`; the `~/.bashrc` fn is a one-line shim over it
+(2026-08-10 unification).
+
+- Lane = the fleet model serving ALL session roles (B6 fix, 2026-08-08): main + tier + subagent vars together.
+  - Pinning `ANTHROPIC_MODEL` is required: settings.json's model otherwise reaches the wire verbatim.
+- No flag, no default: the numbered menu picks; Enter re-picks the last lane.
+  - Menu source = the live router (`GET /v1/models` ids + their `aliases` fields; repo-independent, user rule
+    2026-08-10), each lane with its status (loaded / sleeping / unloaded; listing is read-only).
+    Router down -> the menu fails with a clear message; there is no file fallback.
+  - Sorting is the whole ordering rule: the naming convention lands each alias beside its canonical for free.
+  - The last lane persists in `~/.config/claude-local.last`; non-TTY reuses it or fails with the list.
+  - Any entry that is not a menu number is taken as a lane name verbatim (escape hatch); the router 404s
+    visibly on a typo.
+- Every claude arg passes through untouched (`--model` included); mid-session `/model` moves only the main session.
+- Every plugin is disabled per-session (`--settings` override built from settings.json at launch, never stale).
+- Execs `claude` with `--disallowedTools=WebSearch` plus the vendored web-search MCP (`llamacpp/mcp/`, via pipx)
+  when `~/.config/claude-local.mcp.json` exists (WSL); machines without it launch plain.
+- Secrets live in `~/.config/claude-local.env` (mode 600); cutover validated 2026-08-04, see the P3 history log.
+  - That env file also sets `OTEL_LOG_RAW_API_BODIES` (B8, held by user): each session recreates world-readable
+    raw request/response body logs under `/tmp/claude-bodies`.
+- It rides `/v1/messages`, which is immune to the multi-system guard - the chat-template gate above bites
+  OpenAI-endpoint clients only.
 
 ## WSL disk budget
 
@@ -197,5 +229,9 @@ This runs on WSL2; the guest disk is an `ext4.vhdx` on the Windows `F:` drive th
 - [docs/benchmarking.md](docs/benchmarking.md) - suite mechanics, ports, distilled findings.
 - [docs/openwebui.md](docs/openwebui.md) - Open WebUI setup and config-in-DB semantics.
 - [docs/history/index.md](docs/history/index.md) - dated, immutable session evidence logs.
-- `specs/<feature>/` - spec + tasks for in-flight work, plus plan when the work needs one (tasks.md is the resume point); the run-spec skill (`.claude/skills/run-spec/`) executes a bundle end to end. `specs/README.md` is the roadmap (dependency-ordered sequence).
-- `specs/done/<feature>/` - completed bundles, kept for the record. A bundle moves here once its spec.md Acceptance is met (every tasks.md item `[x]` or deferred out of scope); run-spec files it here on completion.
+- `specs/<feature>/` - spec + tasks for in-flight work, plus plan when needed; tasks.md is the resume point.
+  - The run-spec skill (`.claude/skills/run-spec/`) executes a bundle end to end.
+  - `specs/README.md` is the roadmap (dependency-ordered sequence).
+- `specs/done/<feature>/` - completed bundles, kept for the record.
+  - A bundle moves here once its spec.md Acceptance is met (every tasks.md item `[x]` or deferred out of scope).
+  - run-spec files it here on completion.

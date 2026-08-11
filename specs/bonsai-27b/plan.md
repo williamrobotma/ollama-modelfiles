@@ -13,6 +13,9 @@ Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-ve
   - Passing the rule moves the last-known-good pin forward (stack-upkeep policy).
   - Amended 2026-08-08: gate condition met build-wise - on-disk build 10326 includes #25707 (merged 2026-07-30).
   - 10326 is uncertified: it failed the 2026-08-08 re-cert. Re-evaluate this gate at pickup.
+  - Amended 2026-08-10: the re-cert failures were this box's GPU core overclock, resolved (docs/benchmarking.md).
+    On-disk 10335 passed the crash matrix + froggeric pair, so the cert gate is met at 10335; re-evaluate at
+    pickup only if the build record has moved again.
 - Spec review: record the two remaining decisions (sampling profile, intended role) in tasks.md.
   - Ternary path is already resolved upstream (spec.md decision 1).
 
@@ -22,7 +25,8 @@ Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison. Re-ve
   - Pin the snapshot path per the AGENTS.md sourcing convention.
   - Verify: `df -h /mnt/f` before/after, ~10.2 GB delta.
 - Template vet: multi-system `/v1/chat/completions` probe against a running instance.
-  - Verify: no 400; record pass/fail next to the fleet's guard-scan note.
+  - Verify: no guard error - match the guard message text, never the HTTP status (it varies by build; AGENTS.md
+    gate step 3); record pass/fail next to the fleet's guard-scan note.
 - Launch under llama-server from the pinned path with the full decided profile as flags.
   - Verify: `/props default_generation_settings` matches the profile; coding smoke coherent with timings.
 - Serve through the router preset (first ternary-family GGUF through the router).

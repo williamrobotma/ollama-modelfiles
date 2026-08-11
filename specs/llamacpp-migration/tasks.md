@@ -4,8 +4,8 @@ Planning done 2026-07-23 (spec vetted, plan.md filled). Details and verify steps
 
 GPU-loading items are heavy loads: get user confirmation before starting each.
 
-`spec.md` and `plan.md` locked 2026-07-28 (user directive): no further edits for the remainder of the task.
-Execution deviations and per-item verification notes are recorded here only.
+`spec.md` and `plan.md` were locked 2026-07-28 (user directive); the lock was lifted 2026-08-08 - both now carry
+dated amendments. Execution deviations and per-item verification notes are recorded here only.
 
 ## Pre-flight (2026-07-25)
 
@@ -104,92 +104,29 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 ## Phase 3 - client cutovers
 
 - [x] claude-local rewired: base URL 11433, tier vars, `--disallowedTools WebSearch`, web-search MCP
-  - Applied 2026-08-04 with user consent: `~/.bashrc` fn + `~/.config/claude-local.env` rewrite + new mcp.json
-  - Deviation (measured): `--disallowedTools=WebSearch` = form; the plan's space form swallows `"$@"` into deny rules
-  - MCP scope: per-invocation `--mcp-config` only; nothing registered globally (`~/.claude.json` has no mcpServers)
-  - MCP runtime: pipx (user: pipx first; uv absent) runs the official script vendored at `llamacpp/mcp/`
-    - Local pin `mcp>=1.9,<2` (2026-08-04): mcp 2.0.0 removed FastMCP and Server.tool(); upstream script unfixed
-    - Stdio handshake + live web_search 200 verified end-to-end on the pinned content
-    - Provenance record: `llamacpp/mcp/README.md`
+  - Applied 2026-08-04 (user consent); deviation: `=` flag form required (the space form eats `"$@"`)
+  - MCP: per-invocation `--mcp-config` only, pipx runs the vendored script; pins + provenance: `llamacpp/mcp/README.md`
 - [x] `OLLAMA_API_KEY` moved to a user-readable env file for the MCP
   - Copied (not moved) 2026-08-04: the spec freezes the systemd override until the P4 purge; env file is mode 600
 - [x] claude-local validated: tool loop, live MCP search, body-log check, cache hits, WebFetch
-  - 2026-08-04: 9/9 checks PASS against the live router (evidence: session scratchpad p25/; P3 history log at phase end)
-  - Blocker found: tier vars don't override settings.json's literal model - `claude-fable-5` hit the wire, router 400
-    - Fixed: the function now exports `ANTHROPIC_MODEL=$_cl_model`
-    - Re-smoked with no passthrough: alias on the wire, 200
-  - Cache hits ~25.9k `cache_read_input_tokens` on later turns; thinking blocks round-trip with `signature: ""`
-  - Alias resolves server-side (alias request -> canonical child); decode 26.8-36.0 tok/s, acceptance 0.66-0.97
-  - WebSearch absent from the tools array; `web_search_20250305` count 0 across all 21 body-log files
-  - MTP x graphs-on side result: 10 requests to 26.2k ctx, graphs reused to 1030, zero crashes
-    - n=1; the tracked issue stays open
+  - 2026-08-04: 9/9 PASS on the live router; blocker fixed en route (`ANTHROPIC_MODEL` now pinned - settings.json's
+    literal model otherwise hits the wire); validation detail in the P3 log
 - [x] Open WebUI on OpenAI connection 11433; fleet in picker; search-enabled chat passes
-  - Prep 2026-08-04: backup `~/.open-webui/webui.db.bak-pre-0.11.0` taken, then the pending 0.11.0 first start ran
-    - 9 alembic migrations + 13 seeded config defaults; documented settings and the Brave key intact; serve up on 8080
-  - Browser pass 2026-08-07 (user): OpenAI connection saved (external/bearer, no model filter, no passthrough params)
-    - Picker shows the 17 canonical ids (plus Open WebUI's own "Arena Model"); Ollama connection disabled
-    - Gemma family chat served via the router with thinking rendering (user screenshot)
-  - Sampling neutrality closed at source: `open_webui/utils/payload.py:70` applies only non-None params
-    - Unset chat params never enter the body, so the router's launch-time profiles govern (0.11.0 installed package)
-  - Search chat 2026-08-07 (user): tool-mode search ran on the 12B child - "Explored search_web", 5 cited sources
-    - Web search is Open WebUI's platform toggle, not a model tool
-    - Two earlier turns denied having search; the successful turn's reasoning trace calls those refusals incorrect
-    - DB cross-matches the router log verbatim (predicted_per_second 96.66... on the search turn in both)
-  - Connection research 2026-08-07 (source-grounded, 0.11.0 installed package): keep external + chat-completions
-    - external vs local is a label: the sole behavioral read picks the external vs local task model (utils/task.py:20)
-    - Recommend Provider=llama.cpp: prior-turn reasoning goes back as reasoning_content; unset DROPS it
-      - Sites: middleware.py:2059-2073 -> misc.py:437-439; also unlocks the Loaded badge + Eject (/models/unload)
-      - Our router serves per-model status in /v1/models, so the badge reads true residency (fallback caveat moot)
-    - Responses api_type would lose tok/s (stream_options popped at openai.py:1113; Responses stream has no timings)
-      - And filter-injected web_search/namespace tools would pass into llama-server's silent drop; keep chat-completions
-    - tok/s already works: timings merge into message.usage (middleware.py:4378-4382); the info icon shows the dict
-    - froggeric renders <think> only after the last user query (jinja:226); cross-turn stripping is template-enforced
-  - Finding 2026-08-07: 26b-a4b-mtp child died loading its drafter via the router - vector::_M_range_check
-    - First-ever router-context load: P1's 6/6 was standalone with a free GPU; three residents held ~10.7/12.3 GiB here
-    - Router evicts LRU at stock models-max 4 (observed live: 12b-mtp died for 31b, 9b for 26b)
-    - Root cause (source-traced): full GPU reports free=0 -> NaN split -> devices.at(1) on size-1 (llama-model.cpp:1291)
-    - The drafter bypasses fitting and demands full offload (server-context.cpp:1205); any pressured load can hit it
-    - Upstream: #19973 derived the mechanism (closed unfixed); a #24443 comment reproduces it verbatim; no fix on master
-    - Deterministic fix candidate: spec-draft-ngl = 0 on the 26b entry (241 MiB drafter to CPU); awaiting user go
-    - Applied 2026-08-07 (user: "yes to both"): spec-draft-ngl = 0 in models.ini; launch.sh gains --models-max
-      - models-max default 1 per user (over the proposed 2): one-model-at-a-time usage; effective at next restart
-  - Family-chat check 2026-08-07: zero qwen3.5/qwen3.6 chats exist in webui.db (11 chats total, all scanned)
-    - Today's 15:55 qwen child spawns came from a non-Open-WebUI client (agentic task-id pattern, 97-127 tok/s)
-  - Finding 2026-08-07: 31b-mtp decoded at 1.82 tok/s under 4-resident pressure (vs 38-120 tok/s elsewhere today)
-    - The two follow-up 31b generations were cancelled ~1 s after launch each; reads as giving up on a hang
-    - Same pathology on the 35b instruct as a 5th model: 2.94 tok/s on its first turn (chat f49e10a3)
-  - qwen3.6 family chat verified in DB 2026-08-07: chat f49e10a3 turn 1 done=true, 35b instruct via Open WebUI
-    - Turn 2 completed with platform search on the same model - 2x search_web, 10 sources (user screenshot)
-  - Observation 2026-08-07: 35b instruct fell into a "/" repetition loop after 7 searches (~11.6k ctx, 30 sources)
-    - Log clean (truncated = 0, no context shift): sampling degeneracy, not corruption; profiles carry no repeat penalty
-    - Same model completed the 2-search turn fine; user cancelled the looping task (1313); regenerate is the escape
-  - qwen3.5 family chat verified in DB 2026-08-07 post-restart: chat 68d974be, queen-27b-reasoning, 3 done turns
-    - usage.predicted_per_second joins each DB turn to its router-log task exactly (22.896.../1.947.../1.930...)
-  - Post-restart verification 2026-08-07 (models-max 1 live): 26b-mtp loads clean, --n-gpu-layers-draft 0 in args
-    - 5 completed gens at 22.9-31.2 tok/s, acceptance 0.638-0.841; zero _M_range_check or draft-load failures
-  - Correction to the pressure finding: dense 16-18 GB offloaders sit at ~2-3 tok/s even solo (offload-bound)
-    - queen-27b 1.93-2.30 and 31b 2.77 as lone residents; pressure mainly hurt MoE (35b back to 25-30 solo)
-  - models-max 1 trade-off observed live: switching models force-kills an in-flight generation after 10 s
-  - The 31b "n_ctx_train 131072" overflow W is the drafter's trained ctx (P2 finding); the target trains 262144
+  - Prepped 2026-08-04 (0.11.0 first start over a backup); browser cutover, search chats, and family-chat DB
+    verification done 2026-08-07 (chats cross-matched to the router log verbatim) - full detail in the P3 log
+  - Sampling neutrality closed at source (`payload.py:70`); connection research settled external + chat-completions,
+    Provider=llama.cpp recommended (reasoning round-trip + Loaded/Eject); guidance lives in docs/openwebui.md
+  - Findings dispatched (mechanism + evidence in the P3 log): 26B drafter NaN-split crash root-caused, fixed by
+    `spec-draft-ngl = 0` + `--models-max 1` (user go; both live in models.ini/launch.sh); dense-offloader ~2-3 tok/s
+    attribution corrected (offload-bound, not residency); 35B `/` repetition loop = sampling degeneracy, regenerate
+    escapes; models-max 1 force-kills an in-flight generation on switch after 10 s
 - [x] OpenCode provider block + context limits; search-tool behavior recorded
-  - Applied 2026-08-04 (user consent, "no model left behind"): 12-model provider block with per-model limits
-  - Validated: real tool-loop session fixed a file on disk; requests hit 11433 (no #5674 symptom); picker lists all 12
-  - Search recorded: no websearch tool exists in opencode 1.16.2 - webfetch only; the "search via Ollama" belief closed
-  - Seam clean (no P0-style block overlap); upstream client bug found: `opencode run` drops final text from stdout
-    - 4/4 sessions, stored text intact via `opencode export`; TUI untested; non-blocking for the cutover
-  - Decode 23.2-34.0 tok/s, acceptance 0.71-0.99; zero E/W or CUDA lines across the session's 192 router-log lines
+  - Applied + validated 2026-08-04 (12-model provider, real tool-loop session); no websearch tool exists in 1.16.2
+  - Upstream client bug found (`opencode run` drops final stdout text; stored text intact) - detail in the P3 log
 - [x] Codex custom provider (Responses, fresh threads); tool loop tested or upstream-blocked documented
-  - Applied 2026-08-04 (user consent): provider table + overlay + 12-model catalog; cloud default untouched
-  - Validated: tool loop fixed a file via exec_command x3; /v1/responses -> canonical child proven
-    - #10635 affirmatively dead on the pin (zero 4xx across both runs)
-  - Auth qualifier: 0.145.0 accepts the authless provider but attached the ambient ChatGPT credential
-    - The router ignores the header; authless-without-login and the env_key fallback stay unvalidated
-  - Finding: llama-server silently skips Responses tools typed `namespace` (Codex MCP) and `web_search`, returning 200
-    - Codex-side MCP fails invisibly on this lane (W lines in the router log only); plain function tools unaffected
-    - #26977's zero hits = path never exercised, not fixed; carry to the P4 docs rewrite
-  - Codex phones home under the local profile (chatgpt.com analytics + OTLP); recorded, out of scope here
-  - Cleanup: removed the trust entry Codex self-wrote for the ephemeral validation sandbox; marketplace drift left as-is
-  - Decode 28.9-37.4 tok/s, acceptance 0.72-0.95; the ~10k-token Codex preamble costs ~42 s cold prefill per session
+  - Applied + validated 2026-08-04 (tool loop via exec_command; `/v1/responses` -> canonical child; #10635 dead)
+  - Finding: llama-server silently skips `namespace`/`web_search` Responses tools at 200 - Codex MCP fails
+    invisibly; folded into architecture.md at the P4 docs rewrite; auth + phone-home caveats in the P3 log
 - [x] Pi best-effort config tried or explicitly deferred
   - Explicitly deferred 2026-08-07 (user: "defer pi for now"); Pi is not installed here, so nothing was rewired
   - No Pi config landed in the repo; wire it from `llamacpp/models.ini` at pickup - does not gate P4
@@ -216,37 +153,13 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - launch.sh: --cors-origins localhost added (user picked B4a); overlay/bind comments; build record updated
     - Finding: POST /models executes regardless of CORS or --api-key at 10326 (path-only public-endpoint exemption)
     - Full closure = upstream fix or local patch; neither taken; upstream report not filed (not authorized)
-  - Build record: on-disk moved to 10326 (3653e6d6d, 2026-08-07); re-cert pending (crash matrix + froggeric pair)
-    - GPU-gated; present-tense prose made version-free so it cannot restale
-    - Re-cert RAN 2026-08-08: 10326 FAILS the Qwen-MTP hammer - 2/30 gens crashed the child
-      (CUDA illegal memory access, ggml_backend_cuda_synchronize, ggml-cuda.cu:2499; 9860 was 30/30)
-    - Passed on 10326: Gemma 12B matrix 6/6 @200k, 26B 6/6 @131072, /v1/messages immunity,
-      froggeric patched-pair probes on both guarded GGUFs (200, no guard 400; Queen reply was reasoning-only)
-    - Throughput notes: 12B 99-110 tok/s (9860: 57-61); 26B 21.5-27.7 (9860: 39-42); hammer 108-123
-    - launch.sh record stays 9860 last-known-good (pins move on pass); disposition pending user decision
-    - Raw evidence: job scratch recert/ (router.log, 42 response JSONs); history log to follow disposition
-    - Decided 2026-08-08 (user): disposition = upstream check, rebuild newer, re-run hammer + per-build probes only
-      - Upstream check done 2026-08-08: NO fix exists upstream; rebuild-to-fix is off the table (re-decision open)
-      - #26609 (OPEN, unlabeled): exact signature - synchronize site :2499, fa path, Qwen3.6-35B MoE; -fa off clears it
-      - #26558 (OPEN, unlabeled): draft-mtp, CUDA-graphs cache-corruption theory; GGML_CUDA_DISABLE_GRAPHS=1 soaks clean
-      - Tip b10327 = unrelated cpy launch fix; constraints: graphs-off breaks Gemma MTP, fa-off breaks q8_0 V-cache
-      - 9860-revert caveat (search agent): 30/30 clean is ~11% by luck at a true 7%/run; blamed design predates 9860
-      - Live-use finding 2026-08-08 (user's 19:26 router, 10326): gemma4-12b-it-qat-mtp crash-looped under claude-local
-        - 13 CUDA illegal-memory crashes / 15 spawns in 35 min; same synchronize:2499 signature as the failed hammer
-        - Each respawn re-prefills the ~88k-token session (48-54 s measured), then dies: large-ctx, near-deterministic
-        - Strengthens the #26609 match (fa path, model-agnostic); the matrix's ~1k-prompt shape missed this exposure
-        - Corrected 2026-08-08 (user): 9860 has NO sustained live mileage - the window opened the day the build moved
-        - 9860's actual record: small-n validations (7/7 @16k; 36/36 ladder at 800-token gens; 30/30 hammer)
-          plus one recorded 200k illegal-memory crash (2026-07-17 eval 2b graphs-ON cell, pre-repin): revert = experiment
-      - Post-mortem audit 2026-08-08 (1 opus + 2 sonnet, adversarial): provenance + sweep + correction re-verify
-        - Provenance: plan.md:124 / tasks.md "~2 weeks daily use" (future-tense policy) read as past evidence
-        - Fused with P1 "zero crashes" (Gemma 36/36) and "30/30 clean" (QWEN - cross-model conflation to Gemma)
-        - "crash-free" appears nowhere in the sources - coined at write time; eval log's "daily-driving" fed "daily"
-        - The claim explicitly overrode the adjacent recorded caveat ("outweighs") - assertion, not proximity confusion
-        - Sweep of 14 commits: 15 confirmed, 2 OVERSTATED (Queen "answered" / tool-render), 4 refuted, 3 unverifiable
-        - Fixed on audit: Queen probe wording, parameters.md dual-override, 40s -> 48-54s, graphs-ON cell qualifier
-        - State moved post-record: all 15 pre-kill spawns crashed (14 illegal-memory + 1 misaligned); a 16th survived
-        - Direction-of-error note: every soft spot leaned toward making 9860 look cleaner than its record
+  - Build record: on-disk moved to 10326 (3653e6d6d, 2026-08-07); its failed re-cert (Qwen hammer 2/30) plus the
+    same-day ~88k-ctx live crash-loop opened the crash investigation - consolidated in the CLOSED entry below;
+    per-stage evidence in the diagnosis log sections 1-8
+    - Post-mortem audit 2026-08-08 (1 opus + 2 sonnet, adversarial) of the "weeks of crash-free mileage" claim:
+      provenance traced (spec future-tense read as past evidence, cross-model conflation), 14-commit sweep
+      (15 confirmed / 2 overstated / 4 refuted / 3 unverifiable), fixes applied at head
+    - Direction-of-error note kept: every soft spot leaned toward making 9860 look cleaner than its record
   - Final sweep response (2026-08-09, head 9bdd96e): 6 must-fix + 8 should-fix + nit triage dispatched
     - Decided (user): MCP range pins KEPT - re-resolution risk accepted and documented; == pins declined
     - Decided (user): launch.sh gains port preflight, --version log echo, env -u OLLAMA_API_KEY, cache-dir warn
@@ -278,52 +191,19 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Swept: models.ini, OpenCode, Codex catalog + default, AGENTS.md, llamacpp/README.md, docs, pending specs
     - Frozen harnesses left as-is (benchmarks matrices hold retired Ollama names; Modelfiles stay frozen)
     - Open WebUI: 3 live names in stored chats break on resume (the DB already held 5 dead names pre-rename)
-  - GPU batch 2 ran 2026-08-09 on the renamed fleet; results in the 2026-08-08 history log (section 5)
-    - RETRACTED 2026-08-09: I claimed GGML_CUDA_DISABLE_GRAPHS was removed upstream and inert. Both false.
-      - It is live at ggml-cuda/common.cuh:1258 (moved there by 090b137e, #18637); presence-only, so =0 also disables
-      - Cause: a `| head -8` truncated the grep that was meant to prove absence; `graphs reused` is llama's counter
-      - The stage is indeterminate, not void: no CUDA-graph debug markers were logged either way (default verbosity)
-      - Doc corrections reverted in AGENTS.md, launch.sh, architecture, benchmarking; history log carries the retraction
-      - Default-config fresh-prefill record stands at 1 crash / 3 trials; mechanism (#26558 vs #26609) still open
-    - 35B daily lane: 1 fresh 81,695-token prefill clean, 25.2 tok/s, acceptance 0.733 (n=1, no exposure observed)
+  - GPU batch 2 ran 2026-08-09 on the renamed fleet; results + the GGML_CUDA_DISABLE_GRAPHS retraction are in the
+    2026-08-08 history log (section 5); the graphs-env facts live in AGENTS.md (Serving env constraints)
     - 31B drafter load: PASS without the 26B's spec-draft-ngl pin (n=1; pin question stays open on evidence)
-    - Instruct-entry gate probes post-rename: qwen3.6-27b and qwen3.6-35b-a3b both 200, no guard error, one-word replies
-    - Owed: graphs-off discriminator (runs on the current binary), unconfounded -fa pair, no-MTP control, n>1 repeats
-  - Upstream reporting researched 2026-08-09 (opus): verdict = DO NOT REPORT YET, and never as an AI-written post
-    - llama.cpp CONTRIBUTING.md:25 forbids AI-written bug reports; its AGENTS.md:51 tells autonomous agents not to contribute
-    - So any filing must be the owner's own words; agents supply verified raw material only, never a draft to paste
-    - Our crash is a third thing: #26609 has no MTP; #26558 is a different error under KV saturation on a 0.8B
-    - Best target is #26782 (2026-08-09: same Gemma model + draft-mtp, HIP backend, crashes in prefill, survives -fa off)
-    - Gate before filing: one single-variable toggle that stops it, plus the b9860 known-good re-run on the Gemma config
-  - Isolation batch 2026-08-09 (5 fresh trials/arm, one variable each): MTP IS THE TRIGGER; graphs are not
-    - Baseline 4/5 crashed; no-MTP (same GGUF, no spec-type) 0/5 with zero crash lines - Fisher exact p = 0.048
-    - CUDA graphs off: 2/5, not significant (p = 0.50); same crash signature both times - partial mitigant at best
-    - Marker control ran first: graphs env provably effective (CUDA graph warmup lines present unset, absent when set)
-    - flash-attn arms inconclusive (1/3 on, 0/2 off); one fa-on crash said "misaligned address" - possible 2nd fault mode
-    - Gotcha recorded: "cache_prompt": false is silently ignored on /v1/messages; force freshness via POST /models/unload
-    - Filing gate is now MET (a single variable stops it); best target #26782, owner writes it - AI-written posts banned
-    - Still owed for a strong report: a compute-sanitizer trace (b9860 re-run dropped - user: "dead and bygone")
-    - Dossier for the human-written report: docs/history/2026-08-09-mtp-crash-report-dossier.md
-  - Build moved 2026-08-09 (user rebuilt): on-disk is now 10335 (74ce15741); 10326 evidence is build-scoped
-    - 9 commits past 10326; only 2 touch CUDA (26767 rms_norm+rope fusion, 26731 cpy launch counts), none touch
-      MTP, speculative, or CUDA graphs - so no fix for the crash is expected, and #26782 is still open unfixed
-    - 26767 is a new fusion path, so it is a fresh variable for the crash matrix rather than a neutral bump
-    - Re-cert owed on 10335 per the rebuild rule (GPU-gated); re-running one MTP crash arm would re-scope the evidence
-    - Tested 2026-08-09 (user "go for the test"): the crash PERSISTS on 10335 - 5/5 fresh trials, same signature
-      - vs 4/5 on 10326: Fisher p = 1.0, no change; every trial provably cold, stimulus byte-identical to baseline
-      - Per-build /v1/messages multi-system immunity probe on 10335: PASS
-      - So gemma4-12b-it-qat-mtp cannot serve ~81k prompts on the canonical build; DECISION OWED on the entry
-      - Untested and likely exposed the same way: the 26B and 31B Gemma MTP pairs (same target+drafter mechanism)
-    - Second upstream bug found: POST /models/unload racing a crashed instance orphans the name in stopping_models,
-      so the next instance under that name is force-killed at 10 s (server-models.cpp:1085/:1141/:1042). Reportable.
-  - Re-read 2026-08-09 (user: "are we even sure reverting would fix it?"): NOT A REGRESSION - reverting is unsupported
-    - b9860 has its own recorded instance of this crash: 2026-07-17 eval 2b, Gemma 12B MTP @200k, illegal memory
-      access on gen 5 - the "last known good" build fails the same way at large context
-    - Ollama's older vendored llama.cpp crashed the same way too (2026-07-01, ggml-cuda.cu:104, ~12.5%/run)
-    - The re-cert delta 0/30 vs 2/30 is Fisher p = 0.49: 10326 never demonstrably regressed against 9860
-      - It failed the POLICY gate ("any crash = fail"), which is a different claim from "worse than its predecessor"
-    - What changed this week was workload, not build: no one had run ~81k prompts through an MTP lane before
-    - Pooled across builds, MTP 9/10 vs no-MTP 0/5 is p = 0.002 - MTP is the axis, version is not
+    - Instruct-entry gate probes post-rename: qwen3.6-27b and qwen3.6-35b-a3b both 200, no guard error
+  - Upstream research, isolation batch, and the 10335 build move (2026-08-09): MTP isolated as the trigger axis
+    (p = 0.002 pooled), NOT a regression (b9860 recorded the same crash class at 200k; reverting unsupported),
+    rebuild to 10335 changed nothing (5/5, p = 1.0), no upstream fix existed (#26609/#26558/#26782 all mismatched
+    or open) - all superseded by the CLOSED entry below; stage evidence in the diagnosis log + dossier log
+    - llama.cpp bans AI-written reports (CONTRIBUTING.md): any filing is owner-written; agents supply raw material
+    - Second upstream bug found en route (still reportable): POST /models/unload racing a crashed instance orphans
+      the name in stopping_models, force-killing the next same-name instance at 10 s (server-models.cpp:1085)
+    - Gotcha kept: `"cache_prompt": false` is silently ignored on /v1/messages; force freshness via POST /models/unload
+    - Per-build /v1/messages multi-system immunity probe on 10335: PASS
   - Decided 2026-08-08 (user): fleet reshape package, gated on the new-GGUF chat-template gate + the build fix
     - 35B instruct: repoint to unsloth/Qwen3.6-35B-A3B-GGUF (UD-Q6_K + mmproj); rename qwen3.6-35b-a3b-ud-q6-k
       - No compat alias (old-name requests fail visibly); OpenCode/Codex ids swap in the same batch
@@ -336,16 +216,9 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
     - Executed 2026-08-08 (GPU-gate closed, config-side): models.ini 18 + 8, OpenCode/Codex swapped, doc counts moved
       - Download complete (29.3G blob, snapshot a483e9e6); stale 16.9G .incomplete removed
       - New-GGUF gate greps: guard 0, merged_system 7 - joins the carriers (now 5 GGUFs / 7 entries)
-  - GPU-window queue (gate closed 2026-08-08): diagnosis hammers (graphs-off; fa-off; optional 35B lane hammer)
-    - Plus: 31B drafter load test; live probes (gate step 3) for both new instruct entries before first real use
-    - Plus: per-build multi-system /v1/messages probe whenever the build moves
-    - Gate reopened 2026-08-08 evening; batch ran Stage 1 (default-config crash repro) + Stage 2 (fa-off)
-    - Gate RECLOSED 2026-08-08 (user, "stop at next checkpoint"): stages still owed at next window:
-      graphs-off discriminator, 35B large-ctx bound, 31B drafter load test, both instruct-entry live probes
-    - Batch results (verified at artifacts): Stage 1 default config fresh-prefill crash 1/2 (:2499, n_decoded=1051)
-    - Stage 2 (fa off + f16 KV + ctx 131k): 1/1 clean past the crash point; prefill ~5x slower, decode ~25x slower
-      - Confound: three variables in the overlay; graphs stayed ON (reused 758); consistent with #26609, not proof
-    - Full evidence log: docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md (re-cert, loop, diagnosis)
+  - GPU-window diagnosis queue (2026-08-08): every queued stage since completed across the 2026-08-09 batch and
+    the 2026-08-10 resolution (amended 2026-08-10: the "stages still owed" note was stale); the per-build
+    /v1/messages probe stays standing whenever the build moves; stage evidence in the diagnosis log
   - Resolved 2026-08-08 (user): merged_system exposure accepted + documented (5 GGUFs / 7 entries post-reshape)
     - Those entries would silently drop mid-conversation system messages on /v1/chat/completions (no error surfaces)
     - No live exposure: the one multi-system client rides /v1/messages; OpenAI-endpoint clients send leading-only
@@ -374,43 +247,49 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
       - Deleted 2026-08-08 (user go): the 35B UD-Q5_K_XL GGUF blob (26G measured) removed from the HF cache
         - Guest / usage 484G -> 459G; q6 + mmproj blobs untouched; host vhdx reclaim folds into the purge step
         - The frozen q5 canonical Modelfile keeps its dead FROM path (build-time only; store copy serves rollback)
-  - Finding 2026-08-09 (verified inline at 23:50): the GPU faults on its own - LOCAL CAUSE LIKELY, upstream blocked
-    - Windows nvlddmkm Event ID 13: 1122 events; of 680 carrying a location, 660 (97%) on GPC 3, 566 on GPC 3 TPC 1
-    - Fault names Out Of Range Address / Misaligned Address = the two CUDA errors recorded in the diagnosis log
-    - Control: 3 bursts at 23:16/23:25/23:26 with router down, no llama-server, no compute apps, no trial that evening
-    - A +230 MHz core OC is live (power.limit 220 W vs default 200 W; Afterburner Profile1 alone is stock)
-    - Explains why no build ever fixed it; does NOT explain the MTP flag gate (exposure hypothesis, untested)
-    - DECISION OWED: set Afterburner Profile1, idle, recount Id-13 (needs no GPU gate) - then re-run the matrix
-    - Cleared: toolkit 13.3.73 (not the 13.2 the repo warns of), arch 89, Release, stock flags, graphs ON
-    - Full record: docs/history/2026-08-08-llamacpp-recert-crash-diagnosis.md section 9; dossier gated "do not file"
-  - DECISION OWED on gemma4-12b-it-qat-mtp is HELD pending the stock-clock result (deleting a working config over a
-    hardware defect would be wrong); per-trial capture now mandates an Id-13 delta (docs/benchmarking.md)
-  - RESOLVED 2026-08-10 (user set stock clocks, gate opened): the crash was this box's +230 MHz core overclock
-    - Same build 10335, byte-identical request body: 5/5 crashes with the OC, 0/10 fresh trials at stock, p = 0.00033
-    - Id-13 flat at 1122 across the whole run - zero GPU faults under an hour of the workload that made 766 on 08-08
-    - MTP genuinely engaged (draft acceptance 0.787-0.822; spec-type/model-draft read from /v1/models status.args)
-    - gemma4-12b-it-qat-mtp DECISION is VOID: the entry was never broken, keep it unchanged
-    - Upstream dossier CLOSED, nothing filed; 10335 crash matrix PASSES, froggeric (template, 10335) pair still owed
-    - Standing rule: keep the GPU at stock clocks; full result in the diagnosis log section 10
-  - DECOMPOSED 2026-08-10 (4 arms, one Afterburner field moved at a time): the core clock offset is the whole cause
-    - core +230 on: 11/11 crashed; core off: 0/15 crashed (Fisher p = 1.3e-07)
-    - memory +1500 has no effect at either core level (p = 1.0 both ways); 110% power limit not implicated
-    - Narrower standing rule: keep the CORE offset at 0. Memory offset and power limit need no change
-    - Mechanism is voltage-for-frequency, not peak clock (peak reads 2805 MHz in crashing and clean arms alike)
-    - Core offset is NOT verifiable from WSL (clamp hides it; voltage.gpu unqueryable) - rests on the owner's change
-    - Id-13 final reading: specific but insensitive and coarser than a trial; a zero delta never means "no fault"
-  - CLOSED 2026-08-10 (offset ladder, user drove the profile changes): +120 MHz adopted as the safe core offset
-    - Ladder: +230 11/11 crashed, +200 2/5, +190 1/5, +150 1/5 (and took the host down), +135 0/10, +120 0/25, +0 0/15
-    - +135 did NOT fail - it is less proven (10 vs 25 clean); +120 is the conservative pick between two unfailed rungs
-    - +150's failure was a real host crash: Kernel-Power 41 at 15:15:39, boot 15:15:32, nearest TDR 15 h earlier
-    - Mechanism (owner): offsets were validated under full load where the BIOS pins ~1100 mV; LLM decode runs below
-      that band, so the overclock was never validated where the workload actually sits
-    - Standing rule now in AGENTS.md, CLAUDE.md, docs/benchmarking.md; full ladder in the diagnosis log section 12
-    - Follow-on bundle: specs/gpu-stability-test (packages the matrix as one certifying command)
+  - Crash investigation CLOSED 2026-08-10: the cause was this box's +230 MHz GPU core clock offset, nothing upstream
+    - Arc: GPC-3 Id-13 fault clusters pointed local (2026-08-09, diagnosis log section 9); stock clocks took the
+      same build + byte-identical body from 5/5 crashes to 0/10 (p = 0.00033, section 10); 4-arm decomposition
+      isolated the core offset alone (11/11 vs 0/15, p = 1.3e-07; memory offset and power limit clear, section 11)
+    - Mechanism: voltage-for-frequency below the validated band - the OC was validated under full load (~1100 mV),
+      LLM decode runs lower; peak clock reads identically in crashing and clean arms
+    - Ladder CLOSED: +120 MHz adopted as the safe core offset (25-trial clean soak; +135 unfailed but less proven;
+      +150 took the host down) - standing rule in AGENTS.md + docs/benchmarking.md (the CLAUDE.md copy
+      dissolved at the 2026-08-10 thin-shim move)
+    - Caveat kept: the core offset is NOT verifiable from WSL (clamp hides it) - the rule rests on the owner's
+      Afterburner profile; the Id-13 delta is one-directional (nonzero = hardware fault, zero proves nothing)
+    - gemma4-12b-it-qat-mtp DECISION VOID (the entry was never broken, kept unchanged); dossier CLOSED, nothing
+      filed; 10335 crash matrix PASSES; the froggeric (template, 10335) pair passed 2026-08-10 (templates/README.md)
+    - Full record: diagnosis log sections 9-12; follow-on: specs/gpu-stability-test packages the matrix as one
+      certifying command
   - Decided 2026-08-10 (user, "1. exit, 2. remove, 3. single-home, 4. collapse all three"): review-sweep judgment calls
     - launch.sh exits on a non-empty LLAMA_CACHE; SLEEP_IDLE_SECONDS/MODELS_MAX env knobs removed (flags are last-win)
     - Build record single-homed in launch.sh, crash status in docs/benchmarking.md; the satellites became pointers
     - Also collapsed: MTP mechanisms -> architecture.md s3, FA+q8_0 -> AGENTS.md, guarded count -> templates/README.md
+  - Final sweep response (2026-08-10, head 05f08c5 + repo-independence addendum): all 34 in-repo findings applied
+    after per-site verification (user: "everything in-repo"); tasks.md collapse scoped to closed sections (user)
+    - Must-fix: launch.sh build record -> re-certified 2026-08-10; "guard = 400" corrected at 4 live sites (vet on
+      message text); OpenCode/Codex id counts 12 -> 13; the Id-13 rule rewritten one-directional (+ gpu-stability spec)
+    - Structural: crash section retitled + anchors swept; id grammar single-homed in llamacpp/README.md; fleet-count
+      copies deduped; AGENTS.md MD013 hits split; .gitignore +.claude settings, -.cache-empty (strays now visible);
+      CSRF impact restated (fleet-join, launch-wedge, vhdx growth); the env -u scrub commented at its site
+    - Machine side (user go): claude-local menu now polls GET /v1/models - repo-independent per the owner decision;
+      aliases stay listed via each entry's aliases field (source-verified at server-models.cpp get_router_models);
+      the 00-selects-last-lane bug fixed in the same pass; B8 exposure documented in the claude-local spec;
+      MCP transitive-dep acceptance extended in mcp/README.md
+    - Superseded same day by the cross-machine unification (~/.claude handoff doc, Windows session): the logic
+      moved to the synced ~/.claude/bin/claude-local and the ~/.bashrc fn became a one-line shim over it
+      - Ported into the synced script: the 00 fix, the alias merge (its port read ids only), and a status-column
+        fix (/v1/models status is an object; the port would have printed the dict - .value extracted)
+      - New behavior gained: per-session plugin disable (--settings built from settings.json); MCP wiring gated
+        on ~/.config/claude-local.mcp.json existing (WSL-only)
+      - Spec home moved same day (user rule: this repo owns everything locally-run, Claude included): the
+        canonical spec is AGENTS.md#claude-local; CLAUDE.md is a thin pointer again; all pointers swept
+        (synced-script header, bashrc shim, architecture.md client block)
+    - Wrapper verification: the actual synced script tested under a scratch HOME + pty with stubbed curl/claude -
+      menu render (ids + alias + status), index/Enter/verbatim/00/out-of-range picks, non-TTY reuse and no-last
+      failure, router-down message, MCP branch flags, env-file fail-closed: all PASS
+      - One real interactive + one non-TTY live run against the live router still owed (carried forward)
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted (pruned HF
       snapshots already gone at the fleet reduction)

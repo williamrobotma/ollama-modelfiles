@@ -6,8 +6,9 @@
 # The var lives at ggml-cuda/common.cuh:1258 and tests presence only, so even =0 disables graphs.
 set -euo pipefail
 
-# Build record: on-disk 10335 (74ce15741) since 2026-08-09, re-cert pending. 10326 (3653e6d6d) FAILED re-cert
-# 2026-08-08 (crash matrix; tasks.md), and 10335 carries no fix for it - 9 commits, none touching MTP or CUDA graphs.
+# Build record: on-disk 10335 (74ce15741) since 2026-08-09, re-certified 2026-08-10 (crash matrix + froggeric
+# (template, 10335) pair). The 10326 re-cert failure resolved to this box's GPU core overclock, not any build
+# (crash status: docs/benchmarking.md).
 # Decided 2026-08-08 (user): the on-disk build is canonical - downgrades are never an option; serve it as-is.
 # Rebuilds re-certify per the migration spec's rebuild rule (crash matrix + froggeric pair; P1 log 2026-08-03).
 BIN=/home/wma/Developer/llama.cpp/build/bin/llama-server
@@ -39,8 +40,10 @@ fi
 # Extra args pass through, but they overlay EVERY preset entry (router CLI args
 # merge into each model's config) and cannot move the bind (trailing --host/--port wins).
 # --cors-origins localhost limits browser reads; the unauthenticated management endpoints (POST /models,
-# /models/load, /models/unload) stay CSRF-reachable - full analysis: docs/architecture.md (security section).
+# /models/load, /models/unload) stay CSRF-reachable - full analysis: docs/architecture.md section 4 (CSRF surface).
 "$BIN" --version >&2
+# The env scrub is load-bearing: HF_TOKEN feeds POST /models downloads (server-models.cpp), so scrubbing both
+# secrets caps a CSRF-triggered download at public repos.
 exec env -u OLLAMA_API_KEY -u HF_TOKEN "$BIN" \
     --models-preset "$DIR/models.ini" \
     --sleep-idle-seconds 86400 \

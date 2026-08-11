@@ -12,7 +12,10 @@ One router process; children spawn per entry on demand and sleep after 24 h idle
 
 ## Naming and alias policy
 
-- An id names the lane - `<family>-<size>[-mtp][-profile]`, blank profile = instruct. Never the quant (2026-08-09).
+- An id names the lane, never the quant (2026-08-09). Grammar (this is its single home; other docs point here):
+  - `<family>-<size>[-mtp][-profile]`, blank profile = instruct (e.g. `qwen3.6-27b-mtp-coding`, `qwen3.6-35b-a3b`).
+  - Variant tokens keep their upstream placement: Gemma's `it-qat`/`it-heretic` sit after the size, before `-mtp`
+    (`gemma4-12b-it-qat-mtp`); a finetune name precedes the size (`qwen3.5-queen-27b-coding`).
   - The quant lives in the `model =` path alone, so promoting a new quant is a path edit: no rename, no client churn.
 - An alias is an `alias =` key on its owning entry (comma-separated for several); request bodies resolve it.
   - Aliases now exist only for profile defaults; the fleet has one (`qwen3.6-35b-a3b-coding` -> the MTP coding lane).

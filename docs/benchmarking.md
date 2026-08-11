@@ -23,16 +23,16 @@ Each Ollama suite's `run.sh` sets its suite name and sources `common.sh`.
 `matrix.tsv` lists the model IDs to compare.
 `runtime.tsv` defines the runtime A/B profiles (graphs-off vs graphs-on).
 
-**llamacpp-parity** is a self-contained cross-engine suite (it does not source `common.sh`).
-It benches the same GGUF on an isolated Ollama serve (graphs-off profile) against stock llama-server.
-Stock llama-server is now the live serving lane.
-`LLAMA_SERVER_BIN` selects the binary (default `~/Developer/llama.cpp/build/bin/llama-server`).
-Decode tok/s is read per engine: `ollama run --verbose` eval rate (Ollama), response `timings` (llama-server).
-Its matrix rows carry the GGUF snapshot path, ctx, sampling flags (per docs/parameters.md), and spec-decode flags.
-It has its own `report.py` (mean/stdev plus llamacpp-vs-ollama and mtp-vs-plain ratios).
-Same dry-run-by-default CLI as the other suites.
-Built for the specs/done/llamacpp-serving option-C eval.
-See [history/2026-07-17-llamacpp-eval.md](history/2026-07-17-llamacpp-eval.md).
+**llamacpp-parity** is a self-contained cross-engine suite (it does not source `common.sh`):
+
+- It benches the same GGUF on an isolated Ollama serve (graphs-off profile) against stock llama-server,
+  now the live serving lane.
+- `LLAMA_SERVER_BIN` selects the binary (default `~/Developer/llama.cpp/build/bin/llama-server`).
+- Decode tok/s is read per engine: `ollama run --verbose` eval rate (Ollama), response `timings` (llama-server).
+- Matrix rows carry the GGUF snapshot path, ctx, sampling flags (per docs/parameters.md), and spec-decode flags.
+- It has its own `report.py` (mean/stdev plus llamacpp-vs-ollama and mtp-vs-plain ratios).
+- Same dry-run-by-default CLI as the other suites.
+- Built for the specs/done/llamacpp-serving option-C eval: [history/2026-07-17-llamacpp-eval.md](history/2026-07-17-llamacpp-eval.md).
 
 ## Running
 
@@ -54,8 +54,8 @@ Suite scope:
 - **gemma**: first-pass, text-only, two models (`gemma4-12b-it-qat`, `gemma4-26b-a4b-it-qat`).
 - **9b-coders**: small coders that fit fully in 12 GB VRAM, benched against the `gemma4-12b-it-qat` baseline.
   - `qwen3.5-9b-coding-ud-q4-k-xl`
-  - `qwen3.5-9b-mtp-coding` (self-draft variant)
-  - `qwopus3.5-9b-coder` (community finetune)
+  - `qwen3.5-9b-mtp-coding-ud-q4-k-xl` (self-draft variant)
+  - `qwopus3.5-9b-coder-q4-k-m` (community finetune)
     - Left the fleet in the 2026-07-27 reduction; this frozen row no longer resolves.
 
 ## Isolated serves and ports
@@ -97,8 +97,10 @@ free -m | sed -n '2p;3p'                       # host RAM and swap (WSL2 shares 
     "(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='nvlddmkm';Id=13} -EA 0).Count"
 ```
 
-- The Id-13 delta is what separates a hardware fault from a software bug. This card logs SM warp exceptions on GPC 3
-  with no LLM workload at all, so a crash trial without the delta cannot tell you which one you measured.
+- The Id-13 delta is one-directional: a nonzero delta confirms a hardware fault; a zero delta proves nothing
+  (the counter is specific but insensitive, and coarser than a trial). Never read zero as "software bug".
+  - Nearly all recorded events sat inside GPU-LLM sessions (766 of the 780 with a location); the one verified
+    no-LLM burst rules out llama.cpp specifically, not GPU compute.
   - `dmesg` cannot see these: the kernel-mode driver is Windows-side, so WSL only shows llama-server's own SIGABRT.
   - `.Message` renders empty under WSL, so a message-text filter silently matches nothing. Read the event XML.
   - Location breakdown one-liner and the full finding:
@@ -132,7 +134,7 @@ Distilled from the evidence logs; follow the links for the primary-source detail
 - Gemma 4 MTP via Ollama `DRAFT`: 1.67x on the 12B pair, 1.54x on the 26B pair.
   - See [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md).
 
-### MTP x CUDA-graphs crash
+### MTP crash investigation (resolved: GPU core overclock)
 
 - MTP models with CUDA graphs on crashed ~12.5% per run (illegal memory access) on the Ollama lane.
   - Reproduced with a 30-run hammer.
@@ -150,13 +152,14 @@ Distilled from the evidence logs; follow the links for the primary-source detail
   - Isolated 2026-08-09: MTP is the trigger (p = 0.002). CUDA graphs were tested and are not (p = 0.50).
   - **Resolved 2026-08-10: the cause was this box's +230 MHz GPU core clock offset, not llama.cpp.**
     - Decomposed over 4 arms, same build and byte-identical prompt: core offset on 11/11 crashed, off 0/15,
-      Fisher p = 1.3e-07. Memory offset (+1500) and a 110% power limit have no effect (p = 1.0 each).
+      Fisher p = 1.3e-07. The memory offset (+1500) has no effect (p = 1.0 at either core level); the 110%
+      power limit had no single-variable arm and is not implicated.
     - **Standing rule: keep the GPU core offset at or below +120 MHz.** Certified by a 25-trial clean soak;
       +135 and up are unproven or failed. Memory offset (+1500) and the 110% power limit need no change.
     - Mechanism is voltage-for-frequency, not peak clock: peak reads 2805 MHz in crashing and clean arms alike.
       The offsets were validated under full load, where the BIOS pins ~1100 mV; LLM decode runs far below that,
       in a band the overclock was never validated in.
-    - Offset ladder and the per-rung rates: the 2026-08-10 diagnosis log, section 12.
+    - Offset ladder and the per-rung rates: the 2026-08-08 diagnosis log (extended through 2026-08-10), section 12.
     - Nothing was filed upstream; no config or version change was needed.
   - See [history/2026-08-08-llamacpp-recert-crash-diagnosis.md](history/2026-08-08-llamacpp-recert-crash-diagnosis.md).
 

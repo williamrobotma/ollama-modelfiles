@@ -27,6 +27,8 @@ Every GPU-loading step is a heavy load: announce and get user confirmation befor
    - verify: a two-block system request does not 400.
 4. `/v1/chat/completions` on a guarded Qwen under froggeric.
    - verify: a multi-system request answers, no 400.
+   - Amended 2026-08-10 (applies to items 3-4): "no 400" was build-true then; the guard's HTTP status varies by
+     build (500 at 10335), so vet on the guard message text, never the status code (AGENTS.md gate step 3).
 5. `/v1/responses` minimal Codex-shaped request including one function tool.
    - verify: the tool call round-trips, no 500.
 6. Per-child `/props` (`?model=` selects the child) reflects the preset's sampling flags (GGUF metadata must not leak through).

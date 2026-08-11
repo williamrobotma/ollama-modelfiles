@@ -15,7 +15,7 @@ Status legend: [ ] pending, [x] done. Resume point for this side task.
 
 - [ ] `qwen3.5-queen-27b-coding`: multi-system-message probe; record verdict.
 - [ ] `gemma4-31b-it-heretic`: multi-system-message probe; record verdict.
-- [ ] Verdicts recorded in README catalog or docs/openwebui.md.
+- [ ] Verdicts recorded in docs/openwebui.md (the README catalog tables were deleted 2026-08-08).
 
 ## Model visibility
 

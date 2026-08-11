@@ -83,6 +83,8 @@ Decided at the first execution session's review; these supersede the specific lo
     - Amended 2026-08-08 (reshape): blank-instruct ids, 27B instruct entry, Queen i1 tags -> 18 configs + 8 aliases.
     - Amended 2026-08-09: quants removed from served ids; the alias layer collapses -> 18 configs + 1 alias name.
   - `35b-a3b-coding` alias repoints to `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` and is rebuilt under Ollama.
+    - Amended 2026-08-10: superseded by the q6 standard + alias collapse; the surviving alias is
+      `qwen3.6-35b-a3b-coding` on the MTP q6 lane (models.ini is current).
   - Guarded fleet drops to 2 GGUFs (unsloth 9B non-MTP, Queen-27B); froggeric applies to the 3 entries they back
     (Queen-27B backs both `queen-27b-*` configs - corrected 2026-07-28, was "two entries").
   - Phase 4 purge shrinks to: Ollama uninstall + 232G store, `modelfiles/` + create-script retirement, vhdx compact.
@@ -111,7 +113,8 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
 
 1. Phase 0 - router smokes on 11433 with a 3-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.
 2. Phase 1 - Gemma MTP ctx probe (ladder above known-stable 16k, crash matrix, graphs ON); Qwen-MTP graphs-on hammer.
-3. Phase 2 - full-fleet preset: 17 configs + 6 aliases (now 18 + 1), full flags, mmproj, drafters, froggeric on guarded.
+3. Phase 2 - full-fleet preset: 17 configs + 6 aliases (since amended - dated chain in Scope; models.ini is
+   current), full flags, mmproj, drafters, froggeric on guarded.
 4. Phase 3 - client cutovers: claude-local, Open WebUI, OpenCode, Codex, Pi (best-effort).
 5. Phase 4 - staged retirement: stop + disable, docs rewrite, validation window, gated purge + prune.
 

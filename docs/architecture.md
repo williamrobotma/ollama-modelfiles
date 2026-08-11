@@ -22,7 +22,7 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
                                    |
                                    |  absolute snapshot paths in model = / model-draft = / mmproj =
                                    v
-              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER (18 configs + 1 alias)
+              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER
                                    |
                                    |  llamacpp/launch.sh -> llama-server --models-preset (router mode)
                                    v
@@ -71,12 +71,14 @@ ALIAS (a key on its owning entry, never its own section)
       alias = qwen3.6-35b-a3b-coding
 ```
 
-Ids name the lane (family-size-profile), never the quant: the quant lives in the `model =` path only.
+Ids name the lane, never the quant: the quant lives in the `model =` path only (id grammar: `llamacpp/README.md`).
 
 - Changing quant is a path edit - no rename, no client churn, so aliases now serve only profile-defaults.
 - The one surviving alias points the unsuffixed coding name at the MTP coding lane.
 
 Aliases resolve inside request bodies but never appear as `/v1/models` ids, so point UI pickers at canonical ids.
+(Each `/v1/models` entry does carry its `aliases` as a field - `server-models.cpp` `get_router_models` - which is
+how the claude-local menu lists them.)
 
 - The profile a child actually serves is visible at `/props?model=<id>`; the router's own `/props` returns dummies.
 - Guarded GGUFs take `chat-template-file` = the pinned froggeric template in `llamacpp/templates/`.
@@ -135,8 +137,8 @@ Per-request MTP acceptance and tok/s show up in the router log's `timings` lines
         |                |                                   |                        |
         v                v                                   v                        v
    OPEN WEBUI       OPENCODE 1.16.2                     CLAUDE-LOCAL              CODEX 0.145.0
-   0.11.0 on 8080   openai-compatible                   ~/.bashrc fn ->           llamacpp-router
-   OpenAI conn ->   provider, 12 ids                    lane picked per session   provider, 12 ids
+   0.11.0 on 8080   openai-compatible                   synced script ->          llamacpp-router
+   OpenAI conn ->   provider, 13 ids                    lane picked per session   provider, 13 ids
    11433/v1         per-model ctx limits                vendored web-search MCP   fresh threads only
    Ollama conn      no websearch tool                   --disallowedTools=        namespace/web_search
    disabled         exists in this build                WebSearch                 tools DROPPED at 200
@@ -154,15 +156,21 @@ No inbound auth anywhere: the router checks nothing, and it binds 127.0.0.1, as 
       by path with no method check (server-http.cpp:197, :215), so only `load`/`unload` would end up behind it.
   - CORS-simple (no preflight) and `Host` is unvalidated, so a CSRF page or DNS-rebinding attack reaches them.
   - `load`/`unload` churn force-kills an in-flight generation under `--models-max 1`.
-  - Impact ceiling is low: worst case is a drive-by download into the gitignored `.cache-empty`.
+  - Worst case is a drive-by download via `POST /models`, and its impact is more than stray bytes:
+    - The download lands in `.cache-empty` and joins the served fleet (cache-sourced models are served).
+    - The now-non-empty cache dir wedges the next `launch.sh` (fail-closed guard) until cleared by hand.
+    - The bytes grow the never-shrinking vhdx (bulk downloads have crashed the host twice - AGENTS.md, disk budget).
+    - `launch.sh` scrubs `OLLAMA_API_KEY`/`HF_TOKEN` from the child env (`env -u`), so a triggered download is
+      capped at public repos.
     - `DELETE /models` needs a CORS preflight to run.
       - `--cors-origins localhost` won't grant that preflight to an arbitrary page - effectively gated.
   - The loopback bind (127.0.0.1) is the actual boundary: a same-host threat model, not a remote one.
 
 Per-client detail worth carrying:
 
-- claude-local: the `~/.bashrc` fn exports `ANTHROPIC_BASE_URL` + model vars, all set by its interactive lane menu.
-  - Full detail: [CLAUDE.md](../CLAUDE.md#claude-local).
+- claude-local: the synced `~/.claude/bin/claude-local` (the `~/.bashrc` fn is a shim) exports
+  `ANTHROPIC_BASE_URL` + model vars, all set by its interactive lane menu.
+  - Full spec: [AGENTS.md](../AGENTS.md#claude-local).
   - Execs `claude` with both flags in `=VALUE` form - the space form swallows `"$@"` into the deny list.
   - The MCP is the official Ollama web-search script, run via pipx on an `mcp>=1.9,<2` pin.
 - Open WebUI: started on demand, no background service, OpenAI connection at 11433 ([openwebui.md](openwebui.md)).

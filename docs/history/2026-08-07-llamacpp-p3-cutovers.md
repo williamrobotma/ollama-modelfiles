@@ -65,6 +65,8 @@ The first day of real mixed use loaded 4+ children on 12 GiB and exposed a failu
 - Fixes applied (user go): `spec-draft-ngl = 0` on the 26B entry (241 MiB drafter to CPU, crash unreachable by
   construction) and `launch.sh` now defaults `--models-max 1` (user decision over the proposed 2: one-at-a-time
   usage, full-GPU residency; `MODELS_MAX` env overrides).
+  > **CORRECTION 2026-08-10:** the `MODELS_MAX` / `SLEEP_IDLE_SECONDS` env knobs were later removed from
+  > `launch.sh` (review-sweep decision, user go). Override by passing the flag to `launch.sh` instead; last wins.
 - Sampling-degeneracy observation: the 35B instruct fell into a `/` repetition loop on a 7-search, ~11.6k-token
   chat (log clean - no truncation or shift). Neutral profiles carry no repeat penalty by design; regenerate
   escapes, and a per-chat `repeat_penalty` is the documented escape hatch.
