@@ -1,141 +1,147 @@
 # AGENTS.md
 
-Canonical, tooling-agnostic instructions for any coding agent working in this repo. Read this first. Claude-Code-specific notes live in `CLAUDE.md`; deep detail lives in `docs/`.
+Canonical instructions for any coding agent working in this repo - read this first.
+The detail is defined in the files under `docs/`, and this file points to them.
+`CLAUDE.md` is just `@AGENTS.md`.
 
-## What this repo is
+## The repo
 
-Ollama Modelfile configurations for local LLM inference, organized by model family and use profile. There is no application code and no test suite - just Modelfiles, a build helper, benchmark harnesses, docs, and immutable research logs. Every Modelfile references a local GGUF in the Hugging Face cache. The same cached GGUFs also feed llama.cpp directly (`--model` / `--model-draft`).
+**Serving config only - no application code, no test suite.**
 
-## GGUF sourcing convention
+- The live serving stack is stock llama.cpp in router mode on `127.0.0.1:11433`: the fleet is defined in
+  `llamacpp/models.ini`, and the entrypoint is `llamacpp/launch.sh`.
+- Every served GGUF is a pinned absolute path into the local Hugging Face cache, and the preset lists every
+  model kept on disk.
+- Re-provisioning from nothing is `git clone` + `hf download` - no build or import step.
+- The retired Ollama layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12 (git history keeps it).
+  - Only the on-disk install (store, binaries, override) remains, until the purge tracked in `specs/llamacpp-migration`.
 
-Do NOT use `FROM hf.co/...` (Ollama's OCI bridge; prone to config-blob hangs) or `registry.ollama.ai` tags. Instead:
+## Models and sourcing
 
-- Provision with `hf download ORG/REPO file.gguf`.
-- Reference the absolute, pinned snapshot path: `FROM /home/wma/.cache/huggingface/hub/models--ORG--REPO/snapshots/<commit>/<file>.gguf`.
-- Snapshot paths are pinned on purpose. An `hf download` that pulls a newer repo commit creates a new snapshot dir; the Modelfile keeps pointing at the old (still-cached) one. Updating a model is a deliberate two-step: download, then edit the `FROM` path. That is intended pinning, not drift.
-- Vision models need a second `FROM <...>/mmproj-*.gguf` line, or the `vision` capability is silently dropped (the old OCI pull auto-bundled the projector).
+Provision with `hf download ORG/REPO file.gguf`, then reference the absolute pinned snapshot paths in
+`llamacpp/models.ini` (`model =`, `model-draft =`, `mmproj =`).
 
-## Modelfile layering and naming
-
-Layout is `modelfiles/<family>/<stem>/Modelfile`; families are `gemma4`, `qwen3.5`, `qwen3.6`, `qwopus3.5`. The Ollama model name is computed as `<family>-<stem>` (e.g. `modelfiles/gemma4/12b-it-qat/Modelfile` -> `gemma4-12b-it-qat`). Do not rename models - Open WebUI's DB and claude-local reference them by name.
-
-Three layers (`scripts/ollama-create.sh` resolves them bottom-up):
-
-- **Canonical** (quant-suffixed stem, e.g. `35b-a3b-coding-ud-q4-k-xl`): full parameter block, `FROM` an absolute snapshot path. Source of truth.
-- **Layered / derived**: `FROM` a local model name (inherits weights + params), then overrides or adds directives (e.g. a coding profile layered on an MTP base, or a `DRAFT` line).
-- **Thin alias** (unsuffixed stem, e.g. `35b-a3b-coding`): a single `FROM <canonical model name>` line so the default can be repointed without renaming the family.
-
-Adding a model: create `modelfiles/<family>/<stem>/Modelfile`, mirror the exact upstream quant tag verbatim in the stem, put the full verified parameter block in the canonical file, keep any alias thin.
-
-See [docs/architecture.md](docs/architecture.md) for the full stack diagram.
-
-## The two MTP mechanisms
-
-Speculative decoding via a draft model - two different shapes:
-
-- **Qwen (self-contained)**: one GGUF with embedded MTP tensors; Ollama auto-detects and self-drafts. Measured ~1.65x (9B).
-- **Gemma (target + separate drafter)**: main GGUF plus a `mtp-gemma-4-*.gguf` drafter (~250 MB, shipped in the QAT repos), wired via the `DRAFT` directive in the Modelfile. Measured 1.67x (12B), 1.54x (26B).
-
-Both historically ran on Ollama's CUDA runner (now 0.31.2, vendored llama.cpp b9840), but the 2026-07-17 eval inverted that picture on-box: Ollama's Gemma `DRAFT` lane crashes (illegal memory access on most requests), while stock llama.cpp b9860 serves the same target+drafter pair at ~1.8x - stable only with CUDA graphs ON at moderate ctx. Graphs-off reproduces the #24795 drafter load failure (the bug is config-gated, not build-gated; issue still open upstream). Until the migration spec lands, stock llama-server (graphs-on, capped ctx) is the working CUDA path for Gemma MTP; crash matrix and caveats in [docs/history/2026-07-17-llamacpp-eval.md](docs/history/2026-07-17-llamacpp-eval.md).
+- A newer `hf download` writes a new snapshot directory, and the preset keeps serving the old one until the
+  path is edited. That is deliberate pinning, not drift.
+- Vision models need `mmproj =` on their entry, or vision is silently absent.
+- Ids name the entry, never the quant. The id grammar and alias policy are in [llamacpp/README.md](llamacpp/README.md).
+- Renaming a served id breaks stored Open WebUI chats visibly. Rename only for a naming-rule change, and
+  sweep every client (OpenCode, Codex catalog + default) in the same commit.
+- The add-a-model procedure is in [llamacpp/README.md](llamacpp/README.md).
 
 ## Parameters
 
-Never change a sampling value from memory. All profiles, mandates, and the verification-source URLs are in [docs/parameters.md](docs/parameters.md). The two hard rules:
+Never change a sampling value from memory. The profiles, mandates, and verification sources are defined in
+[docs/parameters.md](docs/parameters.md). The two hard rules:
 
 - **Qwen `repeat_penalty` must be exactly 1.0** - any other value causes structural garbage in code output.
 - **CUDA 13.2 corrupts Gemma 4 output** - use CUDA 13.1 or 13.3.
 
 ## Chat-template gate for community GGUFs
 
-Some clients send multiple `system`-role messages mid-conversation (for example, Claude Code sends a top-level system message plus session-hook and skill/reminder system messages). A model's embedded Jinja `chat_template` must tolerate non-first and repeated system messages, or every such request fails.
+Some clients send multiple `system`-role messages mid-conversation. A model's embedded Jinja `chat_template`
+must tolerate them, or every such request fails.
 
-The guard: `raise_exception('System message must be at the beginning.')`.
+- The guard is the call `raise_exception('System message must be at the beginning.')` inside that template.
+- Serve guarded GGUFs to OpenAI-style clients under froggeric's `chat_template.jinja`
+  (`--jinja --chat-template-file`), validated once per (template, build) pair.
+- The validation record is in [llamacpp/templates/README.md](llamacpp/templates/README.md), and the list of
+  which template each entry runs is in [llamacpp/README.md](llamacpp/README.md).
 
-- Official Qwen 3.5/3.6 default; every fresh Qwen pull carries it.
-- Exception: unsloth's Qwen3.6 and 3.5-MTP builds ship `merged_system`.
-  - It merges up to two leading system messages and silently drops all others, mid-conversation ones included.
-- On llama-server, the guard fires only on the OpenAI endpoint (`/v1/chat/completions` with `--jinja`).
-  - A multi-system request there returns 400.
-  - `/v1/messages` is immune: system folds into one message before the template runs.
-  - Under Ollama: unresolved (the eval found Jinja never runs, yet the 2026-06-23 HauhauCS 400s went through Ollama).
-    - Moot once Ollama retires.
+Vet a new GGUF with the steps below. The only template that runs is the one embedded in the GGUF - read it
+there, not from a tool or a repo listing, and check both the GGUF file and one live request.
 
-Standing rule: serve guarded Qwen GGUFs to OpenAI-style clients under a guard-free template.
+1. `head -c 30000000 <file>.gguf | grep -ac 'System message must be at the beginning'` - template strings sit
+   in the GGUF header, well inside the first 30 MB.
+2. Same grep for `merged_system` - a hit means mid-conversation system messages get silently dropped, never an error.
+3. One non-first-`system` request to `/v1/chat/completions`, with `-ngl 0` so it never cold-loads onto a busy GPU.
+   - Identify the guard by its message text, never the HTTP status - builds return 400 or 500 for the same
+     guard, so a code-only check passes a guarded GGUF.
+4. Per build: one multi-block-`system` request to `/v1/messages` (immune - it folds system into one message).
 
-- Fix: `--jinja --chat-template-file` with froggeric's `chat_template.jinja`, validated once per (template, build) pair.
-  - Validated pair: v21.3 snapshot `23a40b0b` on b9860.
-- Don't wait for an official fix: Qwen says the guard is by design (re-role later system messages to user).
+The test: for every served GGUF you can name which chat template it runs under, and why.
 
-Vetting (replaces `ollama show --template`, which shows a template that never runs):
+## Serving
 
-1. Per GGUF: `head -c 30000000 <file>.gguf | grep -c 'System message must be at the beginning'`.
-2. Per GGUF: one non-first-`system` request to `/v1/chat/completions` - 400 = guarded.
-   - Never cold-load onto a busy GPU; `-ngl 0` is fine.
-3. Per build: one multi-block-`system` request to `/v1/messages` (immunity check).
+The live serve is `llamacpp/launch.sh`, which starts llama-server in router mode on `127.0.0.1:11433`.
+The runbook is [docs/architecture.md](docs/architecture.md) section 4.
 
-Guarded fleet GGUFs as of 2026-07-23 ([evidence](docs/history/2026-07-23-chat-template-refresh.md)):
+Launch flags - the launcher reads no env vars of its own, so configuration is passed as flags:
 
-- unsloth Qwen3.5-9B non-MTP, OBLITERATUS-27B, Queen-27B, Qwopus3.5-9B-coder.
-- All validated under froggeric on b9860.
+- Defaults are emitted before `"$@"`, so the last value given takes effect.
+- Keep `LLAMA_ARG_*` env vars unset - llama-server reads them and applies them, invisibly bypassing the flags.
+- **`-fa on` and q8_0 KV must stay paired** (`[*]` block): the quantized V-cache hard-fails without flash attention.
+- `ctx-size` is set per entry and overrides `[*]`. Nothing auto-shrinks on OOM; the entry partial-offloads instead.
 
-## Keep-set policy
+GPU and stability:
 
-Every installed Ollama model corresponds to a repo Modelfile. Anything else gets `ollama rm`'d. Rebuilding the keep-set from a clean checkout is `git clone` + `hf download` + `scripts/ollama-create.sh`.
+- CUDA graphs stay on fleet-wide. Never set `GGML_CUDA_DISABLE_GRAPHS`.
+  - It disables graphs on presence alone, even `=0`, and Gemma MTP needs graphs on.
+  - MTP wiring, both mechanisms: [docs/architecture.md](docs/architecture.md) section 3.
+- The 26B MTP pair keeps `spec-draft-ngl = 0` (drafter on CPU); graphs-off reproduces its load failure (#24795).
+- **Keep the GPU core clock offset at or below +120 MHz** - above it, large-ctx MTP runs crash
+  ([why](docs/benchmarking.md#mtp-crash-investigation-resolved-gpu-core-overclock)).
+- **Capture GPU + host RAM per trial on any GPU run whose numbers you will quote.** Both are shared with
+  Windows and unrecoverable after the fact.
+  - The capture procedure is in [docs/benchmarking.md](docs/benchmarking.md) (Resource capture).
+- Budget WSL disk against `df -h /mnt/f`, never the guest `df /`. The vhdx grows and never shrinks by itself,
+  and bulk downloads have crashed the host.
+  - After big deletions, run `wsl --shutdown` + `Optimize-VHD`.
 
-## Build commands
+Router discipline (runbook: [docs/architecture.md](docs/architecture.md) section 4):
 
-```bash
-# Build all models (resolves canonical -> layered -> alias order automatically)
-scripts/ollama-create.sh
+- `launch.sh` refuses to start over a live router - honor the refusal, never work around it.
+- Probe 11433 before any stop or parse-check (`curl -s 127.0.0.1:11433/v1/models`); an answer may be a
+  router you did not start - report and ask.
+- Kill only a PID from your own launch, never pgrep/pkill; trust a readout only after your own instance's
+  log says it bound.
 
-# Build one model from its Modelfile directory
-scripts/ollama-create.sh modelfiles/gemma4/12b-it-qat
+## claude-local
 
-# Building an alias builds its canonical dependency first
-scripts/ollama-create.sh modelfiles/qwen3.6/35b-a3b-coding
-```
+**`claude-local` runs Claude Code against the router; this section is its canonical spec.**
+The implementation is the synced `~/.claude/bin/claude-local`, which a per-machine shim invokes.
 
-## Benchmark commands
+- A lane is the one fleet model that serves every session role at once: main, tier, and subagent vars together.
+  - Pinning `ANTHROPIC_MODEL` is required, or settings.json's model is sent to the router verbatim.
+- There is no flag and no default lane: a numbered menu picks one.
+  - Enter re-picks the last lane, stored in `~/.config/claude-local.last`.
+  - A non-TTY run reuses the last lane, or fails and prints the list.
+- The menu is built from the live router: `GET /v1/models` ids plus each entry's `aliases`.
+  - It is C-sorted, so each alias is listed next to its canonical id; each lane shows its router-reported status.
+  - If the router is down the launch fails loudly; there is no fallback to a file.
+- Any input that is not a menu number is used verbatim as a lane name (the fallback). The router 404s on a typo.
+- Every claude arg passes through untouched; mid-session `/model` moves only the main session.
+- Every plugin is disabled per-session (`--settings` override built from `~/.claude/settings.json` at launch).
+- With `~/.config/claude-local.mcp.json` present (WSL), it sources `~/.config/claude-local.env` (mode 600) and
+  execs with `--disallowedTools=WebSearch` plus the vendored web-search MCP (`llamacpp/mcp/`). Without that
+  file, only the plugin override applies.
+  - That env file also enables raw-body logging to `/tmp/claude-bodies`, a held review item (not yet released).
+    - Whether it actually logs depends on the telemetry settings; unverified live.
+- Sends requests to `/v1/messages` - immune to the chat-template guard above.
 
-Suites live under `benchmarks/<suite>/` and are dry-run by default - they print the plan and run nothing without `--execute`.
-
-```bash
-benchmarks/qwen/run.sh            # print the plan (dry-run)
-benchmarks/qwen/run.sh --list     # list configured models and prompts
-benchmarks/qwen/run.sh --execute  # actually run the matrix
-benchmarks/all.sh                 # all suites, sequential
-```
-
-The runtime A/B spins up isolated alternate-port serves. All suites share ports `11435`/`11436`, so never run two suites concurrently (`all.sh` is sequential and safe). Full detail, ports, and distilled findings: [docs/benchmarking.md](docs/benchmarking.md).
-
-## Serving env constraints
-
-The systemd Ollama service (`127.0.0.1:11434`) sets `KEEP_ALIVE=24h`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`.
-
-- **`FLASH_ATTENTION=1` and `KV_CACHE_TYPE=q8_0` must stay paired**: the quantized V-cache hard-fails to load if flash attention resolves off.
-- **Modelfile `num_ctx` outranks the env.** `OLLAMA_NUM_PARALLEL`/`OLLAMA_CONTEXT_LENGTH` being unset is harmless because every repo Modelfile pins `num_ctx`, which wins over the VRAM-tier auto-default and is never auto-shrunk on OOM (it partial-offloads instead).
-- Prod currently runs CUDA graphs ON with the MTP crash exposure noted in [docs/benchmarking.md](docs/benchmarking.md#mtp-x-cuda-graphs-crash) (fix needs sudo).
-
-## WSL disk budget
-
-This runs on WSL2; the guest disk is an `ext4.vhdx` on the Windows `F:` drive that grows and never shrinks by itself.
-
-- Budget against `df -h /mnt/f`, NOT the guest `df -h /` (the guest reports the virtual disk and lies about free host space).
-- Count hidden copies: bytes exist twice by design - the HF cache blob (source) and the Ollama re-serialized layer both hold the model. A migration that copies + downloads + rebuilds can balloon the vhdx and crash the host (it has, twice).
-- After large in-guest deletions, reclaim host space with `wsl --shutdown` then `Optimize-VHD` (Windows side).
-
-## Markdown style
-
-- rumdl enforces `.rumdl.toml`: 120-col barometer (check-only, never `--fix`); `docs/history/` excluded as immutable.
-- Soft-wrap only: never break a line mid-idea - fix long lines by cutting redundancy or splitting into real sub-bullets.
+The test: the lane you picked is the model every session role is talking to.
 
 ## Doc map
 
-- [README.md](README.md) - what/why, quickstart, model catalog, repo map.
-- [docs/architecture.md](docs/architecture.md) - the stack: source of truth, layering, MTP, serving, disk.
+- [README.md](README.md) - what/why, quickstart, catalog pointers, repo map.
+- [llamacpp/README.md](llamacpp/README.md) - the serving stack: preset layout, id grammar, alias policy,
+  which template each entry runs, add-a-model.
+- [llamacpp/templates/README.md](llamacpp/templates/README.md) - vendored chat templates: shas, validated pairs.
+- [llamacpp/mcp/README.md](llamacpp/mcp/README.md) - the web-search MCP claude-local loads.
+  - Search rides Ollama's hosted cloud API; the swap to Brave is specced in `specs/brave-search-mcp`.
+- [docs/architecture.md](docs/architecture.md) - the stack: layering, MTP, serving + clients, disk.
 - [docs/parameters.md](docs/parameters.md) - sampling profiles, mandates, verification sources.
-- [docs/benchmarking.md](docs/benchmarking.md) - suite mechanics, ports, distilled findings.
-- [docs/openwebui.md](docs/openwebui.md) - Open WebUI setup and config-in-DB semantics.
+- [docs/benchmarking.md](docs/benchmarking.md) - the retired-suite record, resource capture, distilled findings.
+- [docs/openwebui.md](docs/openwebui.md) - Open WebUI setup, and how its settings are stored in the database.
 - [docs/history/index.md](docs/history/index.md) - dated, immutable session evidence logs.
-- `specs/<feature>/` - spec + tasks for in-flight work, plus plan when the work needs one (tasks.md is the resume point); the run-spec skill (`.claude/skills/run-spec/`) executes a bundle end to end. `specs/README.md` is the roadmap (dependency-ordered sequence).
-- `specs/done/<feature>/` - completed bundles, kept for the record. A bundle moves here once its spec.md Acceptance is met (every tasks.md item `[x]` or deferred out of scope); run-spec files it here on completion.
+- `specs/<feature>/` - in-flight work, tasks.md as the resume point; `specs/ROADMAP.md` orders the bundles.
+
+## Writing
+
+- Plain language, one idea per line; shorten a long line by cutting words, never by wrapping mid-sentence.
+- Record files - dated tasks.md sections, docs/history/, specs/*/research.md - are append-only, kept as written.
+  - Everything else states the present: a changed fact means rewriting the sentence that carried it.
+- "Amended YYYY-MM-DD" fits only a spec bundle with work already done; an unstarted bundle is edited clean.
+- rumdl checks md at 120 cols; run it check-only, never `--fix` (`.rumdl.toml` excludes the history logs
+  and research records).
+- The one sanctioned count is a file's own header total (`llamacpp/models.ini:1`), re-checked on every touch.

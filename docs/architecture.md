@@ -1,8 +1,12 @@
 # Architecture
 
-How the local-LLM stack fits together after the 2026-07 migration to hf-downloaded local GGUFs (see [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md) for the migration evidence log).
+How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on `127.0.0.1:11433`, four clients.
 
-## 1. The big picture - one source of truth, three consumers
+- Move to local GGUFs: [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md).
+- Cutover off Ollama: [the P3 log](history/2026-08-07-llamacpp-p3-cutovers.md).
+- The retirement schedule and purge tracking live in `specs/llamacpp-migration`; this file keeps the current shape.
+
+## 1. The big picture - one source of truth, one router
 
 ```text
                          Hugging Face Hub (upstream)
@@ -10,111 +14,222 @@ How the local-LLM stack fits together after the 2026-07 migration to hf-download
                                    |  hf download ORG/REPO file.gguf
                                    |  (HF CDN/XET; the OCI bridge is OUT of the loop)
                                    v
-              ~/.cache/huggingface/hub/  ..... THE SOURCE OF TRUTH
+              ~/.cache/huggingface/hub/  ..... THE SINGLE LIVE SOURCE
               models--ORG--REPO/
                 blobs/<sha256>                 (actual bytes, keyed by LFS oid)
                 snapshots/<commit>/<file>.gguf (symlinks; PINNED paths)
                 refs/main
                                    |
-          +------------------------+------------------------+
-          |                                                  |
-          v                                                  v
-   git repo (ollama-modelfiles)                     llama.cpp (direct, optional)
-   modelfiles/*/*/Modelfile                         ./llama-server --model <same path>
-      --> FROM /abs/snapshot/path.gguf              (b9860 CUDA build in ~/Developer/llama.cpp;
-          |                                          NOT usable for Gemma MTP: bug #24795)
-          |  scripts/ollama-create.sh
-          v
-   Ollama blob store (/usr/share/ollama/.ollama/models)
-   re-serialized layers, deduped by sha256; keep-set == repo Modelfiles, nothing else
+                                   |  absolute snapshot paths in model = / model-draft = / mmproj =
+                                   v
+              llamacpp/models.ini  ..... THE ONLY MAPPING LAYER
+                                   |
+                                   |  llamacpp/launch.sh -> llama-server --models-preset (router mode)
+                                   v
+              router on 127.0.0.1:11433: stock llama.cpp (build record in launch.sh),
+              run from ~/Developer/llama.cpp/build/bin/llama-server
+              one child llama-server per served id, spawned on demand
+
+   Ollama blob store (host-disk leftover, freed at the store purge)
+              /usr/share/ollama/.ollama/models
 ```
 
-Key property: the repo's Modelfiles are the *only* mapping layer. Every installed Ollama model is reproducible from `git clone` + `hf download` + `scripts/ollama-create.sh`, and the same cached GGUFs feed llama.cpp without conversion.
+Key property: `llamacpp/models.ini` is the *only* mapping layer.
 
-## 2. Modelfile layering (inside the repo)
+- Every served model is reproducible from `git clone` + `hf download` + `llamacpp/launch.sh`.
+- There is no conversion or import step any more: the child process reads the cached GGUF in place.
+
+Ollama was retired as the serving stack on 2026-08-07: no client points at it any more.
+
+- The repo-side layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12; git history preserves it.
+- The store, binaries, and systemd override stay on disk until the Phase 4 store purge (~2-week validation window).
+- Service stop/disable and the purge itself are tracked in `specs/llamacpp-migration`, not here.
+
+## 2. Preset layering (inside the repo)
 
 ```text
-CANONICAL (quant-suffixed, full param block)
-  modelfiles/gemma4/26b-a4b-it-qat/Modelfile
-      FROM <snapshot>/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf   <- weights
-      FROM <snapshot>/mmproj-BF16.gguf                          <- vision projector
-                                                                   (2nd FROM or vision is silently dropped)
-      PARAMETER ... SYSTEM <|think|>
+GLOBAL  [*]  (merged into every child)
+  jinja = true, flash-attn = on, cache-type-k/v = q8_0, parallel = 1   <- serving flags
+                                                                         (FA + q8_0 stay PAIRED)
+  min-p, n-predict, repeat-penalty, top-p, presence-penalty            <- fleet-constant sampling
 
-LAYERED / DERIVED (FROM a local model name)
-  modelfiles/gemma4/26b-a4b-it-qat-mtp/Modelfile
-      FROM gemma4-26b-a4b-it-qat                                <- inherits weights+mmproj+params
-      DRAFT <snapshot>/mtp-gemma-4-26B-A4B-it.gguf              <- separate drafter GGUF
-      PARAMETER draft_num_predict 2
+CANONICAL ENTRY (one [section] per served id; the section name IS the id)
+  [gemma4-26b-a4b-it-qat]
+      model  = <snapshot>/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf  <- weights
+      mmproj = <snapshot>/mmproj-BF16.gguf                        <- vision projector
+      ctx-size / temp / top-k                                     <- profile values, override [*]
 
-  modelfiles/qwen3.6/35b-a3b-mtp-coding-ud-q5-k-xl/Modelfile
-      FROM qwen3.6-35b-a3b-mtp-ud-q5-k-xl                       <- profile layered on MTP base
-      PARAMETER temperature 0.6 ...                              (coding overrides instruct)
+MTP ENTRY (drafting sibling; carries no mmproj - the MTP x vision split)
+  [gemma4-26b-a4b-it-qat-mtp]
+      model-draft = <snapshot>/mtp-gemma-4-26B-A4B-it.gguf        <- separate drafter GGUF
+      spec-type = draft-mtp, spec-draft-n-max = 2
+      spec-draft-ngl = 0                                          <- this entry only: drafter to CPU
 
-THIN ALIASES (one line, repoint-able defaults)
-  modelfiles/qwen3.6/35b-a3b-mtp-coding/Modelfile
-      FROM qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl
+ALIAS (a key on its owning entry, never its own section)
+  [qwen3.6-35b-a3b-mtp-coding]
+      alias = qwen3.6-35b-a3b-coding
 ```
 
-The model name is `<family>-<stem>` from `modelfiles/<family>/<stem>/Modelfile`. `scripts/ollama-create.sh` resolves this graph bottom-up (canonical -> layered -> alias).
+Ids name the entry, never the quant: the quant lives in the `model =` path only.
 
-## 3. The two MTP mechanisms (they are not the same thing)
+- Id grammar, alias policy, and the add-a-model procedure: [llamacpp/README.md](../llamacpp/README.md).
+- The one surviving alias points the unsuffixed coding name at the MTP coding lane.
+- Aliases resolve inside request bodies but never appear as `/v1/models` ids, so point UI pickers at canonical ids.
+  - Each entry carries an `aliases` field, which the claude-local menu reads ([AGENTS.md](../AGENTS.md#claude-local)).
+- The profile a child actually serves is visible at `/props?model=<id>`. The router's own `/props` returns dummies.
+- Guarded GGUFs take `chat-template-file` = the pinned froggeric template in `llamacpp/templates/`.
+
+## 3. The two MTP mechanisms
+
+MTP is multi-token prediction: speculative decoding where the draft tokens come from an MTP head or a separate
+drafter GGUF. Qwen and Gemma implement it differently.
 
 ```text
 QWEN (self-contained)                      GEMMA (target + drafter)
   one GGUF with embedded MTP tensors         main GGUF + mtp-gemma-4-*.gguf (~250MB)
-  Ollama auto-detects, self-drafts           wired via DRAFT directive in the Modelfile
-  PARAMETER draft_num_predict 2              PARAMETER draft_num_predict 2
-  measured: ~1.65x (9B)                      measured: 1.67x (12B), 1.54x (26B)
-
-  BOTH run on Ollama's CUDA runner (0.31.1, vendored llama.cpp b9840).
-  Stock llama.cpp cannot load gemma4-assistant drafters (#24795, open)
-  -> Ollama is currently the ONLY working CUDA path for Gemma MTP.
+  spec-type = draft-mtp                      spec-type = draft-mtp + explicit model-draft
+  spec-draft-n-max = 2                       spec-draft-n-max = 2
 ```
+
+- Gemma has no auto-discovery: without `model-draft` the child exits with `failed to create MTP context`.
+- Speedups measured on the retired Ollama stack, not on this one (docs/benchmarking.md): ~1.65x (9B self-draft),
+  1.67x (12B pair), 1.54x (26B pair).
+  - Stock b9860 served the Gemma pair at ~1.8x in the 2026-07-17 eval (graphs on, moderate ctx).
+
+Both families now run as router children on stock llama.cpp, with CUDA graphs on fleet-wide.
+
+- #24795 is caused by configuration, not by the build: graphs off reproduces the Gemma drafter load failure,
+  and graphs on serves it.
+- Never set `GGML_CUDA_DISABLE_GRAPHS`: it tests presence only, so even `=0` disables graphs (`common.cuh:1258`).
+- Phase 1 (2026-08-03): 36/36 generations across the 12B ctx ladder, 30/30 on the Qwen hammer, 0 crashes.
+- The 26B-A4B entry is the exception: its drafter is pinned to CPU (`spec-draft-ngl = 0`, 241 MiB).
+  - A full GPU reports free=0 -> NaN layer split -> `devices.at(1)` throws (`llama-model.cpp:1291` at b9860-era
+    source; the line moves across builds).
+  - Upstream #19973 derived that mechanism and closed unfixed. There is no fix on master, so a rebuild would not help.
+- Per-request MTP acceptance and tok/s show up in the router log's `timings` lines (26B pair 0.62-0.74 at Phase 1).
 
 ## 4. Serving layer and its clients
 
 ```text
-                    systemd: ollama.service (the one intentional daemon)
-                    env: KEEP_ALIVE=24h, FLASH_ATTENTION=1, KV_CACHE_TYPE=q8_0
-                    (FA=1 + q8_0 must stay PAIRED: quantized V-cache fails load without FA)
-                    (NUM_PARALLEL/CONTEXT_LENGTH removed = defaults; harmless because
-                     every Modelfile pins num_ctx, which outranks the env)
-                                   127.0.0.1:11434
+              llamacpp/launch.sh -> llama-server --models-preset llamacpp/models.ini
+              user-mode, detached (setsid nohup) - NO daemon, no systemd unit
+              --models-max 1               one resident child owns the whole 12 GiB GPU; LRU evicts
+              --sleep-idle-seconds 86400   24 h idle, then the child sleeps
+              LLAMA_CACHE -> an empty dir, so models.ini is the entire served fleet
+                                   127.0.0.1:11433
                                         |
-        +-------------------------------+-------------------------------+
-        |                               |                               |
-   native /api/*                   OpenAI /v1/*                  Anthropic /v1/messages
-        |                               |                               |
-        v                               v                               v
-   OPEN WEBUI  ------uses this     [DISABLED in webui]            CLAUDE-LOCAL
-   on-demand: `openwebui`          reason: /v1 injects            `ollama launch claude`
-   (no service; Ctrl+C stops)      temp=1.0/top_p=1.0 when        models must pass the
-   DATA_DIR=~/.open-webui          omitted, silently overriding   multi-system-message
-   config lives in webui.db        Modelfile sampling; native     template gate
-   (Admin UI, not env)             endpoint doesn't
-   Brave search: engine+key
-   in DB, live-tested OK
+        +----------------+--------------+--------------------+------------------------+
+        |                |                                   |                        |
+   OpenAI /v1/*     OpenAI /v1/*                    Anthropic /v1/messages    Responses /v1/responses
+        |                |                                   |                        |
+        v                v                                   v                        v
+   OPEN WEBUI       OPENCODE 1.16.2                     CLAUDE-LOCAL              CODEX 0.145.0
+   0.11.0 on 8080   openai-compatible                   synced script ->          llamacpp-router
+   OpenAI conn ->   provider, 13 ids                    lane picked per session   provider, 13 ids
+   11433/v1         per-model ctx limits                vendored web-search MCP   fresh threads only
+   Ollama conn      no websearch tool                   --disallowedTools=        namespace/web_search
+   disabled         exists in this build                WebSearch                 tools DROPPED at 200
 ```
 
-No inbound auth anywhere: `OLLAMA_API_KEY` on the server is client-side only (verified - endpoints answer 200 unauthenticated), everything binds to 127.0.0.1.
+The launcher reads no env vars of its own: pass flags to `launch.sh`, and the last value given takes effect.
 
-## 5. Disk reality (the lesson baked into the design)
+- llama-server itself reads `LLAMA_ARG_*` env vars and applies them (`common/arg.cpp` `.set_env`), so keep them unset.
+- Every client was cut over and validated against the router on 11433.
+  - claude-local, OpenCode, and Codex on 2026-08-04; Open WebUI on 2026-08-07.
+
+The retired Ollama stack's service env carried `KEEP_ALIVE=24h`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`.
+
+- All three now live in the router: `--sleep-idle-seconds 86400` and the `[*]` `flash-attn` / `cache-type-*` keys.
+- The FA + q8_0 pairing rule carried over unchanged; the mandate is in AGENTS.md, the decision in parameters.md.
+
+### CSRF surface
+
+The loopback bind (127.0.0.1) is the actual boundary: this is a same-host threat model, not a remote one.
+This analysis is defined here, and other files (including `launch.sh`) point to it.
+
+There is no inbound auth anywhere: the router checks nothing, and it binds 127.0.0.1, as does Open WebUI on 8080.
+`OLLAMA_API_KEY` is client-side only and now lives in `~/.config/claude-local.env` (mode 600) for the search MCP.
+
+Three management endpoints are unauthenticated, and no `--api-key` is set:
+
+- `POST /models`, `POST /models/load`, `POST /models/unload`.
+  - Site: server.cpp:226-228 in the on-disk source; the line moves across builds.
+- An `--api-key` would not close `POST`/`DELETE /models`: `get_public_endpoints` holds `/models` and is tested
+  by path with no method check (server-http.cpp:197, :215), so only `load`/`unload` would end up behind it.
+- They are CORS-simple (no preflight) and `Host` is unvalidated, so a CSRF page or DNS-rebinding attack reaches them.
+- `DELETE /models` needs a CORS preflight to run, and `--cors-origins localhost` won't grant that preflight to an
+  arbitrary page, so it is effectively blocked.
+
+What an attacker gets if one is reached:
+
+- `load`/`unload` churn force-kills an in-flight generation under `--models-max 1`.
+- Worst case is an attacker-triggered download via `POST /models`, and its impact is more than stray bytes.
+  - The download is written to `.cache-empty` and joins the served fleet (cache-sourced models are served).
+  - The now-non-empty cache dir makes the next `launch.sh` refuse to start (fail-closed guard) until cleared by hand.
+  - The bytes grow the never-shrinking vhdx (bulk downloads have crashed the host twice - AGENTS.md, disk budget).
+- `launch.sh` scrubs both secrets from the child env (`env -u`), for two different reasons.
+  - Dropping `HF_TOKEN` caps a triggered download at public repos.
+  - Dropping `OLLAMA_API_KEY` (which llama-server never reads) keeps the MCP client credential out of the
+    server's inherited env.
+
+### Per-client notes
+
+- claude-local picks a lane per session and exports `ANTHROPIC_BASE_URL` + the model vars.
+  - Full spec: [AGENTS.md](../AGENTS.md#claude-local).
+  - It execs `claude` with all three flags (`--settings`, `--disallowedTools`, `--mcp-config`) in `=VALUE` form,
+    because the space form consumes `"$@"` as the flag's value and puts it in the deny list.
+  - Its MCP is the vendored web-search script (`llamacpp/mcp/`), run via pipx on an `mcp>=1.9,<2` pin.
+    - Search rides Ollama's hosted cloud API; the swap to Brave is specced (`specs/brave-search-mcp`).
+- Open WebUI: started on demand, no background service, OpenAI connection at 11433 ([openwebui.md](openwebui.md)).
+- Codex: llama-server silently skips Responses tools typed `namespace` or `web_search` and still returns 200.
+  - Codex-side MCP therefore fails invisibly on this stack; plain `function` tools are unaffected.
+- The multi-system-message guard now rejects requests from the OpenAI-endpoint clients, not from `/v1/messages`
+  (see AGENTS.md).
+
+### Runbook
+
+- The log directory has to exist first: `mkdir -p ~/.local/state`.
+- Start: `setsid nohup ~/Developer/ollama-modelfiles/llamacpp/launch.sh > ~/.local/state/llama-router.log 2>&1 &`
+  - Then record the pid: `echo $! > ~/.local/state/llama-router.pid`; confirm it is the listener with
+    `ss -ltnp | grep 11433` (under interactive job control `$!` can be a short-lived `setsid` wrapper).
+- Stop: `kill "$(cat ~/.local/state/llama-router.pid)"` - the children die with it.
+  - Never `pgrep`/`pkill` for it instead: that has twice killed a router someone else started
+    ([AGENTS.md](../AGENTS.md) Serving).
+- Monitor: the `status` field in `/v1/models` (loaded / sleeping / unloaded), the log's `timings` lines, `nvidia-smi`.
+
+## 5. Disk reality
 
 ```text
 Windows F: (1.9TB NTFS) --contains--> ext4.vhdx (WSL2 root; GROWS, never shrinks by itself)
                                           |
      guest `df /` reports the VIRTUAL disk -> always budget against `df /mnt/f` instead
-     bytes exist TWICE by design: HF cache blob (source) + ollama layer (re-serialized copy)
-     current: ollama store 232GB, HF cache 249GB (~89GB is the same bytes both sides)
+     HF cache = the single live source: 199G (du -sh 2026-08-07; the 2026-07-27 cut logged 285G -> 199G)
+     ollama store = retired leftover bytes, freed at the purge: 186G (du -sh 2026-08-07; the spec's
+       232G predates that cut)
      after large in-guest deletions: `wsl --shutdown` + Optimize-VHD (Windows side)
      to return freed space to NTFS
 ```
 
+Bytes used to exist twice by design: the HF blob plus the re-serialized Ollama layer. That duplication is now a
+leftover, not a design choice.
+
 ## 6. Reproducibility / recovery paths
 
-- Rebuild any model: `scripts/ollama-create.sh modelfiles/<family>/<stem>` (source bytes already cached; create dedups by sha256 -> instant re-link).
-- Re-provision from nothing: `hf download` the repos listed in the FROM paths -> same pinned snapshots -> `scripts/ollama-create.sh`.
-- Session state: `specs/<feature>/tasks.md` (resume point per feature), [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md) (full migration evidence log), `.migration-artifacts/` (git-excluded: baselines of the pre-migration store, HF inventories, the preseed/migrate/validate scripts).
+- Bring the serving stack back up (reboot, or after a kill): the runbook start command in section 4. Nothing
+  else is needed.
+- Add or repoint a model: edit `llamacpp/models.ini` per [llamacpp/README.md](../llamacpp/README.md), then restart.
+  - There is no build or import step: the entry points at the cached snapshot, and the child loads it directly.
+- Re-provision from nothing: `hf download` the repos in the `model =` paths -> same pinned snapshots -> `launch.sh`.
+- Session state: `specs/<feature>/tasks.md` is the resume point per feature, backed by the dated logs in `history/`.
+  - `.migration-artifacts/` is git-excluded: pre-migration store baselines, HF inventories, the migration scripts.
+- Rollback: the Ollama store, binaries, and override are retained on disk, so the retired stack can be restored
+  until the store purge.
+  - The repo-side rebuild path went at the 2026-08-12 purge (section 1); git history holds it.
 
-The one architectural caveat to keep in mind: Modelfiles hard-pin absolute snapshot paths, so an `hf download` that pulls a *newer* repo commit creates a new snapshot dir and the Modelfiles keep pointing at the old (still-cached) one - updating a model is a deliberate two-step (download, then update the FROM path), which is the intended pinning behavior, not drift.
+Two pins to keep in mind:
+
+- `models.ini` hard-pins absolute snapshot paths, so an `hf download` of a newer repo commit writes a *new*
+  snapshot directory.
+  - The preset keeps serving the old, still-cached one until the path is edited - a deliberate two-step, not drift.
+- `launch.sh` records the on-disk build and its re-cert state. That is a record, not an assertion.
+  - The version abort was removed 2026-08-03; rebuilds re-certify per the migration spec's rebuild rule.

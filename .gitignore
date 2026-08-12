@@ -94,7 +94,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Benchmark outputs
+# Historical benchmark outputs; the suites were removed at the 2026-08-12 purge
 benchmark-results/
 
 # Ruff
@@ -133,13 +133,15 @@ venv.bak/
 # =============================================================================
 
 # Visual Studio Code (from Global/VisualStudioCode.gitignore)
+# .vscode/settings.json is synced (repo-wide editor config); *.code-workspace
+# is machine-local (per-user settings, e.g. a personal conda env manager).
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/*.code-snippets
-!*.code-workspace
+*.code-workspace
 *.vsix
 
 # JetBrains — PyCharm, IntelliJ, Rider, etc. (from Global/JetBrains.gitignore)
@@ -213,14 +215,13 @@ flycheck_*.el
 *.~undo-tree~
 
 # =============================================================================
-# Ollama
+# Models / migration leftovers
 # =============================================================================
 
-# Local model copies / downloads (models live in ~/.ollama/models or $OLLAMA_MODELS)
-ollama-models/
+# GGUFs live in the HF cache, never in the repo
 *.gguf
 
-# Migration working data (baselines, HF inventories, helper scripts) — machine-local
+# Ollama-migration working data (baselines, inventories) - machine-local
 .migration-artifacts/
 
 # =============================================================================
@@ -375,3 +376,14 @@ cscope.po.out
 # =============================================================================
 
 .svn/
+
+# Claude Code local state. settings.json is deliberately ignored: it carries
+# only plugin/runtime state here. Local settings and worktrees are per-machine.
+.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
+
+# Empty dir launch.sh points LLAMA_CACHE at. Stays ignored: launch.sh fails
+# closed if it is non-empty (the real control), and downloaded blobs have
+# bare-hex names that the *.gguf ignore above would not catch.
+llamacpp/.cache-empty/

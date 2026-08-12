@@ -1,29 +1,71 @@
 # Open WebUI
 
-Open WebUI is the browser chat frontend for the local Ollama stack. Setup and the non-obvious config semantics are captured here; the migration evidence log is [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md).
+Open WebUI is the browser chat frontend, now wired to the llama-server router (11433), not Ollama.
+
+Evidence logs:
+
+- [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md) - historical.
+- [history/2026-08-07-llamacpp-p3-cutovers.md](history/2026-08-07-llamacpp-p3-cutovers.md) - the router cutover.
 
 ## Install and launch
 
-- Installed via `pipx`, version 0.10.2.
-- No background service (user preference). The launcher `~/.local/bin/openwebui` runs it on demand, in the foreground; Ctrl+C stops it.
-- `DATA_DIR=~/.open-webui` is pinned in the launcher. This is load-bearing: the pipx-venv default `DATA_DIR` lives *inside* the venv and is destroyed by `pipx upgrade` (verified in `env.py` source). That trap already ate one install - the admin account plus 7 chats were recovered out of the venv-internal `webui.db` via an sqlite backup into `~/.open-webui`.
+- Installed via `pipx`, version 0.11.0 (upgraded from 0.10.2; `webui.db.bak-pre-0.11.0` backup taken first).
+  - First 0.11.0 start ran 9 alembic migrations + 13 seeded config defaults; settings and the Brave key survived.
+- No background service (user preference).
+  - The launcher `~/.local/bin/openwebui` runs it on demand, in the foreground; Ctrl+C stops it.
+- `DATA_DIR=~/.open-webui` is pinned in the launcher. Do not remove the pin:
+  - The pipx-venv default `DATA_DIR` lives *inside* the venv and is destroyed by `pipx upgrade` (per `env.py`).
+  - That default already destroyed one install - the admin account plus 7 chats were recovered via an sqlite backup.
 
-## Config lives in the DB, not env
+## Settings live in the DB, not env
 
-- All settings live in `webui.db` (SQLite under `DATA_DIR`), edited through the Admin UI at <http://127.0.0.1:8080>.
-- Environment variables only *seed* the DB on first launch and are then ignored ("PersistentConfig" semantics). To change a setting later, use the Admin UI, not env.
-- Verified DB state: `ollama.base_urls=[http://127.0.0.1:11434]`, `web.search.engine=brave`, `web.search.enable=true`, `openai.enable=false`.
+- All settings live in `webui.db` (SQLite under `DATA_DIR`), edited through the Admin UI at 127.0.0.1:8080.
+- Env vars only *seed* the DB on first launch and are then ignored ("PersistentConfig" semantics).
+  - To change a setting later, use the Admin UI, not env.
+- Verified DB state (2026-08-07): OpenAI connection to `http://127.0.0.1:11433/v1`; Ollama connection disabled.
+  - Connection is external, bearer auth with a dummy key, no model filter, no passthrough params.
+- The picker shows the canonical router ids plus Open WebUI's own built-in "Arena Model".
+  - The count is the header total in `llamacpp/models.ini:1`.
 
-## Ollama connection: native, not OpenAI-compat
+## Connection: OpenAI-compat at 11433, not native Ollama (inverted from the old guidance)
 
-- Connect to Ollama over the native connection at `http://127.0.0.1:11434`, not the OpenAI-compatible `/v1` endpoint.
-- Reason: ollama's `/v1` injects `temperature=1.0` / `top_p=1.0` when the client omits them, silently overriding the Modelfile's own sampling (verified in `openai.go` at v0.31.1). The native connection type passes nothing it is not given, so the Modelfile parameters stand.
+- Connect over the OpenAI connection to `http://127.0.0.1:11433/v1`, the router's OpenAI-compatible endpoint.
+- `open_webui/utils/payload.py:70` applies only non-None params, so sampling stays neutral at the source.
+  - Unset chat params never enter the request body, and the router's launch-time profiles govern instead.
+- The old native-Ollama-only rule guarded an Ollama `/v1` shim behavior that no longer applies; see the logs.
+
+## Recommended connection settings
+
+- `connection_type`: external.
+  - Sole behavioral effect: which admin task-model setting is used, local vs. external (`utils/task.py:20`).
+- `api_type`: Chat Completions, not Responses.
+  - Responses loses tok/s display: `stream_options` is popped at `openai.py:1113`.
+  - llama-server's Responses stream carries no timings, and it silently drops `web_search`/namespace tools.
+  - Revisit at component updates: the Responses migration is a stack-upkeep watch item (`specs/stack-upkeep/spec.md`).
+- Provider: llama.cpp.
+  - Prior-turn reasoning goes back as `reasoning_content`, which chat templates strip from history (standard).
+  - Also unlocks the Loaded badge and the admin Eject action via the router's `/models/unload`.
+- Auth: the connection's API-key field requires a value, so a dummy bearer key is set; no model filter.
+
+## Metrics (tok/s)
+
+- llama-server attaches a `timings` object to the final streamed chunk.
+- Open WebUI merges it into `message.usage` unconditionally.
+  - The info icon (hover a finished response) shows that dict, including `predicted_per_second`.
+- Enabling a model's "Usage" capability (workspace model settings) adds OpenAI-style token counts.
+  - Not required for tok/s to show.
 
 ## Web search (Brave)
 
-- Engine set to `brave` with the API key stored in `webui.db` (Admin Panel > Settings > Web Search). The key came over with the recovered DB and was live-tested (HTTP 200 against `api.search.brave.com`).
+- A platform per-chat toggle (integrations menu near the message input), not a model tool.
+  - Engine `brave`, API key stored in `webui.db`.
+- Open WebUI runs the search itself and injects the results.
+  - In tool mode the model additionally sees a `search_web` tool in its inventory.
+- Verified end-to-end 2026-08-07 on two models (one 5-source chat, one 10-source chat).
 
-## Auth reality
+## Per-chat Advanced Params
 
-- No inbound auth anywhere; everything binds to localhost.
-- `OLLAMA_API_KEY` on the server is a client-side variable only (used by `ollama launch`/cloud). It does *not* gate inbound requests - `/api/tags` and `/v1/models` answer 200 unauthenticated on-box - so Open WebUI needs no bearer key to reach Ollama.
+- Controls > Advanced Params: rows tagged `(Ollama)` are dead on this connection.
+  - Untagged rows reach the router only when explicitly set.
+- A per-chat `repeat_penalty` ~1.05 is the fallback if a model falls into a repetition loop.
+  - The fleet profiles deliberately carry no repeat penalty.

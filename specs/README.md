@@ -1,6 +1,12 @@
 # Specs
 
-Spec-driven work bundles. Each `<feature>/` holds `spec.md` (its Acceptance defines done) and `tasks.md` (the resume point), plus `plan.md` when the work needs one. The run-spec skill executes a bundle end to end.
+Spec-driven work bundles, executed end to end by the run-spec skill. Each `<feature>/` directory holds:
+
+- `spec.md` - its Acceptance section defines done.
+- `tasks.md` - the resume point.
+- `plan.md` - present when the work needs one.
+
+The work order lives in `ROADMAP.md`, next to this file.
 
 ## Status is the folder
 
@@ -10,15 +16,10 @@ Spec-driven work bundles. Each `<feature>/` holds `spec.md` (its Acceptance defi
 
 ## Reference convention
 
-- Refer to a spec by name; this file maps a name to its location.
-- Inside a bundle, use plain-text or backtick paths, not `](relative)` links, so the bundle can move to `done/` without rewriting links.
+- Refer to a spec by name; the name is its directory (`specs/<name>/`, or `specs/done/<name>/` once done).
+- Inside a bundle, use plain-text or backtick paths, not `](relative)` links.
+  - A bundle can then move to `done/` without rewriting links.
 
-## In-flight sequence
+## Scaffold shape
 
-Order follows the dependencies; work top-down (stack-upkeep is planned early, run late - see step 4).
-
-1. **llamacpp-migration** - the spine: retire Ollama, serve from stock llama-server. Fill plan.md first. Consumes chat-template-refresh (done 2026-07-23).
-2. **bonsai-27b** - add the model to the llama.cpp lane. Blocked until step 1 builds the lane and its config home; also has an upstream gate (tracked in the bundle).
-3. **openwebui-wrapup** - end-to-end Open WebUI pass. Runs after step 1 rewires Open WebUI to llama-server, so the final config is validated once.
-4. **stack-upkeep** - version tracking and per-component checks. The chat-template vetting check is already filed in its planning items; run as a recurring cadence.
-5. **copilot-byok** - VS Code Copilot on the llama-server lane (BYOK Custom Endpoint); runs any time after step 1.
+Short `##` sections (goal / decisions / done-when), one idea per bullet, ~15-30 lines total.

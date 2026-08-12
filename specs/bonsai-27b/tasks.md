@@ -1,38 +1,43 @@
 # Tasks: Bonsai-27B onboarding
 
-Status legend: [ ] pending, [x] done. This file is the resume point for the feature; update as phases land.
+Status legend: [ ] pending, [x] done. This file is the resume point for the feature; update as phases complete.
 
-DRAFT 2026-07-17 - not started. Blocked on `specs/llamacpp-migration` (the serving lane + config home; `specs/done/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict). Ternary is the end state; 1-bit is the interim lane. Spec review pending: the three decisions in spec.md.
+DRAFT 2026-07-17, reworked 2026-08-03 (ternary first-class) - not started.
 
-## Phase 0 - gate check + re-verify
+Runs after `specs/llamacpp-migration` closes; the serving stack and config home already exist.
 
-- [ ] Serving-config home known (from `specs/llamacpp-migration`). llamacpp-serving verdict has landed (B).
-- [ ] #25707 status re-checked (api.github.com); rebuild plan if merged (incl. Gemma MTP load re-check).
-- [ ] Spec review: ternary-path / sampling-profile / role decisions recorded here.
-- [ ] Ternary-path decision covers serving: "build the PrismML fork" => llama-swap adopted before Phase 1.
+Spec review pending: the two remaining decisions in spec.md (sampling profile, intended role).
 
-## Phase 1 - 1-bit lane
+## Phase 0 - prerequisites + decisions
 
-- [ ] Download + pin `Q1_0`, dspark Q4_1, mmproj Q8_0 (~6.2 GB; check `/mnt/f` before/after).
-- [ ] Template vet: multi-system `/v1/chat/completions` probe recorded.
-- [ ] llama-server launch from pinned path; `/props` matches profile; coding smoke.
-- [ ] Q1_0 served through the router preset (first ternary-family GGUF through the router; one-gen smoke).
+- [x] #25707 (fast group-64 ternary CUDA) merged upstream 2026-07-30.
+  - Checked 2026-08-03; the fork option and its llama-swap contingency retired with it.
+- [x] Build prerequisite met: on-disk b10335 contains #25707 and passed certification 2026-08-10.
+  - [ ] At pickup: confirm the build record (`llamacpp/launch.sh`) has not moved; else the rebuild rule applies.
+- [ ] Spec review: sampling-profile and role decisions recorded here.
 
-## Phase 2 - bench (1-bit)
+## Phase 1 - ternary lane
 
-- [ ] Parity rows `bonsai27b-q1` / `bonsai27b-q1-dspark` vs `qwen3.6-27b-coding-ud-q4-k-xl`.
-- [ ] DSpark A/B (tok/s delta + acceptance); adopt only on a win.
-- [ ] VRAM/ctx envelope on the 4070.
+- [ ] Download + pin `Q2_g64`, DSpark Q4_1, mmproj Q8_0 (~10.2 GB; check `/mnt/f` before/after).
+- [ ] Template vet per the AGENTS.md gate; result recorded in `llamacpp/README.md`.
+- [ ] llama-server launch from the pinned path; `/props` matches the profile; coding smoke.
+- [ ] Served through the router preset (first ternary-family GGUF through the router; one-gen smoke).
+
+## Phase 2 - bench (ternary)
+
+- [ ] A/B rows `bonsai27b-q2g64` / `bonsai27b-q2g64-dspark` vs `qwen3.6-27b-coding` (retired parity suite's shape).
+- [ ] DSpark A/B (tok/s delta + acceptance rate); adopt only on a win.
+- [ ] VRAM/ctx envelope + long-context ceiling on the 4070.
 - [ ] (optional) mmproj vision smoke.
 
-## Phase 3 - ternary (end state)
+## Phase 3 - 1-bit comparison
 
-- [ ] Ternary gate cleared (upstream merge + rebuild, or fork decision executed).
-- [ ] Phases 1-2 repeated on `Q2_g64` (or fork format).
-- [ ] Three-way comparison + long-context ceiling + serving-role verdict.
+- [ ] Download + pin `Q1_0` + DSpark Q4_1 (~5.6 GB; no second mmproj).
+- [ ] Served far enough to bench: template vet + `/props`; A/B rows `bonsai27b-q1` / `bonsai27b-q1-dspark`.
+- [ ] Three-way comparison + serving-role verdict; the winner added as a preset entry.
 
 ## Phase 4 - document
 
 - [ ] docs/parameters.md Bonsai-27B profile section.
-- [ ] docs/benchmarking.md findings + watch items (#25707, #13668).
+- [ ] docs/benchmarking.md findings + watch items (#25707 resolved, ollama#13668 watched).
 - [ ] research.md resolution notes appended.
