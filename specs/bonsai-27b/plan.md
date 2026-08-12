@@ -1,56 +1,55 @@
 # Plan: Bonsai-27B onboarding
 
-Not started; runs after `specs/llamacpp-migration` closes (the serving stack it joins already exists).
-Ternary is first-class (decision 2026-08-03); 1-bit is a bench comparison only.
-Re-verify research.md facts at pickup; they were recorded 2026-07/08.
+Not started. Pre-flight review 2026-08-12; its decisions are in spec.md, its evidence in research.md.
 `Verify:` marks the check that closes the step above it.
 
 Terms:
 
-- #25707 - llama.cpp PR adding fast CUDA kernels for group-64 ternary quants; merged upstream 2026-07-30.
-- b10326, b10335, ... - llama.cpp build numbers; the served build record lives in `llamacpp/launch.sh`.
-- DSpark - PrismML's separate speculative-decoding drafter GGUF (a classic `-md` drafter, not embedded MTP).
 - `Q2_g64` (ternary) and `Q1_0` (1-bit) - the two Bonsai GGUF variants under test.
+- Residency ceiling - the largest `ctx-size` at which the model stays on the card without offloading.
 
-## Phase 0 - prerequisites + decisions
+## Phase 0 - prerequisites
 
-- Confirm the build record is at or past b10335.
-  - Verify: `llamacpp/launch.sh` header; b10335 contains #25707 and passed certification 2026-08-10.
-  - If the record moved since: the migration spec's rebuild rule applies (crash matrix, froggeric pair,
-    and the Gemma MTP load re-check that the 2026-07-17 eval's verdict item 5 defines).
-- Record the two open decisions in tasks.md: sampling profile (vendor card vs the qwen3.6 coding profile)
-  and intended role.
+- Confirm the build record still matches the on-disk binary.
+  - Verify: `llamacpp/launch.sh` header against `llama-server --version`. A moved record triggers the rebuild rule.
+- Confirm the GPU core clock offset is at or below +120 MHz.
+  - Verify: owner statement. WSL cannot read it, and every quoted number depends on it.
+- Rule on the served ids (spec.md).
 
 ## Phase 1 - ternary lane
 
-- `hf download prism-ml/Ternary-Bonsai-27B-gguf`: `Q2_g64` (7.59 GB), DSpark Q4_1 (1.95 GB), mmproj Q8_0 (0.63 GB).
-  - Pin the snapshot path per AGENTS.md sourcing.
-  - Verify: `df -h /mnt/f` before/after, ~10.2 GB delta.
-- Template vet per the AGENTS.md chat-template gate.
-  - Verify: probe result matched by the guard's message text (never HTTP status); recorded in `llamacpp/README.md`.
-- Launch under llama-server from the pinned path with the decided profile as flags.
+- Download `Q2_g64` (7,585,330,240 B) and mmproj `Q8_0` (629,246,880 B); pin the snapshot paths.
+  - `Q2_g64` only: `Q2_0` fails on stock with `invalid ggml type 142`, and `PQ2_0` is vendor-marked "do not use yet".
+  - Verify: `df -h /mnt/f` before and after, 8.21 GB delta.
+- Template vet per the AGENTS.md gate, with a positive control added to step 1.
+  - The guard is known present, so a zero hit means the 30 MB window was too small, not that it is unguarded.
+  - Verify: matched by the guard's message text, never the HTTP status; recorded in `llamacpp/README.md`.
+- Measure the residency ceiling before writing the entry.
+  - Predicted near 100K; 200000 and 262144 are over the card (arithmetic in research.md).
+  - Verify: `nvidia-smi` at all three capture points (docs/benchmarking.md).
+- Decide role and `ctx-size` from that measurement, then write the preset entry.
   - Verify: `/props` matches the profile; one coding smoke returns coherent output with timings.
-- Serve through the router preset (the first ternary-family GGUF through the router).
+- Serve through the router preset.
   - Verify: one-gen smoke under the preset name.
+- Record any repetition loops or malformed tool calls.
+  - DRY sampling is the mitigation; `repeat_penalty` stays 1.0.
 
 ## Phase 2 - bench (ternary)
 
-- A/B rows: `bonsai27b-q2g64` and `bonsai27b-q2g64-dspark` vs `qwen3.6-27b-coding` (same base model).
-  - The retired parity suite (git history) is the shape to follow; harness details are the runner's call.
-  - Verify: warmup + repetitions recorded, not a single-run smoke.
-- DSpark A/B: `-md` on vs off.
-  - Verify: decode tok/s delta and acceptance rate recorded; adopt only on a win.
-- VRAM/ctx envelope on the 4070: resident long-ctx ceiling under the fleet's q8_0 KV cache.
-  - Community figure to test: 13.7 GiB resident at 100K ctx.
-  - Verify: `nvidia-smi` figures per the benchmarking.md resource-capture procedure.
-- Optional: mmproj load + one vision smoke.
+- `llama-bench`: ternary vs `qwen3.6-27b-coding` (same base model) across a ctx ladder.
+  - Verify: warmup plus repetitions recorded, not a single-run smoke.
+- Sampling arms: coding, reasoning, instruct, and the vendor card.
+- Serve-path checks are the runner's call: `llama-bench` exercises neither the router nor the chat template.
+- Optional: mmproj load plus one vision smoke.
 
 ## Phase 3 - 1-bit comparison
 
-- `hf download prism-ml/Bonsai-27B-gguf`: `Q1_0` (3.8 GB), DSpark Q4_1 (1.79 GB); ~5.6 GB, no second mmproj.
-  - Pin the snapshot path; verify the `/mnt/f` delta.
-- Serve far enough to bench: template vet + `/props` check on the decided profile.
-- A/B rows: `bonsai27b-q1` and `bonsai27b-q1-dspark`.
+- Download `Q1_0` (3,803,452,480 B); pin the path. No second mmproj.
+  - Verify: `/mnt/f` delta 3.80 GB.
+- Confirm the 1-bit path generates correct output, not just that it loads.
+  - The vendor card still says to clone the fork, and no upstream report settles this either way.
+  - Verify: greedy output diffed against a known-good reference.
+- Template vet plus a `/props` check on the decided profile.
 - Three-way comparison: ternary vs 1-bit vs `qwen3.6-27b-coding` - throughput, VRAM, spot quality.
   - The vendor quality-retained deltas (94.6% vs 89.5%) are the hypothesis under test.
 - Write the serving-role verdict; add the winner as a `llamacpp/models.ini` entry.
@@ -58,12 +57,16 @@ Terms:
 ## Phase 4 - document
 
 - docs/parameters.md: Bonsai-27B profile section (values, source URLs, the repeat_penalty stance).
-- docs/benchmarking.md: distilled findings; watch items (#25707 resolved, ollama#13668 watched).
+- docs/benchmarking.md: findings, the measured ceiling, the first 4070 numbers.
 - research.md: append a dated resolution note per blocked fact.
 
 ## Risks / notes
 
-- Vendor quality and speed numbers are unbenched marketing until Phase 2/3; do not promote the model on them.
-- DSpark can be a net slowdown (-37% on a DGX Spark community bench); treat it as an experiment, not a default.
-- VRAM contention while benchmarking: keep the router's resident child idle; the card and host RAM are
-  still shared with Windows (AGENTS.md resource-capture rule applies to every quoted run).
+- Vendor quality and speed numbers stay unbenched marketing until Phase 2/3.
+- An oversized `ctx-size` fails silently: nothing auto-shrinks on OOM, so the entry partial-offloads instead.
+- A resident router child holds the card for 24 h (`--models-max 1`, `--sleep-idle-seconds 86400`), and idling it
+  does not release the memory.
+  - Either stop the router for bench runs, or accept `POST /models/unload` and its known orphan race.
+- The card and host RAM are shared with Windows, so resource capture applies to every quoted run.
+- Worth one smoke test: long context plus request cancellation. The vendor fork has an open CUDA-fault report on
+  the same MMQ path these quant types use; unconfirmed on stock.
