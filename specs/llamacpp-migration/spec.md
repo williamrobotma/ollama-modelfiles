@@ -101,6 +101,9 @@ Decided at the first execution session's review; these supersede the specific lo
     - Amended 2026-08-08: the q6 trio replaced the 35B q5 trio -> 17 configs + 8 alias names.
     - Amended 2026-08-08 (reshape): blank-instruct ids, 27B instruct entry, Queen i1 tags -> 18 configs + 8 aliases.
     - Amended 2026-08-09: quants removed from served ids; the alias layer collapses -> 18 configs + 1 alias name.
+    - Amended 2026-08-11 (user): 27B gains a reasoning mode (`qwen3.6-27b-mtp-reasoning`), mirroring the 35B-A3B
+      instruct/coding/reasoning trio, and Queen-27B gains an instruct entry (`qwen3.5-queen-27b`) ->
+      20 configs + 1 alias name. Decision + ctx-policy record: tasks.md.
   - `35b-a3b-coding` alias repoints to `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` and is rebuilt under Ollama.
     - Amended 2026-08-10: superseded by the q6 standard + alias collapse; the surviving alias is
       `qwen3.6-35b-a3b-coding` on the MTP q6 entry (models.ini is current).

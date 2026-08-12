@@ -43,7 +43,7 @@ For research, open-ended reasoning, and exploration.
 | top_k | 64 | |
 | min_p | 0.0 | Repo choice, not a vendor value - see below |
 | repeat_penalty | 1.0 | |
-| num_ctx | 131072-200000 | 256K max; 12B/31B dense run 200000, 26B-A4B runs 131072 |
+| num_ctx | 131072-262144 | 256K max; non-MTP entries serve it full (262144, 2026-08-11). MTP entries stay at their per-entry ceiling: 12B/31B 200000 (highest rung tested by the Phase 1 ladder, not a demonstrated limit); 26B-A4B 131072 (its separate drafter GGUF's actual trained context, a real ceiling) |
 | num_predict | 65536 | |
 | System trigger | `<|think|>` | Activates reasoning; see the engine-scoped mandate above |
 
@@ -62,7 +62,7 @@ For code generation, debugging, and structured technical work.
 | min_p | 0.0 | |
 | presence_penalty | 0.0 | |
 | repeat_penalty | 1.0 | Mandated 1.0 - deviating causes structural garbage in code output |
-| num_ctx | 131072-262144 | 256K max (1M with YaRN); 27B/9B coders 131072, 35B-A3B MTP tiers 200000-262144 |
+| num_ctx | 200000 | 256K max (1M with YaRN); all six `-coding` entries (9B and 27B in both plain and MTP form, Queen-27B, 35B-A3B MTP) serve 200000 |
 | num_predict | 65536 | |
 
 The Qwen 3.5 9B coders reuse this exact precise-coding profile (verified identical to 3.6).
@@ -79,6 +79,9 @@ For non-coding use with thinking mode on.
 | min_p | 0.0 |
 | presence_penalty | 0.0 |
 | repeat_penalty | 1.0 |
+| num_ctx | 262144 |
+
+Full 256K max; every `-reasoning` entry serves it uncapped.
 
 `presence_penalty` here is contested and the divergence is per-model, not a stale value.
 
@@ -87,7 +90,8 @@ For non-coding use with thinking mode on.
 - Qwen's own caveat: a higher value reduces repetition but "may occasionally result in language mixing and a slight
   decrease in model performance".
 - Qwen READMEs are self-inconsistent elsewhere too (`Qwen/Qwen3.5-9B` discussion #51, unanswered since April).
-- Pinned `0.0` in `[*]`; the instruct entries `qwen3.6-35b-a3b` + `qwen3.6-27b` override at `1.5`.
+- Pinned `0.0` in `[*]`; the instruct entries `qwen3.6-35b-a3b`, `qwen3.6-27b` + `qwen3.5-queen-27b` override
+  at `1.5`.
 - Only `qwen3.6-35b-a3b-mtp-reasoning` diverges from its own card within this profile.
   - A post-migration A/B against `1.5` on that entry is filed in `specs/llamacpp-migration`.
 
@@ -103,6 +107,10 @@ For direct responses without reasoning traces.
 | min_p | 0.0 |
 | presence_penalty | 1.5 |
 | repeat_penalty | 1.0 |
+| num_ctx | 262144 |
+
+Full 256K max; all three instruct entries (`qwen3.6-27b`, `qwen3.6-35b-a3b`, `qwen3.5-queen-27b`) serve it
+uncapped.
 
 Serve this profile with `--reasoning off` at launch (`-rea off`; INI key `reasoning = off`).
 That flag is what makes it non-thinking on llama.cpp.

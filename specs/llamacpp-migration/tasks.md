@@ -455,3 +455,73 @@ Archived files excluded (docs/history/, frozen modelfiles/, the sha-pinned vendo
   - 4 flags rejected: plan-era counts and defined terms stay as recorded (detail in the PR closure comment)
 - Declared: web-search-mcp.py docstrings stay upstream-verbatim (mcp/README.md "do not reformat"; sha-recorded)
 - Verified: rumdl clean, links + anchors resolve, token net vs 683d8f9 all-deliberate, full diff hand-read
+
+### 27B reasoning-mode parity + fleet ctx-cap sweep - 2026-08-11
+
+Decided 2026-08-11 (user): 27B gains a reasoning mode mirroring the 35B-A3B instruct/coding/reasoning trio.
+
+- Added `[qwen3.6-27b-mtp-reasoning]`: same self-contained MTP GGUF as `qwen3.6-27b-mtp-coding`
+  (no new chat-template vetting needed - already a documented `merged_system` carrier, llamacpp/README.md)
+- Decided 2026-08-11 (user): ctx-size 262144, mirroring `qwen3.6-35b-a3b-mtp-reasoning` exactly, not 27B's
+  prior 131072 sibling convention
+  - GGUF-metadata-verified first: every Qwen GGUF in the fleet (9B, Queen-27B, 27B, 27B-MTP, 35B-A3B,
+    35B-A3B-MTP, both main and MTP-drafter files) reports `context_length = 262144` natively - Qwen MTP is
+    self-contained (no separate drafter file), so there is no drafter-training-context ceiling to respect
+  - The 2026-08-08 `merged_system` exposure inventory (5 GGUFs / 7 entries, line 304 above) gains a member:
+    `Qwen3.6-27B-MTP` now backs two entries (mtp-coding + mtp-reasoning) -> 5 GGUFs / 8 entries. The
+    2026-08-08 line stays as-recorded; this is the current count.
+- Widened 2026-08-11 (user, "include queen"): Queen-27B also gains an instruct entry (`qwen3.5-queen-27b`,
+  blank suffix), mirroring `qwen3.6-27b`/`qwen3.6-35b-a3b`'s pattern
+  - Same guarded GGUF as `qwen3.5-queen-27b-coding`/`-reasoning`; no new chat-template vetting needed
+  - Instruct Mode profile per docs/parameters.md: `reasoning = off`, temp 0.7, top-p 0.80, presence-penalty 1.5
+  - ctx-size 262144 (full, instruct policy) - same GGUF, same native 262144 already confirmed
+  - Guarded-entry count (llamacpp/README.md's 2 GGUFs) unaffected; templates/README.md's "N preset entries
+    covered" note moves 3 -> 4 (9B non-MTP + Queen's now-three configs)
+  - Fleet becomes 20 configs + 1 alias name (spec.md/plan.md amendment chains)
+- Decided 2026-08-11 (user, "make sure everything is up to 200k for coding (if possible), full context
+  length otherwise, including reasoning and instruct"): fleet-wide Qwen ctx-cap sweep, since the 131072
+  caps on 9B/27B/Queen-27B were leftover conservative defaults, not tested or trained ceilings
+  - `-coding` entries -> 200000 uniformly: `qwen3.5-9b-coding`, `qwen3.5-9b-mtp-coding`,
+    `qwen3.5-queen-27b-coding`, `qwen3.6-27b-coding`, `qwen3.6-27b-mtp-coding`
+    (`qwen3.6-35b-a3b-mtp-coding` was already 200000; unchanged)
+  - Instruct entry `qwen3.6-27b` -> 262144 (full); `qwen3.6-35b-a3b` was already 262144, unchanged
+  - `qwen3.5-queen-27b-reasoning` and `qwen3.6-35b-a3b-mtp-reasoning` were already 262144, unchanged
+  - This is a config-only edit (no GPU load); AGENTS.md: "Nothing auto-shrinks on OOM; the entry
+    partial-offloads instead" - oversized ctx costs decode speed, not correctness.
+  - docs/parameters.md coding-profile `num_ctx` row updated to 200000; reasoning/instruct tables gained
+    `num_ctx` rows (262144) where they had none
+  - `~/.config/opencode/opencode.jsonc` (user config, outside the repo) swept in the same pass: `limit.context`
+    values matched to the new ctx-size figures, plus a new `qwen3.6-27b-mtp-reasoning` catalog entry
+
+Decided 2026-08-11 (user): Gemma non-MTP entries also bumped to full context; MTP entries stay put.
+
+- Checked each `model-draft` GGUF's own `context_length` (Gemma MTP uses a separate drafter file, unlike
+  Qwen's self-contained MTP): 12B drafter 262144 (no constraint), 26B-A4B and 31B drafters both 131072
+  (real trained ceilings)
+- Non-MTP bumped to 262144 (full, no drafter to constrain them): `gemma4-12b-it-qat`, `gemma4-26b-a4b-it-qat`,
+  `gemma4-26b-a4b-it-heretic`, `gemma4-31b-it-qat`, `gemma4-31b-it-heretic`
+- MTP entries unchanged: `gemma4-12b-it-qat-mtp` and `gemma4-31b-it-qat-mtp` stay at 200000, the Phase 1
+  ladder's highest tested rung - not a demonstrated failure boundary, since nothing above it was ever tried
+  - The 2026-08-10 crash investigation closed on the GPU core-clock offset, not ctx, so it is not evidence
+    against going higher
+  - Left untouched anyway: extending past a tested rung on inference alone is declined; a fresh ladder run
+    would be the way to raise it
+  - `gemma4-26b-a4b-it-qat-mtp` stays at 131072, its drafter's actual trained ceiling
+- docs/parameters.md Gemma table's `num_ctx` row split into non-MTP (262144) vs MTP (per-entry ceiling)
+- Per-entry ctx comments in models.ini corrected to say which sibling each note applies to
+
+Spot-loaded 2026-08-12 (user go, "spot-load"): PASS 13/13 on the router live at b10335.
+
+- Router restarted clean over the reboot-cleared port (launch.sh's live-router refusal did not fire); all
+  20 presets listed at boot, including both new entries
+- One `/v1/chat/completions` generation + one `/props?model=<id>` per changed/new entry; every `n_ctx`,
+  `temperature`, `top_k`, `top_p`, `presence_penalty` matched its profile exactly
+- Covered: `qwen3.5-9b-coding`, `qwen3.5-9b-mtp-coding`, `qwen3.5-queen-27b-coding`, `qwen3.5-queen-27b` (new),
+  `qwen3.6-27b-coding`, `qwen3.6-27b-mtp-coding`, `qwen3.6-27b-mtp-reasoning` (new), `qwen3.6-27b`,
+  `gemma4-12b-it-qat`, `gemma4-26b-a4b-it-qat`, `gemma4-26b-a4b-it-heretic`, `gemma4-31b-it-qat`,
+  `gemma4-31b-it-heretic`
+- Not re-spot-loaded (unchanged by this sweep): `qwen3.5-queen-27b-reasoning`, `qwen3.6-35b-a3b` and its
+  two MTP siblings, and every Gemma MTP entry
+- `ctx-size` pads to a 256 boundary on load (200000 -> 200192), matching the known Phase 2 artifact; the
+  262144-ctx entries loaded at the exact figure (already a 256 multiple)
+- No crashes; router still answering after all 13 loads
