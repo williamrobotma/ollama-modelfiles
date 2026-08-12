@@ -30,9 +30,8 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
               run from ~/Developer/llama.cpp/build/bin/llama-server
               one child llama-server per served id, spawned on demand
 
-   FROZEN LEGACY (not in the serving path)
-              modelfiles/*/*/Modelfile --scripts/ollama-create.sh--> Ollama blob store
-              (/usr/share/ollama/.ollama/models)
+   FROZEN LEGACY (host-disk leftover, freed at the store purge)
+              Ollama blob store (/usr/share/ollama/.ollama/models)
 ```
 
 Key property: `llamacpp/models.ini` is the *only* mapping layer.
@@ -42,10 +41,11 @@ Key property: `llamacpp/models.ini` is the *only* mapping layer.
 
 Ollama was retired as the serving stack on 2026-08-07: no client points at it any more.
 
-- Its store, binaries, and systemd override are retained on disk until the Phase 4 purge (~2-week validation window).
+- The repo-side layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12; git history preserves it.
+- The store, binaries, and systemd override stay on disk until the Phase 4 store purge (~2-week validation window),
+  so the retired stack can still be restored if the validation window turns something up.
 - Service stop/disable and the purge itself are tracked in `specs/llamacpp-migration`, not here.
-- FROZEN LEGACY, used throughout this file, marks something retained on disk but out of the serving path.
-  - It is not live, and it is not to be edited before the purge.
+- FROZEN LEGACY, used in this file, marks those on-disk leftovers: out of the serving path, freed at the store purge.
 
 ## 2. Preset layering (inside the repo)
 
@@ -81,12 +81,8 @@ Ids name the entry, never the quant: the quant lives in the `model =` path only.
 - The profile a child actually serves is visible at `/props?model=<id>`. The router's own `/props` returns dummies.
 - Guarded GGUFs take `chat-template-file` = the pinned froggeric template in `llamacpp/templates/`.
 
-FROZEN LEGACY - the Modelfile graph that used to be this mapping layer (see section 1):
-
-- Three layers via `scripts/ollama-create.sh`: canonical (quant-suffixed stem, full parameter block, absolute
-  `FROM` path) -> layered/derived (`FROM` a local model name, then overrides - e.g. a coding profile on an MTP
-  base, or a `DRAFT` line) -> thin alias (unsuffixed stem, one `FROM <canonical>` line to repoint defaults).
-- Canonical files carried weights plus a second `FROM` for the vision projector, which was silently dropped if omitted.
+The Ollama Modelfile layer that preceded this mapping was removed from the repo 2026-08-12;
+its three-layer scheme survives in git history only.
 
 ## 3. The two MTP mechanisms
 
@@ -146,8 +142,7 @@ The launcher reads no env vars of its own: pass flags to `launch.sh`, and the la
 - Every client was cut over and validated against the router on 11433.
   - claude-local, OpenCode, and Codex on 2026-08-04; Open WebUI on 2026-08-07.
 
-FROZEN LEGACY: the retired Ollama stack's service env carried `KEEP_ALIVE=24h`, `FLASH_ATTENTION=1`,
-`KV_CACHE_TYPE=q8_0`.
+The retired Ollama stack's service env carried `KEEP_ALIVE=24h`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`.
 
 - All three now live in the router: `--sleep-idle-seconds 86400` and the `[*]` `flash-attn` / `cache-type-*` keys.
 - The FA + q8_0 pairing rule carried over unchanged; the mandate is in AGENTS.md, the decision in parameters.md.
@@ -188,7 +183,8 @@ What an attacker gets if one is reached:
   - Full spec: [AGENTS.md](../AGENTS.md#claude-local).
   - It execs `claude` with all three flags (`--settings`, `--disallowedTools`, `--mcp-config`) in `=VALUE` form,
     because the space form consumes `"$@"` as the flag's value and puts it in the deny list.
-  - Its MCP is the official Ollama web-search script, run via pipx on an `mcp>=1.9,<2` pin.
+  - Its MCP is the vendored web-search script (`llamacpp/mcp/`), run via pipx on an `mcp>=1.9,<2` pin.
+    - Search is Ollama's hosted cloud API, not Brave; a Brave-backed swap is specced (`specs/brave-search-mcp`).
 - Open WebUI: started on demand, no background service, OpenAI connection at 11433 ([openwebui.md](openwebui.md)).
 - Codex: llama-server silently skips Responses tools typed `namespace` or `web_search` and still returns 200.
   - Codex-side MCP therefore fails invisibly on this stack; plain `function` tools are unaffected.
@@ -231,10 +227,10 @@ leftover, not a design choice.
 - Re-provision from nothing: `hf download` the repos in the `model =` paths -> same pinned snapshots -> `launch.sh`.
 - Session state: `specs/<feature>/tasks.md` is the resume point per feature, backed by the dated logs in `history/`.
   - `.migration-artifacts/` is git-excluded: pre-migration store baselines, HF inventories, the migration scripts.
-- Rollback: the Ollama store, binaries, and override are retained, so the retired Ollama stack can be restored
-  until the purge.
-  - FROZEN LEGACY rebuild path: `scripts/ollama-create.sh modelfiles/<family>/<stem>` re-created one model.
-    - It reused the already-cached bytes, deduping by sha256 into an instant re-link.
+- Rollback: the Ollama store, binaries, and override are retained on disk, so the retired stack can be restored
+  until the store purge.
+  - The repo-side rebuild path (`scripts/ollama-create.sh` + `modelfiles/`) was removed 2026-08-12; git history
+    holds it if a rollback ever needs it.
 
 Two pins to keep in mind:
 

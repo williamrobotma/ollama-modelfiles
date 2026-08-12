@@ -13,8 +13,8 @@ The detail is defined in the files under `docs/`, and this file points to them.
 - Every served GGUF is a pinned absolute path into the local Hugging Face cache, and the preset lists every
   model kept on disk.
 - Re-provisioning from nothing is `git clone` + `hf download` - no build or import step.
-- Do not edit `modelfiles/`, the retired Ollama build layer, frozen until the Phase 4 purge
-  (`specs/llamacpp-migration`). Its scheme is in [docs/architecture.md](docs/architecture.md) section 2.
+- The retired Ollama layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12; git history
+  preserves it. Only the on-disk store remains, until the purge tracked in `specs/llamacpp-migration`.
 
 ## Models and sourcing
 
@@ -96,22 +96,6 @@ Router discipline (runbook: [docs/architecture.md](docs/architecture.md) section
 - Kill only a PID from your own launch, never pgrep/pkill; trust a readout only after your own instance's
   log says it bound.
 
-## Commands
-
-Benchmarks are dry-run by default - nothing runs without `--execute`:
-
-```bash
-benchmarks/qwen/run.sh            # print the plan
-benchmarks/qwen/run.sh --list     # configured models and prompts
-benchmarks/qwen/run.sh --execute  # run the full matrix.tsv
-benchmarks/all.sh                 # the three Ollama suites; parity runs alone
-```
-
-Suites share ports 11435-11438, so never run two concurrently.
-Mechanics and findings are in [docs/benchmarking.md](docs/benchmarking.md).
-Legacy Ollama builds use `scripts/ollama-create.sh [modelfiles/<family>/<stem>]`; the script's header
-documents its usage.
-
 ## claude-local
 
 **`claude-local` runs Claude Code against the router; this section is its canonical spec.**
@@ -143,10 +127,11 @@ The test: the lane you picked is the model every session role is talking to.
 - [llamacpp/README.md](llamacpp/README.md) - the serving stack: preset layout, id grammar, alias policy,
   which template each entry runs, add-a-model.
 - [llamacpp/templates/README.md](llamacpp/templates/README.md) - vendored chat templates: shas, validated pairs.
-- [llamacpp/mcp/README.md](llamacpp/mcp/README.md) - the vendored web-search MCP claude-local loads.
+- [llamacpp/mcp/README.md](llamacpp/mcp/README.md) - the web-search MCP claude-local loads.
+  - Search is Ollama's hosted cloud API, not Brave; the swap to Brave is specced in `specs/brave-search-mcp`.
 - [docs/architecture.md](docs/architecture.md) - the stack: layering, MTP, serving + clients, disk.
 - [docs/parameters.md](docs/parameters.md) - sampling profiles, mandates, verification sources.
-- [docs/benchmarking.md](docs/benchmarking.md) - suite mechanics, ports, distilled findings.
+- [docs/benchmarking.md](docs/benchmarking.md) - the retired-suite record, resource capture, distilled findings.
 - [docs/openwebui.md](docs/openwebui.md) - Open WebUI setup, and how its settings are stored in the database.
 - [docs/history/index.md](docs/history/index.md) - dated, immutable session evidence logs.
 - `specs/<feature>/` - in-flight work, tasks.md as the resume point; `specs/README.md` is the roadmap.

@@ -94,7 +94,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Benchmark outputs
+# Historical benchmark outputs; the suites were removed at the 2026-08-12 purge
 benchmark-results/
 
 # Ruff
@@ -215,14 +215,13 @@ flycheck_*.el
 *.~undo-tree~
 
 # =============================================================================
-# Ollama
+# Models / migration leftovers
 # =============================================================================
 
-# Local model copies / downloads (models live in ~/.ollama/models or $OLLAMA_MODELS)
-ollama-models/
+# GGUFs live in the HF cache, never in the repo
 *.gguf
 
-# Migration working data (baselines, HF inventories, helper scripts) — machine-local
+# Ollama-migration working data (baselines, inventories) - machine-local
 .migration-artifacts/
 
 # =============================================================================
@@ -384,7 +383,7 @@ cscope.po.out
 .claude/settings.local.json
 .claude/worktrees/
 
-# Empty LLAMA_CACHE redirect target for launch.sh. Kept ignored: launch.sh
-# fails closed on a non-empty dir (the real control), and un-ignoring would
-# make bare-hex blobs commit-eligible while *.gguf still hid the symlinks.
+# Empty dir launch.sh points LLAMA_CACHE at. Stays ignored: launch.sh fails
+# closed if it is non-empty (the real control), and downloaded blobs have
+# bare-hex names that the *.gguf ignore above would not catch.
 llamacpp/.cache-empty/

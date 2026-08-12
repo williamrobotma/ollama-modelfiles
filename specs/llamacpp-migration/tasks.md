@@ -163,15 +163,21 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 ### Open items
 
 - [ ] Validation window (~2 weeks daily use) completed without rollback
-- [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted
-  - [ ] Same pass: mark the Ollama benchmark suites and the AGENTS.md Commands block retired (exact action decided at purge)
-  - Both of those are unrunnable once the binary and store go
+- [ ] Store purge (user-confirmed, after the window ~2026-08-21): `ollama rm` all, uninstall, delete the
+  `/usr/share/ollama` store, `wsl --shutdown` + `Optimize-VHD` host-side
   - Pruned HF snapshots are already gone, deleted at the fleet reduction
 - [ ] Disk numbers and final state recorded in a dated docs/history log
-- [ ] At spec close: prune the spec.md Watch list to still-live issues (entries are as-recorded, not re-checked)
+- [ ] At spec close: move the still-live spec.md Watch issues to `specs/stack-upkeep` (entries are
+  as-recorded, not re-checked)
 
 ### Closed items
 
+- [x] Repo-side purge executed 2026-08-12 (review directive: "eliminate all ollama"; user picked repo-now/disk-later)
+  - `git rm`: `modelfiles/` (every Modelfile), `scripts/` (ollama-create.sh, repro-mtp-graphs.sh),
+    `benchmarks/` (the 3 Ollama suites, llamacpp-parity, common.sh, report.py, all.sh)
+  - `benchmarks/` and `scripts/` went beyond the plan's named purge list because every file in them runs
+    only against the retired stack; git history preserves all of it, `benchmark-results/` keeps raw outputs
+  - Docs swept same pass: README, AGENTS.md, architecture.md, benchmarking.md, pyproject.toml, .gitignore
 - [x] Prerequisites met (claude-local, Open WebUI, OpenCode validated; Codex validated or documented-blocked)
   - Met 2026-08-07: all four cutovers validated (claude-local/OpenCode/Codex 2026-08-04, Open WebUI 2026-08-07)
 - [x] ollama.service stopped + disabled (user runs sudo)

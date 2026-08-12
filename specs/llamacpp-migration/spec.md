@@ -11,8 +11,10 @@ What is settled, after every dated amendment below.
 - **Config home**: the git-tracked top-level `llamacpp/` directory.
 - **Build**: the b9860 pin is superseded - the on-disk build is canonical and is never downgraded (2026-08-08).
 - **Fleet size**: amended repeatedly since the 2026-07-27 reduction; `llamacpp/models.ini:1` carries the count.
-- **Web search**: `WebSearch` is denied in claude-local; search is served by Ollama's web-search MCP.
-- **Ollama**: staged retirement - stop and disable first, purge only after the validation window.
+- **Web search**: `WebSearch` is denied in claude-local; search is served by the Ollama-cloud web-search MCP.
+  - A swap to a Brave-backed MCP is specced (`specs/brave-search-mcp`, 2026-08-12).
+- **Ollama**: retired in stages. Stopped + disabled 2026-08-07; repo-side layer removed 2026-08-12 (record:
+  tasks.md Phase 4); the on-disk store purge waits for the validation window (~2026-08-21).
 
 The sections below record how each decision got here.
 `Amended YYYY-MM-DD:` marks a later change to the item it sits under.
@@ -42,6 +44,8 @@ The sections below record how each decision got here.
   - The purge runs last, blocked until that validation window closes.
   - The purge itself: uninstall, delete the 232G store, retire `modelfiles/` + create script, compact vhdx.
   - Everything Ollama-side stays frozen (not edited, not deleted) until that purge.
+  - Amended 2026-08-12 (review directive): the repo-side retirement ran early - `modelfiles/`, `scripts/`,
+    `benchmarks/` removed. The store purge and vhdx compact still wait for the window.
   - The pending graphs-off systemd fix (docs/benchmarking.md) no longer applies (Ollama no longer serves).
 - **Prune** (skip migration; delete at purge; ~60G HF-cache reclaim):
   - `models--noctrex--Qwopus3.5-9B-Coder-MTP` (15G): orphaned, no Modelfile ever referenced it.
@@ -79,6 +83,8 @@ Evidence log: `docs/history/2026-07-25-llamacpp-preflight.md`. These refine the 
   Qwen; the ctx ladder must run at whichever type the probe selects.
 - **`--mmproj` and MTP are documented incompatible.** Affected GGUFs get two router entries - one MTP, one vision -
   rather than dropping a capability, if the probe confirms the conflict.
+  - Tracked forward (2026-08-12): re-checking this incompatibility and the KV question above per rebuild is
+    filed in `specs/stack-upkeep`.
 
 ## Execution revisions (2026-07-27)
 
@@ -136,7 +142,8 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
 
 ## Steps (plan.md holds the task breakdown)
 
-1. Phase 0 - router smokes on 11433 with a 3-model preset: all three endpoints, per-child `/props`, sleep-idle, models-max.
+1. Phase 0 - router smokes on 11433 with a 3-model preset: all three endpoints, sleep-idle, models-max, and
+   per-child `/props` - llama-server's settings-report endpoint, the check that a child serves its configured flags.
 2. Phase 1 - Gemma MTP ctx probe (ladder above known-stable 16k, crash matrix, graphs ON); Qwen-MTP graphs-on hammer.
 3. Phase 2 - full-fleet preset: 17 configs + 6 aliases, full flags, mmproj, drafters, froggeric on guarded.
    - Since amended: the dated chain is under Execution revisions, and `llamacpp/models.ini` is current.
@@ -153,6 +160,10 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
 - Codex threads start fresh per provider - replayed `web_search_call` history 400s on local backends (codex #24612).
 
 ## Watch
+
+Upstream issues affecting this stack, as-recorded on their check dates (not re-checked since).
+These live only here until spec close; at close, the still-live ones move to `specs/stack-upkeep`
+so monitoring continues after this bundle is archived.
 
 - <https://github.com/ggml-org/llama.cpp/pull/24942> - Gemma MTP fix candidate; open, unreviewed (2026-07-23).
 - <https://github.com/ggml-org/llama.cpp/issues/24795> - open, no fix merged (re-verified 2026-07-23).

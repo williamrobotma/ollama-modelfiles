@@ -1,78 +1,16 @@
 # Benchmarking
 
-Three dry-run-by-default Ollama benchmark suites live under `benchmarks/`.
-They are frozen legacy harnesses targeting the retired Ollama stack, kept on disk for reference.
-llamacpp-parity (below) stays current: it benches stock llama-server, the live serving stack.
-Shared machinery and a report tool live alongside them.
-Headline findings are distilled below with links into the immutable evidence logs in `history/`.
+The benchmark suites targeted the retired Ollama stack and were removed at the 2026-08-12 repo purge.
+Two things stay live here: the resource-capture procedure (mandatory for GPU runs) and the distilled findings.
 
-## Layout
+## Retired suites
 
-```text
-benchmarks/
-  qwen/        run.sh  matrix.tsv  runtime.tsv  prompts/{medium,long}.txt
-  gemma/       run.sh  matrix.tsv  runtime.tsv  prompts/{reasoning,analysis}.txt
-  9b-coders/   run.sh  matrix.tsv  runtime.tsv  prompts/{medium,long}.txt
-  llamacpp-parity/  run.sh  report.py  matrix.tsv  runtime.tsv  prompts/{medium,long}.txt
-  common.sh    shared harness body sourced by each suite's run.sh
-  report.py    post-run report: per-prompt throughput mean/stdev + sanity flags
-  all.sh       runs qwen, gemma, 9b-coders sequentially
-```
+Removed 2026-08-12; git history preserves them, and `benchmark-results/` (gitignored) keeps their raw outputs.
 
-Each Ollama suite's `run.sh` sets its suite name and sources `common.sh`.
-`matrix.tsv` lists the ids to compare.
-`runtime.tsv` defines the runtime arms to compare, graphs-off vs graphs-on (its column for an arm is `profile`).
-
-**llamacpp-parity** is a self-contained cross-engine suite (it does not source `common.sh`):
-
-- It benches the same GGUF on an isolated Ollama serve (graphs-off arm) against stock llama-server,
-  now the live serving stack.
-- `LLAMA_SERVER_BIN` selects the binary (default `~/Developer/llama.cpp/build/bin/llama-server`).
-- Decode tok/s is read per engine: `ollama run --verbose` eval rate (Ollama), response `timings` (llama-server).
-- `matrix.tsv` rows carry the GGUF snapshot path, ctx, sampling flags (per docs/parameters.md), and spec-decode flags.
-- It has its own `report.py` (mean/stdev plus llamacpp-vs-ollama and mtp-vs-plain ratios).
-- Same dry-run-by-default CLI as the other suites.
-- Built for the specs/done/llamacpp-serving option-C eval: [history/2026-07-17-llamacpp-eval.md](history/2026-07-17-llamacpp-eval.md).
-
-## Running
-
-Everything is dry-run by default - nothing runs without `--execute`:
-
-```bash
-benchmarks/<suite>/run.sh            # print the plan and exact commands
-benchmarks/<suite>/run.sh --list     # configured models and prompts
-benchmarks/<suite>/run.sh --execute  # run the full matrix.tsv
-benchmarks/all.sh                    # qwen, gemma, 9b-coders sequentially
-```
-
-Executed runs write raw logs and timing under `benchmark-results/<timestamp>/` (gitignored).
-The three Ollama suites are frozen against the retired Ollama stack.
-Some of their `matrix.tsv` rows reference models deleted at the 2026-07-27 fleet reduction and no longer resolve.
-Each suite's `matrix.tsv` is authoritative.
-
-## Isolated serves and ports
-
-Runtime A/B compares CUDA graphs off vs on via temporary isolated `ollama serve` instances on alternate ports.
-It never mutates systemd mid-run.
-
-Port assignments, all on 127.0.0.1:
-
-- `11434` - the Ollama systemd service's port, untouched by the harness.
-  - Ollama is retired as the serving stack; stop/purge is tracked in specs/llamacpp-migration Phase 4.
-- `11435` - graphs-off arm (`GGML_CUDA_DISABLE_GRAPHS=1`), the prod target under Ollama serving.
-  - Also the llamacpp-parity suite's Ollama side.
-- `11436` - graphs-on arm (`GGML_CUDA_DISABLE_GRAPHS` unset).
-- `11437` - `scripts/repro-mtp-graphs.sh` only.
-- `11438` - llamacpp-parity suite's llama-server side.
-
-The suites share these ports, so **never run two suites concurrently** unless you change the host assignments.
-`all.sh` is sequential and safe.
-For the cleanest results, stop or idle the Ollama systemd service first.
-
-The isolated serves run as the invoking user.
-The harness sets `OLLAMA_MODELS=/usr/share/ollama/.ollama/models` (the systemd `ollama` user's store).
-This lets it see the `ollama create`d models.
-It requires the invoking user to be in the `ollama` group for read access.
+- `benchmarks/{qwen,gemma,9b-coders}` - Ollama runtime A/B: CUDA graphs off vs on, shared `common.sh` harness.
+- `benchmarks/llamacpp-parity` - the same GGUF on Ollama vs stock llama-server (the 2026-07-17 eval below).
+- `benchmarks/report.py` + `all.sh`, `scripts/repro-mtp-graphs.sh` - report tool, sequential runner, crash repro.
+- All were dry-run by default (`--execute` to run) and shared ports 11435-11438, now free.
 
 ## Resource capture (mandatory for crash trials and any GPU run whose numbers get quoted)
 
@@ -119,15 +57,6 @@ Reading the numbers:
     CUDA graphs.
 - Swap pressure matters as much as VRAM: partial-offload models read weights through host RAM, so a host under
   memory pressure changes timings and can starve a run that looked fine on VRAM alone.
-
-## Report tool
-
-```bash
-python3 benchmarks/report.py benchmark-results/<timestamp> ...
-```
-
-Stdlib only (`pyproject.toml` pins `requires-python >= 3.10`).
-Produces per-prompt throughput mean/stdev (graphs-off vs graphs-on) plus coarse output-sanity flags.
 
 ## Findings
 

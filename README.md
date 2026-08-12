@@ -2,7 +2,7 @@
 
 Local LLM serving config for a single 12 GB GPU, organized by model family and use profile.
 The live serving stack is stock llama.cpp in router mode ([llamacpp/](llamacpp/README.md), port 11433).
-The Ollama Modelfiles are the retired legacy build layer, frozen on disk until the post-migration purge.
+The repo name is historical: the Ollama build layer it is named for was retired and removed at the 2026-08-12 purge.
 Every served GGUF is a pinned Hugging Face cache snapshot (`hf download`; mostly [Unsloth](https://unsloth.ai) builds).
 Agents should read [AGENTS.md](AGENTS.md) first.
 
@@ -72,14 +72,21 @@ Canonical Unsloth models use an Unsloth Dynamic ("UD-") quant, which is not stan
 Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) are defined in
 [docs/parameters.md](docs/parameters.md).
 
+## Web search
+
+Local models have no web access of their own; `claude-local` sessions get it from one MCP server.
+
+- The server: `llamacpp/mcp/web-search-mcp.py`, which calls **Ollama's hosted web-search API** (a cloud service on `ollama.com`).
+- The key: `OLLAMA_API_KEY`, read from `~/.config/claude-local.env` (mode 600) - it never enters this repo.
+- **Brave is not involved.** A swap to a Brave-backed MCP is planned in `specs/brave-search-mcp`.
+- This cloud API is the one remaining Ollama dependency; the local Ollama serving stack is retired.
+- Wiring and provenance: [llamacpp/mcp/README.md](llamacpp/mcp/README.md).
+
 ## Repo map
 
 | Path | What |
 |---|---|
 | `llamacpp/` | The live serving stack: `models.ini` preset, `launch.sh`, pinned templates, vendored MCP. |
-| `modelfiles/<family>/<stem>/Modelfile` | Legacy Ollama build layer (frozen until purge); name = `<family>-<stem>`. |
-| `scripts/` | `ollama-create.sh` (legacy build), `repro-mtp-graphs.sh` (crash repro). |
-| `benchmarks/` | Three frozen-Ollama suites + `llamacpp-parity` (live engine), shared `common.sh`, `report.py`, `all.sh`. |
 | `docs/` | Topic docs; `docs/history/` holds immutable dated session logs. |
 | `specs/<feature>/` | Spec + tasks (plus plan when needed) for in-flight work; executed by the run-spec skill. |
 | `specs/done/<feature>/` | Completed bundles (spec.md Acceptance met), filed here by the run-spec skill. |
@@ -87,8 +94,8 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) are def
 
 ## Benchmarking
 
-Dry-run-by-default suites under `benchmarks/` - three frozen Ollama suites plus the live-engine `llamacpp-parity`.
-Commands, ports, and distilled findings are in [docs/benchmarking.md](docs/benchmarking.md).
+The Ollama-era benchmark suites were removed at the 2026-08-12 purge; git history preserves them.
+The distilled findings and the GPU resource-capture procedure stay live in [docs/benchmarking.md](docs/benchmarking.md).
 
 ## More
 

@@ -143,6 +143,8 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
    - Retire `modelfiles/` + `scripts/ollama-create.sh` (git rm; history preserves them).
    - User runs `wsl --shutdown` + `Optimize-VHD` host-side; budget against `df /mnt/f` before and after.
    - verify: disk numbers in a dated history log; every client unaffected in its next session.
+   - Amended 2026-08-12 (review directive): the repo-side retirement ran early - `modelfiles/`, `scripts/`,
+     `benchmarks/` removed (record: tasks.md Phase 4). Only the host-side steps remain gated on the window.
 
 ## Deferred / follow-ups
 
