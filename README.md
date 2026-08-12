@@ -47,8 +47,8 @@ The fleet spans these families:
 - Qwen 3.6 coders.
 - Qwen 3.5 small coders. Qwen 3.6's smallest GGUF is 27B (it partial-offloads), so the fully-resident
   coders are Qwen 3.5 dense.
-- An uncensored track of community abliterated builds (plain Q4/i1-Q4, not UD-*). Abliteration can degrade
-  reasoning and tool-calling.
+- An uncensored track of community "abliterated" builds - finetunes with refusal behavior removed
+  (plain Q4/i1-Q4, not UD-*). Abliteration can degrade reasoning and tool-calling.
   - Verify on-task. All of them must pass the [chat-template gate](AGENTS.md#chat-template-gate-for-community-ggufs).
 
 Ids no longer carry quant tags. The quant appears only in the `model =` path.
@@ -78,7 +78,8 @@ Local models have no web access of their own; `claude-local` sessions get it fro
 
 - The server: `llamacpp/mcp/web-search-mcp.py`, which calls **Ollama's hosted web-search API** (a cloud service on `ollama.com`).
 - The key: `OLLAMA_API_KEY`, read from `~/.config/claude-local.env` (mode 600) - it never enters this repo.
-- **Brave is not involved.** A swap to a Brave-backed MCP is planned in `specs/brave-search-mcp`.
+- **Brave is not involved in claude-local's search.** A swap to a Brave-backed MCP is planned in `specs/brave-search-mcp`.
+  - The one place Brave does appear: Open WebUI's own in-app search feature uses a Brave key, client-side.
 - This cloud API is the one remaining Ollama dependency; the local Ollama serving stack is retired.
 - Wiring and provenance: [llamacpp/mcp/README.md](llamacpp/mcp/README.md).
 

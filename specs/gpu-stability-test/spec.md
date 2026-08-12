@@ -9,8 +9,9 @@ One command answers two questions: is the GPU stable at the current clocks, and 
 
 ## Decisions
 
-- The suite is defined in `benchmarks/gpu-stability/`, so it inherits the dry-run-by-default CLI and the ports table.
-  - It reports a pass/fail verdict rather than throughput numbers - the one way it differs from the other suites.
+- The suite lives in `benchmarks/gpu-stability/` - a fresh directory; the old suites were purged 2026-08-12.
+  - It keeps the retired suites' CLI convention: dry-run by default, `--list`, `--execute`.
+  - It reports a pass/fail verdict rather than throughput numbers.
 - The ~81k-token prompt is generated from a short seed to a target token count, never committed.
   - Record the sha256 of the generated body so comparability with the 2026-08-10 decomposition arms stays checkable.
 - Default entry is `gemma4-12b-it-qat-mtp` at ~81k ctx: the most crash-sensitive configuration found.
@@ -31,6 +32,6 @@ One command answers two questions: is the GPU stable at the current clocks, and 
 ## Done when
 
 - `benchmarks/gpu-stability/run.sh --execute` returns `PASS 25/25` at the recorded safe core offset.
-- Dry-run by default; `--list` and `--execute` behave as in the other suites.
+- Dry-run by default; `--list` and `--execute` behave per the CLI convention above.
 - Its README states the standing core-offset rule and links the 2026-08-10 core-offset ladder.
 - `docs/benchmarking.md` and the AGENTS.md doc map point at it.

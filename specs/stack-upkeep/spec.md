@@ -4,11 +4,9 @@ SCAFFOLD - plan in a fresh session.
 
 ## Goal
 
-Keep llama.cpp, Ollama, Open WebUI, and the pinned GGUFs current and tracked.
+Keep llama.cpp, Open WebUI, and the pinned GGUFs current and tracked.
 Today versions are pinned ad hoc, and drift is found by accident.
-
-Amended 2026-08-08: Ollama tracking no longer applies now that Ollama is retired (stopped and disabled 2026-08-07).
-Ollama tracking drops out at planning.
+Ollama left the scope when it was retired (stopped 2026-08-07; repo-side purge 2026-08-12).
 
 ## Decide at planning
 
@@ -17,9 +15,20 @@ Ollama tracking drops out at planning.
 - The check each component must pass before an update is trusted.
   - Decided for chat templates (2026-07-23): the AGENTS.md gate section's vetting procedure.
 - What stays pinned on purpose.
-  - Decided for all components (2026-08-03): llama.cpp, Ollama, Open WebUI, and the GGUFs may stay updated.
-  - A pin is a documented last-known-good record only; it moves forward when the component's named check passes.
-  - Precedent: the llama.cpp launcher-abort removal (decision record in the 2026-08-03 P1 log).
+  - Decided 2026-08-03: every component may stay updated; a pin is a documented last-known-good record
+    that moves forward when the component's named check passes.
+  - Precedent: the llama.cpp launcher version-abort removal (decision record in the 2026-08-03 P1 log).
+
+## Filed here from other specs
+
+The per-rebuild re-vet checklist, to be formalized at planning:
+
+- The crash matrix (packaged by `specs/gpu-stability-test`) and the froggeric (template, build) pair.
+- The router preset INI schema (key names can move across builds).
+- The `--mmproj` x MTP incompatibility and the KV q8_0-vs-Gemma question (migration spec pre-flight items;
+  filed 2026-08-12 so they keep being monitored).
+
+At the migration spec's close, its still-live upstream Watch issues move here (recorded 2026-08-12).
 
 ## Done when
 
@@ -34,18 +43,9 @@ A short procedure doc exists and each component has a named check. No new servic
   - Flip triggers: llama-server Responses gains timings, tool-type errors, and state; or a client degrades Chat Completions.
   - No version pin protects these choices (components stay updatable): re-check at every rebuild and client upgrade.
 
-## Version snapshot 2026-08-03 (superseded - do not act on)
+## Planning leads from the 2026-08-03 snapshot (superseded; do not act on)
 
-- llama.cpp: local b9860, upstream b10251. No fix merged for the Gemma MTP bugs - don't upgrade for that.
-  - #26017 and #24795 are both still open with no linked PR (checked 2026-08-03).
-  - Watched fix landed: #25707 (Bonsai ternary group-64 CUDA) merged 2026-07-30 - a concrete rebuild trigger.
-  - If rebuilding anyway, re-smoke speculative decoding and the pinned sampling flags.
-    - llama-cli was rewritten.
-    - b10242 moved penalties sampling to the GPU.
-- Ollama: 0.31.2 installed, 0.32.5 out. Low risk, no benefit (vendored engine unchanged).
-  - 0.32.x rewrites the CLI into an interactive agent - recheck `ollama launch claude` before any upgrade.
-- Open WebUI: 0.11.0 installed = latest (pipx upgrade done), but not started since the upgrade.
-  - `~/.open-webui/webui.db` is untouched since Jul 11, so the 0.11.0 DB migration has not run.
-  - Pending at first run: the DB migration, then the native-connection sampling check in docs/openwebui.md.
-  - Amended 2026-08-08: stale - 0.11.0 first started 2026-08-04 (P3 prep) and ran 9 alembic migrations clean.
-    - Browser-validated 2026-08-07; current state: `docs/openwebui.md`.
+- llama.cpp has since moved to b10335 (`llamacpp/launch.sh` is the build record).
+- Rebuild cautions recorded then: llama-cli was rewritten; b10242 moved penalties sampling to the GPU;
+  re-smoke speculative decoding and the pinned sampling flags after any rebuild.
+- Open WebUI 0.11.0: DB migration ran and browser validation passed (2026-08-04/07); state in docs/openwebui.md.

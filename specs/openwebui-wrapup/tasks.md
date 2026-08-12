@@ -2,27 +2,26 @@
 
 Status legend: [ ] pending, [x] done. Resume point for this side task.
 
-## In-browser pass
+Rescoped 2026-08-12 with the spec (cutover-era items folded in as done).
 
-- [ ] Launch `~/.local/bin/openwebui`; login with recovered admin account.
-- [ ] Chat against a migrated model (streams, sampling sane).
-- [ ] Web search round-trip via Brave in a real chat.
+## In-browser checks
+
+- [x] Login, chat, and Brave-search chats - covered by the 2026-08-07 cutover validation (migration P3 log).
 - [ ] Native tool calling with `qwen3.6-27b-coding`.
-- [ ] Vision: image drop on `gemma4-12b-it-qat` (mmproj kept the capability).
+- [ ] Vision: image drop on `gemma4-12b-it-qat`.
 - [ ] Any failure written up in docs/openwebui.md or a history log.
 
 ## Chat-template gate
 
-- [x] `qwen3.5-queen-27b-coding`: probed 2026-07-23 - guarded; froggeric-validated (spec.md).
-- [ ] `gemma4-31b-it-heretic`: multi-system-message probe; record verdict.
-- [ ] Verdicts recorded in docs/openwebui.md (the README catalog tables were deleted 2026-08-08).
+- [x] `qwen3.5-queen-27b-coding`: probed 2026-07-23 - guarded; froggeric-validated.
+- [x] `gemma4-31b-it-heretic` template extracted 2026-08-03: no guard string (26B sibling live-probed clean).
+- [ ] Residue: one live multi-system probe against the 31B entry; verdict recorded in docs/openwebui.md.
 
 ## Model visibility
 
 - [ ] Decide the user-facing default model set.
-- [ ] Set it in Admin UI (Admin Panel > Settings > Models); record the intended set.
+- [ ] Set it in Admin Panel > Settings > Models; record the intended set in docs/openwebui.md.
 
-## Host-side disk reclaim (user)
+## Host-side disk reclaim
 
-- [ ] Delete orphaned blobs from `.migration-artifacts/orphans.txt` (needs sudo: stop ollama, delete, restart).
-- [ ] Windows: `wsl --shutdown` then `Optimize-VHD` on the ext4.vhdx (~190 GB reclaim on F:).
+- [x] Superseded 2026-08-12: folds into the migration Phase 4 store purge (~2026-08-21).

@@ -78,7 +78,8 @@ GPU and stability:
 - CUDA graphs stay on fleet-wide. Never set `GGML_CUDA_DISABLE_GRAPHS`.
   - It disables graphs on presence alone, even `=0`, and Gemma MTP needs graphs on.
   - MTP wiring, both mechanisms: [docs/architecture.md](docs/architecture.md) section 3.
-- The 26B MTP pair keeps `spec-draft-ngl = 0`; graphs-off reproduces the #24795 drafter load failure.
+- The 26B MTP pair keeps `spec-draft-ngl = 0` (drafter on CPU); graphs-off reproduces the drafter load
+  failure tracked upstream as #24795.
 - **Keep the GPU core clock offset at or below +120 MHz** - above it, large-ctx MTP runs crash
   ([why](docs/benchmarking.md#mtp-crash-investigation-resolved-gpu-core-overclock)).
 - **Capture GPU + host RAM per trial on any GPU run whose numbers you will quote.** Both are shared with
@@ -115,8 +116,8 @@ The implementation is the synced `~/.claude/bin/claude-local`, which a per-machi
 - With `~/.config/claude-local.mcp.json` present (WSL), it sources `~/.config/claude-local.env` (mode 600) and
   execs with `--disallowedTools=WebSearch` plus the vendored web-search MCP (`llamacpp/mcp/`). Without that
   file, only the plugin override applies.
-  - That env file also enables raw-body logging to `/tmp/claude-bodies` (B8, a review item the owner has not
-    released); whether it logs anything depends on the telemetry settings, and that is unverified live.
+  - That env file also enables raw-body logging to `/tmp/claude-bodies` - a held review item the owner has
+    not released; whether it logs anything depends on the telemetry settings, and that is unverified live.
 - Sends requests to `/v1/messages` - immune to the chat-template guard above.
 
 The test: the lane you picked is the model every session role is talking to.
@@ -134,7 +135,7 @@ The test: the lane you picked is the model every session role is talking to.
 - [docs/benchmarking.md](docs/benchmarking.md) - the retired-suite record, resource capture, distilled findings.
 - [docs/openwebui.md](docs/openwebui.md) - Open WebUI setup, and how its settings are stored in the database.
 - [docs/history/index.md](docs/history/index.md) - dated, immutable session evidence logs.
-- `specs/<feature>/` - in-flight work, tasks.md as the resume point; `specs/README.md` is the roadmap.
+- `specs/<feature>/` - in-flight work, tasks.md as the resume point; `specs/ROADMAP.md` orders the bundles.
 
 Markdown: rumdl enforces `.rumdl.toml` (120-col, check-only, never `--fix`); `docs/history/` is excluded as
 immutable. Soft-wrap only - fix a long line by cutting or splitting ideas, never a mid-idea break.

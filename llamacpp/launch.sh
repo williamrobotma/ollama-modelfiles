@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# Router launcher for the llama.cpp serving stack (specs/llamacpp-migration).
-# Binds 127.0.0.1:11433. Nearby ports: 8080 Open WebUI, 11434 Ollama
-# (retired 2026-08-07), 11435-11438 benchmarks.
-# Children inherit this env verbatim. Keep GGML_CUDA_DISABLE_GRAPHS unset:
-# even =0 disables graphs, and Gemma MTP needs graphs on (AGENTS.md Serving).
+# Starts the llama.cpp router on 127.0.0.1:11433 (specs/llamacpp-migration).
+# Port neighbors: 8080 Open WebUI; 11434 was Ollama (retired 2026-08-07).
+# Children inherit this env verbatim, so env hygiene here is fleet-wide.
+# Never set GGML_CUDA_DISABLE_GRAPHS: any value, even =0, turns CUDA graphs
+# off, and Gemma MTP crashes without graphs (AGENTS.md Serving).
 set -euo pipefail
 
-# Build record (defined here; other files point to it): b10335 (74ce15741)
-# on disk since 2026-08-09, re-certified 2026-08-10 (crash matrix + froggeric
-# pair). The b10326 re-cert failure was this box's GPU core overclock, not
-# the build (docs/benchmarking.md). The build is canonical, never downgraded
-# (user, 2026-08-08); rebuilds re-certify per the migration spec rebuild rule.
+# Build record (defined here; other files point to it):
+#   b10335 (74ce15741), on disk since 2026-08-09.
+#   Re-certified 2026-08-10: crash matrix + froggeric pair passed.
+#   The earlier b10326 re-cert failure was the GPU core overclock, not the
+#   build (docs/benchmarking.md).
+#   Canonical = whatever is on disk, never downgraded (user, 2026-08-08);
+#   rebuilds re-certify per the migration spec's rebuild rule.
 BIN=/home/wma/Developer/llama.cpp/build/bin/llama-server
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -30,11 +32,15 @@ if [ -n "$(ls -A "$LLAMA_CACHE")" ]; then
     exit 1
 fi
 
-# Flag rationale + CSRF surface: docs/architecture.md section 4.
-# Defaults precede "$@": a repeated flag's last value takes effect.
-# Extra args merge into EVERY entry; the trailing --host/--port fixes the bind.
-"$BIN" --version >&2
-# Secret scrub; per-key rationale: docs/architecture.md section 4 (CSRF).
+# Flags: defaults first, then "$@" - the last value of a repeated flag wins,
+# so callers can override any default.
+# The bind stays after "$@": loopback is the security boundary (CSRF
+# analysis: docs/architecture.md section 4), so no caller may rebind it.
+# Caution: router CLI args merge into EVERY entry (llamacpp/README.md).
+"$BIN" --version >&2   # log the served build
+# Scrub secrets from the fleet env: no HF_TOKEN caps a CSRF-triggered
+# download at public repos; OLLAMA_API_KEY is the MCP client's key, which
+# llama-server never reads. Analysis: docs/architecture.md section 4.
 exec env -u OLLAMA_API_KEY -u HF_TOKEN "$BIN" \
     --models-preset "$DIR/models.ini" \
     --sleep-idle-seconds 86400 \

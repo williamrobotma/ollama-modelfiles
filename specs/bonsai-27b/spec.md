@@ -2,17 +2,15 @@
 
 ## Why
 
-- **Ternary Bonsai-27B is the target**: the highest-retention extreme quant of the repo's existing Qwen3.6-27B base.
-  - Vendor-claimed retention 94.6%.
-  - Small enough to run fully resident on the 12 GB 4070; the 27B class currently partial-offloads.
-    - Source: docs/history/2026-07-17-llamacpp-eval.md section 7.
+- **Target: ternary Bonsai-27B** - an extreme-quant rebuild of the Qwen3.6-27B base the fleet already serves.
+  - Quality retained vs the full-precision base (vendor-claimed): 94.6%.
+  - Size: fully resident on the 12 GB 4070; the fleet's 27B class partial-offloads today.
 - **Ternary is first-class (decision 2026-08-03, user)**: onboarded directly, not via a 1-bit interim phase.
-  - The stepping-stone rationale expired when #25707 merged (2026-07-30); the upstream block is gone.
-  - Q1_0 stays as a bench comparison, not an onboarding phase. It remains runnable on stock build b9860.
+  - The stepping-stone rationale expired when #25707 (fast group-64 ternary CUDA) merged 2026-07-30.
+  - Q1_0, the 1-bit variant, stays as a bench comparison only; it already ran on stock build b9860.
   - Q1_0 shares ternary's file layout, drafter, and template family.
-- Ollama cannot load either variant (bundled ggml lacks type 41; verified on-box).
-  - So this feature lives entirely on the llama.cpp serving stack built in `specs/llamacpp-migration`.
-  - No Modelfile, and no entry in the Ollama model store.
+- llama.cpp-only, by necessity then and by default now.
+  - Ollama could not load either variant (bundled ggml lacked type 41; verified on-box) - moot since its retirement.
 
 ## Known facts
 
@@ -29,11 +27,13 @@ See [research.md](research.md) in this bundle - verification status marked per c
 
 ## Prerequisites
 
-1. `specs/llamacpp-migration` builds the serving stack and defines where non-Ollama models are configured.
-   - `specs/done/llamacpp-serving` already delivered its Phase 2 parity + Phase 4 verdict.
+1. Met: `specs/llamacpp-migration` built the serving stack; models are configured in `llamacpp/models.ini`.
    - This spec adds a model to that stack; it creates no new serving machinery.
-2. Ternary: PR #25707 merged 2026-07-30; the remaining prerequisite is the on-box rebuild (migration spec rebuild rule).
-3. Watch only, not a prerequisite: [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen a Modelfile path someday.
+2. Met at b10335 (2026-08-10): the on-disk build contains #25707 and passed certification.
+   - Re-check the build record (`llamacpp/launch.sh`) at pickup; a moved record re-certifies per the
+     migration spec's rebuild rule.
+3. Watch only, not a prerequisite: [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen an
+   Ollama path someday.
 
 ## Decisions at spec review
 
@@ -50,15 +50,16 @@ See [research.md](research.md) in this bundle - verification status marked per c
 
 - **Ternary (first-class)**: Ternary-Bonsai-27B serves on the llama.cpp stack's fast CUDA path, template-vetted.
   - Served from a pinned HF-cache snapshot; full profile flags verified via `/props`.
-  - Benched against 1-bit and `qwen3.6-27b-coding` (same base) in the parity suite's shape.
+  - Benched against 1-bit and `qwen3.6-27b-coding` (same base) in the retired parity suite's shape (git history).
   - A written serving-role verdict exists.
   - Delivers the repo's first fully-resident 27B and the first published 4070 numbers.
 - **1-bit (bench comparison)**: `Q1_0` served from a pinned snapshot and template-vetted far enough to bench.
   - No serving-role claim of its own.
 - DSpark drafter A/B'd with recorded accept rates and tok/s delta; adopted only if it wins on this hardware.
 - Chat-template gate passed: multi-system `/v1/chat/completions` probe recorded.
-  - The Anthropic path is structurally immune; the OpenAI path is the risk.
+  - The guard can only fire on `/v1/chat/completions`, which passes mid-conversation `system` messages through.
+  - `/v1/messages` folds all system blocks into one leading message before the template runs, so it cannot trip.
 - docs/parameters.md gains a Bonsai-27B profile section with source URLs.
   - Benchmarking notes and watch items (#25707, #13668) recorded.
-- Ollama untouched: no Modelfiles, its model store left as-is, disk budgeted against `/mnt/f`.
+- Disk budgeted against `/mnt/f` (AGENTS.md rule: never the guest `df /`).
   - Downloads: ~10.2 GB for ternary, ~5.6 GB more for the 1-bit comparison (no second mmproj).

@@ -13,6 +13,10 @@ Notation used throughout:
 - `PASS N/N` - N of N trials clean.
 - Dated labels, written `<Label> YYYY-MM-DD (who):` when both are recorded.
   - `Amended` / `Decided` / `Finding` mark rulings; `Applied`, `Executed`, `Fixed`, and similar mark work done.
+- Review-item codes (`B6`, `B8`, `M8`, `#32`, ...) number findings within one review sweep; they only have
+  meaning inside that sweep's dated section.
+- "the P1 log", "the diagnosis log", "the dossier log" - dated evidence logs under `docs/history/`
+  (`docs/history/index.md` maps names to files).
 
 ## Pre-flight (2026-07-25)
 
@@ -337,7 +341,8 @@ Fixed 2026-08-08 (user "1"): the 9-tag whitespace patch is applied to the vendor
 
 ### Validation window clock - 2026-08-08
 
-Decided 2026-08-08 (user): the #32 window clock does NOT restart at the b10326 re-cert; the 2026-08-07 opening stands.
+Decided 2026-08-08 (user): the validation-window clock (sweep item #32) does NOT restart at the b10326 re-cert;
+the 2026-08-07 opening stands.
 
 ### Q6 is the 35B standard - 2026-08-08
 
@@ -531,3 +536,22 @@ Spot-loaded 2026-08-12 (user go, "spot-load"): PASS 13/13 on the router live at 
 - `ctx-size` pads to a 256 boundary on load (200000 -> 200192), matching the known Phase 2 artifact; the
   262144-ctx entries loaded at the exact figure (already a 256 multiple)
 - No crashes; router still answering after all 13 loads
+
+### PR #15 review response - 2026-08-12
+
+The 18:05 review: rerun the prose/comment passes with its inline comments in mind; "eliminate all ollama";
+make the search routing clear at top level; propose future mitigation.
+
+- Repo-side purge executed (Phase 4 record above); the store purge stays gated on the window
+- Search routing documented top-level (README "Web search"): claude-local search = Ollama's cloud API, not Brave
+  - Decided (user): swap to a Brave-backed MCP; scaffolded as `specs/brave-search-mcp`
+  - Open WebUI's in-app search is the one Brave user (client-side key), now stated in the README
+- web-search-mcp.py became locally maintained (user ruff-fix 094878a + review fixes): dead fallback deleted,
+  editor flags cleared, provenance + new sha in mcp/README.md; stdio handshake re-verified
+- Plain-language rewrites: llamacpp/README.md (alias example, quoted source lines), templates/README.md
+  (guard quoted, terms defined), launch.sh + models.ini comments (fact-per-line, rationale hints at pointers)
+- Amendment policy applied per review: not-started bundles (bonsai-27b, stack-upkeep, openwebui-wrapup)
+  edited clean with amendments folded; started bundles keep dated amendments
+- openwebui-wrapup rescoped: cutover-era items marked done; its disk reclaim folded into the store purge
+- The roadmap moved to `specs/ROADMAP.md`; `specs/README.md` stays the bundle index
+- Monitoring homes: the Watch list moves to stack-upkeep at spec close; mmproj x MTP + the KV question filed there
