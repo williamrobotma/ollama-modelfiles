@@ -138,12 +138,16 @@ The test: the lane you picked is the model every session role is talking to.
 
 ## Writing
 
-- Two registers, two rules:
-  - Reference text (READMEs, docs/, a spec's current-state) is rewritten in place for a cold reader - no sediment.
-  - Records (tasks.md dated sections, docs/history/, specs/*/research.md) append as-recorded; never restyled.
-  - Amendments belong only in started bundles; a not-started bundle is edited clean instead.
-- Define at first use, per file: a repo-specific term gets a one-clause gloss, or a pointer plus a rationale hint.
-- Markdown: rumdl enforces `.rumdl.toml` (120 cols, check-only, never `--fix`); record-register files are excluded.
-  - Soft-wrap only: fix a long line by cutting or splitting ideas, never a mid-idea break.
-- Name sets, never their size, because written counts drift.
-  - The one sanctioned count is a file's own header total (e.g. `llamacpp/models.ini:1`); re-check it on touch.
+- Docs state the present: when a fact changes, rewrite the sentence that carried it.
+  - Never stack a dated correction on top of old text.
+  - Records are the exception: dated tasks.md sections, docs/history/, and specs/*/research.md only ever
+    gain new entries, and old entries stay as written.
+- "Amended YYYY-MM-DD" lines belong to bundles with work already done.
+  - A bundle nothing has started on is simply edited, as if written right the first time.
+- Write for a reader with zero context.
+  - The first time a file uses a repo term, give a few words of meaning or point to the doc that defines it.
+  - A pointer says in a few words what it points to - "docs/parameters.md (why FA stays paired)" - never a bare path.
+- One idea per line; rumdl checks lines at 120 cols (`.rumdl.toml`; check-only, never `--fix`).
+  - Shorten a long line by cutting words or splitting ideas - never wrap mid-sentence.
+- Name the members, not the count ("the guarded entries", not "the 4 guarded entries") - written counts drift.
+  - The one exception: a file's own header total (`llamacpp/models.ini:1`), re-checked whenever that file changes.

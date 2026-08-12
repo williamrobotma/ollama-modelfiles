@@ -2,5 +2,5 @@
 
 Status legend: [ ] pending, [x] done. Resume point for this feature.
 
-- [x] Scaffolded 2026-08-12 (spec.md; held per the PR #15 mitigation decision).
-- [ ] Plan in a fresh session, resolving spec.md's "Decisions for planning"; then run per run-spec.
+- [x] Scaffolded 2026-08-12; build is on hold (user decision on the PR #15 review).
+- [ ] Plan in a fresh session, settling spec.md's "Decide at planning"; then run per run-spec.

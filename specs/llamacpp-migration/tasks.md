@@ -553,5 +553,5 @@ make the search routing clear at top level; propose future mitigation.
 - openwebui-wrapup rescoped: cutover-era items marked done; its disk reclaim folded into the store purge
 - The roadmap moved to `specs/ROADMAP.md`; `specs/README.md` stays the bundle index
 - Monitoring homes: the Watch list moves to stack-upkeep at spec close; mmproj x MTP + the KV question filed there
-- Mitigation decided (user): register-split + first-use rules added to AGENTS.md Writing
-  - The hook extension and the standing style reviewer are held, scaffolded as `specs/writing-guards`
+- Mitigation decided (user): the rewrite-vs-append rule and define-at-first-use now sit in AGENTS.md Writing
+  - The automatic checks and the standing reviewer are held; scaffolded as `specs/writing-guards`
