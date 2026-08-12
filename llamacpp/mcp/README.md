@@ -18,7 +18,30 @@
   - An mcp 2.x bump means a rewrite, not an unpin.
 - Verified 2026-08-04: pipx stdio handshake + live web_search 200 against ollama.com (migration tasks.md, Phase 3).
 - Style is upstream-verbatim: exempt from repo Python rules; do not reformat. Only the dep block may change.
-- Consumer: `~/.config/claude-local.mcp.json` runs it via `pipx run`.
+- Consumer (WSL): `~/.config/claude-local.mcp.json` runs it via `pipx run`; Windows contract below.
   - `OLLAMA_API_KEY` comes from the user env file, never this repo.
   - Accepted 2026-08-11 (review): claude-local exports that key into claude's env, so every child inherits it
     (an `env` printout can write it into a transcript) - mcp.json's `${OLLAMA_API_KEY}` expansion requires it there.
+
+## Windows consumer contract (specced 2026-08-11; setup pending)
+
+Same MCP on the Windows/git-bash machine, run by `uv`.
+No claude-local change: its MCP branch is gated on the two `~/.config` files below.
+Anything not listed here is the Windows-side agent's call.
+
+- Script: this vendored file, byte-identical (Vendored sha256 above), at that machine's checkout path.
+- Runner: `uv run <script path>` - uv reads the PEP 723 block, so the dep pins apply as written.
+- `~/.config/claude-local.mcp.json` (git-bash `$HOME`), server name kept exactly:
+
+  ```json
+  { "mcpServers": { "web_search_and_fetch": {
+      "type": "stdio",
+      "command": "<uv>",
+      "args": ["run", "<checkout>/llamacpp/mcp/web-search-mcp.py"],
+      "env": { "OLLAMA_API_KEY": "${OLLAMA_API_KEY}" } } } }
+  ```
+
+- `~/.config/claude-local.env` exports `OLLAMA_API_KEY`; claude-local fails closed without it.
+  - Key stays out of both repos; nearest Windows equivalent of mode 600 - agent's pick.
+  - The key-inheritance exposure accepted above applies unchanged.
+- Acceptance: one live `web_search` in a claude-local session; record date + uv version here on pass.
