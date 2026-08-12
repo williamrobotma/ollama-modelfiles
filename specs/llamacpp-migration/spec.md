@@ -103,12 +103,13 @@ Decided at the first execution session's review; these supersede the specific lo
     - Amended 2026-08-09: quants removed from served ids; the alias layer collapses -> 18 configs + 1 alias name.
     - Amended 2026-08-11 (user): 27B gains a reasoning mode (`qwen3.6-27b-mtp-reasoning`), mirroring the 35B-A3B
       instruct/coding/reasoning trio, and Queen-27B gains an instruct entry (`qwen3.5-queen-27b`) ->
-      20 configs + 1 alias name. Decision + ctx-policy record: tasks.md.
+      20 configs + 1 alias name; froggeric now covers 4 entries. Decision + ctx-policy record: tasks.md.
   - `35b-a3b-coding` alias repoints to `qwen3.6-35b-a3b-mtp-coding-ud-q5-k-xl` and is rebuilt under Ollama.
     - Amended 2026-08-10: superseded by the q6 standard + alias collapse; the surviving alias is
       `qwen3.6-35b-a3b-coding` on the MTP q6 entry (models.ini is current).
   - Guarded fleet drops to 2 GGUFs (unsloth 9B non-MTP, Queen-27B); froggeric applies to the 3 entries they back
     (Queen-27B backs both `queen-27b-*` entries - corrected 2026-07-28, was "two entries").
+    - Amended 2026-08-11: the Queen instruct entry makes it 4 froggeric entries.
   - Phase 4 purge shrinks to: Ollama uninstall + 232G store, `modelfiles/` + create-script retirement, vhdx compact.
 - **KV probe replaced** (supersedes the same-prompt comparison): Gemma-only `llama-perplexity` KL run, one
   ~16k-token wikitext segment, f16-cache baseline vs q8_0; read the tool's numbers as-is, no pooling.
@@ -127,6 +128,7 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
   - The 2026-07-17 eval recorded a gen-5 crash at 200k graphs-on: a ctx-instability crash during the smokes is
     documented behavior, NOT a "protocol smoke fails" contingency trigger. The Phase 1 ladder still bounds the ceiling.
 - **froggeric scope corrected**: the 2 guarded GGUFs back 3 preset entries; all 3 get `--chat-template-file`.
+  - Amended 2026-08-11: the Queen instruct entry makes it 4.
 - **froggeric template copied at Phase 0** (Phase 2 item pulled forward); byte-identical, sha256 + provenance in
   `llamacpp/templates/README.md`.
 - **Stale counts fixed in place**: spec Steps "21 configs" -> 17 + 6; plan preamble "7 alias names" -> 6; tasks.md

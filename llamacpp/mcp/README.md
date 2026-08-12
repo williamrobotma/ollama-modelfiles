@@ -26,11 +26,12 @@
 ## Windows consumer contract (specced 2026-08-11; setup pending)
 
 Same MCP on the Windows/git-bash machine, run by `uv`.
-No claude-local change: its MCP branch is gated on the two `~/.config` files below.
+No claude-local change: `~/.config/claude-local.mcp.json` alone activates its MCP branch.
 Anything not listed here is the Windows-side agent's call.
 
 - Script: this vendored file, byte-identical (Vendored sha256 above), at that machine's checkout path.
 - Runner: `uv run <script path>` - uv reads the PEP 723 block, so the dep pins apply as written.
+  - The re-resolution accepted risk above applies to uv the same way.
 - `~/.config/claude-local.mcp.json` (git-bash `$HOME`), server name kept exactly:
 
   ```json
@@ -41,7 +42,9 @@ Anything not listed here is the Windows-side agent's call.
       "env": { "OLLAMA_API_KEY": "${OLLAMA_API_KEY}" } } } }
   ```
 
-- `~/.config/claude-local.env` exports `OLLAMA_API_KEY`; claude-local fails closed without it.
+- `~/.config/claude-local.env` exports `OLLAMA_API_KEY`; claude-local fails closed without the file.
+  - A file that exports nothing passes launch; only the acceptance probe catches the empty key.
   - Key stays out of both repos; nearest Windows equivalent of mode 600 - agent's pick.
   - The key-inheritance exposure accepted above applies unchanged.
 - Acceptance: one live `web_search` in a claude-local session; record date + uv version here on pass.
+  - Same pass: sweep the WSL-only claims (AGENTS.md claude-local section; the synced script's comment).

@@ -467,7 +467,8 @@ Decided 2026-08-11 (user): 27B gains a reasoning mode mirroring the 35B-A3B inst
   - GGUF-metadata-verified first: every Qwen GGUF in the fleet (9B, Queen-27B, 27B, 27B-MTP, 35B-A3B,
     35B-A3B-MTP, both main and MTP-drafter files) reports `context_length = 262144` natively - Qwen MTP is
     self-contained (no separate drafter file), so there is no drafter-training-context ceiling to respect
-  - The 2026-08-08 `merged_system` exposure inventory (5 GGUFs / 7 entries, line 304 above) gains a member:
+  - The 2026-08-08 `merged_system` exposure inventory (5 GGUFs / 7 entries, the "merged_system exposure
+    accepted" section above) gains a member:
     `Qwen3.6-27B-MTP` now backs two entries (mtp-coding + mtp-reasoning) -> 5 GGUFs / 8 entries. The
     2026-08-08 line stays as-recorded; this is the current count.
 - Widened 2026-08-11 (user, "include queen"): Queen-27B also gains an instruct entry (`qwen3.5-queen-27b`,

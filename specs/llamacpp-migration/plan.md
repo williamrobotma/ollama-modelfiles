@@ -83,7 +83,7 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
    - Amended 2026-08-09: quants removed from served ids; the alias layer collapses -> 18 configs + 1 alias name.
    - Amended 2026-08-11 (user): 27B gains a reasoning mode (`qwen3.6-27b-mtp-reasoning`), mirroring the
      35B-A3B instruct/coding/reasoning trio, and Queen-27B gains an instruct entry (`qwen3.5-queen-27b`)
-     -> 20 configs + 1 alias name. Record: tasks.md.
+     -> 20 configs + 1 alias name; froggeric now covers 4 entries. Record: tasks.md.
    - Every key sits under a `[section]` header.
    - A top-level key silently becomes a served model named `default` that no one configured.
    - The upstream example's top-level `version = 1` does exactly this - do not copy it.
