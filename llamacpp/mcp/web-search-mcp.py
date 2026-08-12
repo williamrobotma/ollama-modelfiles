@@ -1,36 +1,27 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#   "mcp>=1.9,<2",  # local pin 2026-08-04: mcp 2.0.0 removed FastMCP, which this script imports; upstream unfixed
-#   "ollama>=0.6.2,<1",  # local pin 2026-08-08: was unbounded, re-resolved on every pipx run
+#   # Local pins; rationale and history: README.md in this directory.
+#   "mcp>=1.9,<2",
+#   "ollama>=0.6.2,<1",
 # ]
 # ///
+# pyright: reportMissingImports=false
+# (Deps resolve from the PEP 723 block at run time; editor envs cannot see
+# them, so the missing-import diagnostic is noise here.)
 """MCP stdio server exposing Ollama web_search and web_fetch as tools.
 
 Environment:
-- OLLAMA_API_KEY (required): if set, will be used as Authorization header.
+- OLLAMA_API_KEY (required): sent as the Authorization header to ollama.com;
+  requests fail without it.
 """
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
+from mcp.server.fastmcp import FastMCP
 from ollama import Client
-
-try:
-    # Preferred high-level API (if available)
-    from mcp.server.fastmcp import FastMCP  # type: ignore
-
-    _FASTMCP_AVAILABLE = True
-except Exception:
-    _FASTMCP_AVAILABLE = False
-
-if not _FASTMCP_AVAILABLE:
-    # Fallback to the low-level stdio server API
-    from mcp.server import Server  # type: ignore
-    from mcp.server.stdio import stdio_server  # type: ignore
-
 
 client = Client()
 
@@ -45,62 +36,35 @@ def _web_fetch_impl(url: str) -> dict[str, Any]:
     return res.model_dump()
 
 
-if _FASTMCP_AVAILABLE:
-    app = FastMCP("ollama-search-fetch")
+app = FastMCP("ollama-search-fetch")
 
-    @app.tool()
-    def web_search(query: str, max_results: int = 3) -> dict[str, Any]:
-        """Perform a web search using Ollama's hosted search API.
 
-        Args:
-          query: The search query to run.
-          max_results: Maximum results to return (default: 3).
+@app.tool()
+def web_search(query: str, max_results: int = 3) -> dict[str, Any]:
+    """Perform a web search using Ollama's hosted search API.
 
-        Returns:
-          JSON-serializable dict matching ollama.WebSearchResponse.model_dump()
-        """
-        return _web_search_impl(query=query, max_results=max_results)
+    Args:
+      query: The search query to run.
+      max_results: Maximum results to return (default: 3).
 
-    @app.tool()
-    def web_fetch(url: str) -> dict[str, Any]:
-        """Fetch the content of a web page for the provided URL.
+    Returns:
+      JSON-serializable dict matching ollama.WebSearchResponse.model_dump()
+    """
+    return _web_search_impl(query=query, max_results=max_results)
 
-        Args:
-          url: The absolute URL to fetch.
 
-        Returns:
-          JSON-serializable dict matching ollama.WebFetchResponse.model_dump()
-        """
-        return _web_fetch_impl(url=url)
+@app.tool()
+def web_fetch(url: str) -> dict[str, Any]:
+    """Fetch the content of a web page for the provided URL.
 
-    if __name__ == "__main__":
-        app.run()
+    Args:
+      url: The absolute URL to fetch.
 
-else:
-    server = Server("ollama-search-fetch")  # type: ignore[name-defined]
+    Returns:
+      JSON-serializable dict matching ollama.WebFetchResponse.model_dump()
+    """
+    return _web_fetch_impl(url=url)
 
-    @server.tool()  # type: ignore[attr-defined]
-    async def web_search(query: str, max_results: int = 3) -> dict[str, Any]:
-        """Perform a web search using Ollama's hosted search API.
 
-        Args:
-          query: The search query to run.
-          max_results: Maximum results to return (default: 3).
-        """
-        return await asyncio.to_thread(_web_search_impl, query, max_results)
-
-    @server.tool()  # type: ignore[attr-defined]
-    async def web_fetch(url: str) -> dict[str, Any]:
-        """Fetch the content of a web page for the provided URL.
-
-        Args:
-          url: The absolute URL to fetch.
-        """
-        return await asyncio.to_thread(_web_fetch_impl, url)
-
-    async def _main() -> None:
-        async with stdio_server() as (read, write):  # type: ignore[name-defined]
-            await server.run(read, write)  # type: ignore[attr-defined]
-
-    if __name__ == "__main__":
-        asyncio.run(_main())
+if __name__ == "__main__":
+    app.run()
