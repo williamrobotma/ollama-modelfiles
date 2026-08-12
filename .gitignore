@@ -133,13 +133,15 @@ venv.bak/
 # =============================================================================
 
 # Visual Studio Code (from Global/VisualStudioCode.gitignore)
+# .vscode/settings.json is synced (repo-wide editor config); *.code-workspace
+# is machine-local (per-user settings, e.g. a personal conda env manager).
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/*.code-snippets
-!*.code-workspace
+*.code-workspace
 *.vsix
 
 # JetBrains — PyCharm, IntelliJ, Rider, etc. (from Global/JetBrains.gitignore)
