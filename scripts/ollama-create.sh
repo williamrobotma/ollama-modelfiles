@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Legacy Ollama build layer (frozen; retires at the P4 purge - specs/llamacpp-migration).
+# Legacy Ollama build layer (frozen until the Phase 4 purge).
 # Usage: scripts/ollama-create.sh [modelfiles/<family>/<stem>]
-#   No arg = build every Modelfile; resolution order canonical -> layered -> alias is automatic,
-#   and building an alias builds its canonical dependency first.
+#   No arg = build all. Canonical -> layered -> alias order is automatic:
+#   an alias builds its canonical dependency first.
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "$0")/.." && pwd)"
@@ -25,9 +25,8 @@ model_name_for() {
     printf '%s-%s\n' "$family" "$stem"
 }
 
-# Map every model name to its Modelfile path up front, so a FROM dependency
-# lookup doesn't need to re-split names into family/stem (ambiguous: qwen3.5
-# vs qwen3.6 share a "qwen3." prefix).
+# Name -> path map up front: FROM lookups must not re-split names into
+# family/stem (qwen3.5 vs qwen3.6 share the "qwen3." prefix).
 while IFS= read -r modelfile; do
     name_to_path["$(model_name_for "$modelfile")"]="$modelfile"
 done < <(find "$modelfiles_root" -name Modelfile | sort)
@@ -44,9 +43,8 @@ build_modelfile() {
 
     name="$(model_name_for "$modelfile")"
 
-    # FROM naming another local model (matches a name_to_path key) is an alias
-    # dependency and must be built first; an absolute path or hf.co ref has no
-    # entry in the map and is left to ollama create itself.
+    # A FROM matching a local model name is an alias dependency: build it
+    # first. Absolute paths and hf.co refs are left to ollama create itself.
     from="$(from_target "$modelfile")"
     if [[ -n "$from" && -n "${name_to_path[$from]:-}" ]]; then
         build_modelfile "${name_to_path[$from]}"

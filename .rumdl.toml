@@ -1,7 +1,7 @@
-# Repo-local rumdl config. Replaces (does not merge with) the global config,
-# so the MD013 barometer (120 cols, check-only, never --fix) is repeated here.
+# Repo-local rumdl config; replaces (not merges) the global one, so the
+# MD013 settings (120 cols, check-only, never --fix) are repeated here.
 # docs/history/*.md are immutable session logs; excluded entirely.
-# CLAUDE.md is a single @AGENTS.md import line (Firefox-repo convention), not a document.
+# CLAUDE.md is a single @AGENTS.md import line, not a document.
 [global]
 exclude = ["docs/history/*.md", "CLAUDE.md"]
 

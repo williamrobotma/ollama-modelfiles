@@ -38,12 +38,12 @@ Two markers run through this file:
      build (500 at b10335), so vet on the guard message text, never the status code (AGENTS.md gate step 3).
 5. `/v1/responses` minimal Codex-shaped request including one function tool.
    - verify: the tool call round-trips, no 500.
-6. Per-child `/props` (`?model=` selects the child) reflects the preset's sampling flags (GGUF metadata must not leak through).
+6. Per-child `/props` (`?model=` selects the child) reflects the preset's sampling flags, not the GGUF metadata values.
    - verify: values match the docs/parameters.md profile exactly.
 7. Sleep-idle: relaunch with a short timer (e.g. 30s) for this check, wait past it, then send a request.
    - verify: unload observed, reload succeeds, response OK.
 8. models-max: request the second model while the first is loaded (stock `--models-max 4`, per spec revisions).
-   - verify: behavior recorded (evict or coexist) for the config-home README.
+   - verify: behavior recorded (evict or coexist) for `llamacpp/README.md`.
    - On 12 GB two ~9 GiB children cannot coexist: label an eviction as VRAM-forced, not router policy.
 9. Gemma thinking in a live response: one request to the Gemma child with no thinking flags set.
    - verify: a thought channel appears, confirming llama.cpp's `enable_thinking` default reaches the template.
@@ -85,7 +85,7 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
    - A top-level key silently becomes a served model named `default` that no one configured.
    - The upstream example's top-level `version = 1` does exactly this - do not copy it.
    - Full sampling flags per docs/parameters.md (GGUF metadata overrides any flag not set - eval log section 3).
-   - Serving flags too, per that doc's new section: `-fa on`, `-ctk`/`-ctv` (Phase 1's choice), `-np 1`, `--jinja`.
+   - Serving flags per docs/parameters.md (Serving flags): `-fa on`, `-ctk`/`-ctv` (Phase 1's choice), `-np 1`, `--jinja`.
    - Explicit `min_p` on every entry, Gemma included, or llama-server injects `0.05`.
    - `--chat-template-kwargs '{"enable_thinking":false}'` on the instruct-mode entry; Gemma needs no thinking flag.
    - `--mmproj` for vision canonicals; drafter + `--spec-type draft-mtp --spec-draft-n-max 2` for MTP lanes.
@@ -93,7 +93,7 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
      - Where an entry wants both, split it per the Phase 0 probe: one MTP entry plus one `--mmproj` entry.
    - froggeric `--chat-template-file` on the 3 guarded-GGUF entries (9B non-MTP; Queen-27B coding + reasoning);
      per-model ctx (Gemma from Phase 1).
-   - `35b-a3b-coding` alias -> the MTP-q5 coding config (already repointed on disk at the fleet reduction).
+   - `35b-a3b-coding` alias -> the MTP-q5 coding entry (already repointed on disk at the fleet reduction).
 2. Copy froggeric v21.3 `chat_template.jinja` into `llamacpp/templates/` with its `23a40b0b` provenance noted.
 3. Write `llamacpp/README.md`: layout, alias policy, add-a-model procedure (bonsai's entry point).
    - verify: name parity - every kept `ollama list` name resolves to a router entry id or an `aliases[]` member
@@ -131,7 +131,7 @@ Contingency: any protocol smoke fails -> llama-swap (port the preset to YAML, re
 2. `sudo systemctl stop ollama && sudo systemctl disable ollama` (user runs; binary + store kept for rollback).
 3. Docs rewrite for the new serving stack:
    - architecture.md (new stack diagram), AGENTS.md (serving + build sections), README, CLAUDE.md claude-local note.
-   - benchmarking.md drops the pending graphs-off systemd action (moot).
+   - benchmarking.md drops the pending graphs-off systemd action (no longer applies - Ollama no longer serves).
    - verify: rumdl clean; no doc claims Ollama serves anything.
 4. Validation window: ~2 weeks of daily use; rollback is `systemctl start ollama` (nothing deleted yet).
 5. Purge (started only after the validation window closes; confirm with user - destructive):

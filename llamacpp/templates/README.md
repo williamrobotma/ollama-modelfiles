@@ -2,7 +2,7 @@
 
 `chat_template.jinja` serves the guarded Qwen GGUFs to OpenAI-style clients, whose embedded templates reject
 multi-system requests (the vet rule is under Validated pairs, below). It covers 3 preset entries: unsloth
-Qwen3.5-9B non-MTP, plus the two Queen-27B configs that share one GGUF.
+Qwen3.5-9B non-MTP, plus the two Queen-27B entries that share one GGUF.
 
 ## Provenance
 
@@ -49,7 +49,7 @@ Details for the b10335 pair:
 - All three spent the 32-token cap inside reasoning and returned empty content: a status-level pass, not visible text.
   - The 9B answered in content at b10326 and did not here. The cap is the difference, not the template.
 - Control, the same 9B GGUF with no template override and `-ngl 0`: the embedded guard rejected the request.
-  - The override is therefore load-bearing on this build.
+  - The override is therefore required on this build.
   - Sanity check on that same server: a single leading system message returned 200.
 - **The guard returned HTTP 500 on b10335, not the 400 seen at b10326.** The message was verbatim
   `Jinja Exception: System message must be at the beginning.` Vet on the text, never the status code.

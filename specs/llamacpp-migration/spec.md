@@ -22,7 +22,7 @@ The sections below record how each decision got here.
 - **Switching: native router mode** (`--models-preset` INI, `--sleep-idle-seconds`).
   - Standalone scripts are the fallback.
   - llama-swap is the named contingency (~half a day to port the config).
-  - Triggers here: a Phase-0 protocol smoke fails, or the Qwen-MTP graphs-on hammer fails.
+  - Triggers here: a Phase 0 protocol smoke fails, or the Qwen-MTP graphs-on hammer (30 repeated generations) fails.
   - Third trigger is bonsai decision 1: "build the PrismML fork" means adopting llama-swap before ternary onboards.
     - Router children spawn only from the router's own binary (`server-models.cpp`, b9860); a fork build cannot be a child.
     - "Wait for #25707" (the other option) keeps router mode sufficient - ternary would be a normal GGUF entry.
@@ -30,7 +30,7 @@ The sections below record how each decision got here.
 - **Posture**: launcher script first, no daemon; a systemd unit is a post-validation follow-up.
   - Router port `127.0.0.1:11433` (8080 = Open WebUI, 11434 = Ollama until retired, 11435-11438 = benchmarks).
 - **Config home**: new top-level `llamacpp/` dir - preset INI, launcher, template files, notes.
-  - Git-tracked, peer of `modelfiles/`; bonsai-27b lands here. No secrets in the repo.
+  - Git-tracked, peer of `modelfiles/`; the bonsai-27b entry is defined here. No secrets in the repo.
 - **Web-search parity**: deny `WebSearch` in claude-local; serve search via Ollama's web-search MCP (Brave MCP fallback).
   - Verified: Claude Code fulfills WebSearch by a sub-request to the model server carrying `web_search_20250305`.
   - Ollama's daemon executes that tool mid-generation.
@@ -47,7 +47,7 @@ The sections below record how each decision got here.
   - `models--noctrex--Qwopus3.5-9B-Coder-MTP` (15G): orphaned, no Modelfile ever referenced it.
   - `35b-a3b-mtp-ud-q4-k-xl` + `35b-a3b-mtp-coding-ud-q4-k-xl`: superseded by the q5 pair (~23G blob).
   - Non-MTP `35b-a3b-coding-ud-q4-k-xl` entry (22G repo): unused by any integration.
-  - The `35b-a3b-coding` alias repoints to the MTP-q5 coding config; 21 configs + 7 alias names remain.
+  - The `35b-a3b-coding` alias repoints to the MTP-q5 coding entry; 21 configs + 7 alias names remain.
 - **Build pin**: stay on b9860 (fdb1db877).
   - Re-verified 2026-07-23: no tracked-bug fix merged through b10094; new crash reports exist on newer builds.
   - Amended 2026-08-08: superseded - the on-disk build is canonical, never downgraded (user decision; record in tasks.md).
@@ -105,7 +105,7 @@ Decided at the first execution session's review; these supersede the specific lo
     - Amended 2026-08-10: superseded by the q6 standard + alias collapse; the surviving alias is
       `qwen3.6-35b-a3b-coding` on the MTP q6 entry (models.ini is current).
   - Guarded fleet drops to 2 GGUFs (unsloth 9B non-MTP, Queen-27B); froggeric applies to the 3 entries they back
-    (Queen-27B backs both `queen-27b-*` configs - corrected 2026-07-28, was "two entries").
+    (Queen-27B backs both `queen-27b-*` entries - corrected 2026-07-28, was "two entries").
   - Phase 4 purge shrinks to: Ollama uninstall + 232G store, `modelfiles/` + create-script retirement, vhdx compact.
 - **KV probe replaced** (supersedes the same-prompt comparison): Gemma-only `llama-perplexity` KL run, one
   ~16k-token wikitext segment, f16-cache baseline vs q8_0; read the tool's numbers as-is, no pooling.
@@ -142,7 +142,8 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
 
 - Stay on b9860. Any rebuild: re-run the crash matrix (eval log 2b) and re-validate the froggeric (template, build) pair.
   - Amended 2026-08-08: superseded - the on-disk build is canonical, never downgraded (user decision; record in tasks.md).
-- Guarded Qwen GGUFs face OpenAI clients only under the froggeric template (v21.3, snapshot `23a40b0b`, `--jinja`).
+- Guarded Qwen GGUFs serve OpenAI-endpoint clients only under the froggeric template.
+  - Template identity: v21.3, snapshot `23a40b0b`, served with `--jinja`.
 - Never scrape `GET /metrics` on the router - it autoloads models and blocks idle sleep (llama.cpp #23096).
 - Codex threads start fresh per provider - replayed `web_search_call` history 400s on local backends (codex #24612).
 
@@ -170,5 +171,5 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
   - Open WebUI: search-enabled chat smoke passes on the OpenAI connection.
 - Gemma MTP serves at the probed ctx ceiling, graphs ON; results recorded in a dated history log.
 - ollama.service stopped + disabled; purge executed after the validation window.
-- `llamacpp/` documents where per-model serving config lives; architecture.md, AGENTS.md, README rewritten.
+- `llamacpp/` defines each entry's serving flags (other files point there); architecture.md, AGENTS.md, README rewritten.
 - tasks.md items all checked or explicitly deferred with reasons.

@@ -21,4 +21,4 @@
 - Consumer: `~/.config/claude-local.mcp.json` runs it via `pipx run`.
   - `OLLAMA_API_KEY` comes from the user env file, never this repo.
   - Accepted 2026-08-11 (review): claude-local exports that key into claude's env, so every child inherits it
-    (an `env` printout can land it in a transcript) - mcp.json's `${OLLAMA_API_KEY}` expansion requires it there.
+    (an `env` printout can write it into a transcript) - mcp.json's `${OLLAMA_API_KEY}` expansion requires it there.

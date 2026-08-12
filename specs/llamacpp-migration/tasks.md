@@ -11,7 +11,8 @@ Notation used throughout:
 
 - Status legend: [ ] pending, [x] done.
 - `PASS N/N` - N of N trials clean.
-- Dated labels `Amended` / `Decided` / `Finding`, written `<Label> YYYY-MM-DD (who):` when both are recorded.
+- Dated labels, written `<Label> YYYY-MM-DD (who):` when both are recorded.
+  - `Amended` / `Decided` / `Finding` mark rulings; `Applied`, `Executed`, `Fixed`, and similar mark work done.
 
 ## Pre-flight (2026-07-25)
 
@@ -30,7 +31,7 @@ Fleet: 17 configs + 6 aliases.
 - [x] 8 Modelfiles deleted - verified 23 Modelfiles remain (17 + 6)
   - 3 OBLITERATUS configs + the `27b-obliterated-coding` alias, and the `qwopus3.5/` family
   - The 35B q4 MTP pair and the non-MTP 35B entry
-- [x] `35b-a3b-coding` alias repointed to the MTP-q5 coding config; rebuilt under Ollama
+- [x] `35b-a3b-coding` alias repointed to the MTP-q5 coding entry; rebuilt under Ollama
   - Verified 28 GB (q5 class; the old q4 build was 23 GB)
 - [x] 9 Ollama models removed - verified `ollama list` = 23, matching the Modelfile count
 - [x] HF cache: OBLITERATUS x2, noctrex, Jackrong Qwopus, non-MTP 35B repo, 35B q4 blob deleted - hub 285G -> 199G
@@ -45,12 +46,12 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Verified: 19 keys map to b9860 flags, all paths resolve, `[*]` mechanics source-checked, copy sha256-identical
 - [x] Launcher uses the absolute build/bin path and aborts unless `--version` reports 9860
   - Verified: assert substring matches live `--version` output; `bash -n` clean; abort branch untested (accepted)
-  - Amended 2026-08-03 (user): abort removed after P1; launch.sh keeps the pin as a last-known-good record
+  - Amended 2026-08-03 (user): abort removed after Phase 1; launch.sh keeps the pin as a last-known-good record
   - The spec's rebuild rule moves that pin record forward (decision record in the P1 log)
 - [x] Router up: `/v1/models` lists only preset entries (no `default` entry, no HF-cache auto-discovery)
   - One generation OK under the `LLAMA_CACHE` redirect
 - [x] `/v1/messages` smoke via router: basic, streaming, tool loop, cache hits (427 cached tokens on turn 2)
-  - Streaming block-overlap quirk at the thinking->text boundary logged for the P3 claude-local validation
+  - Streaming block-overlap quirk at the thinking->text boundary logged for the Phase 3 claude-local validation
 - [x] Multi-system immunity check on `/v1/messages` (per-build) - two-block system 200
 - [x] `/v1/chat/completions` + froggeric on a guarded Qwen - mid-conversation system 200, template byte-identical
 - [x] `/v1/responses` Codex-shaped smoke with a function tool - round-trip completed, no 500
@@ -61,7 +62,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 - [x] Gemma thinking confirmed in a live response with no flags set; disable path and `-rea` mapping recorded
   - `enable_thinking:false` disables per-request; `-rea off` disables at launch
 - [x] MTP x `--mmproj` behavior recorded - b9860 serves both from one entry, no conflict, loads fine unsplit
-  - Image round-trip OK with drafting active, at a ~35-40% decode penalty; P2 splits for speed
+  - Image round-trip OK with drafting active, at a ~35-40% decode penalty; Phase 2 splits for speed
 - [x] Gemma drafter auto-discovery from a local snapshot path tested - none; explicit `model-draft` mandatory
   - Child dies without it: `failed to create MTP context`
 
@@ -69,7 +70,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 
 - [x] Gemma KV probe: llama-perplexity KL (f16 vs q8_0, one ~16k segment) + VRAM delta; type fixed before the ladder
   - Qwen was to be probed only if the Gemma result fell outside the decision rule
-  - Decided 2026-08-03 (user): q8_0 fleet-wide - q8_0 KLD 0.072 == bf16's 0.070 vs the f16 base
+  - Decided 2026-08-03 (user): q8_0 fleet-wide - q8_0 KLD 0.072, matching bf16's 0.070, vs the f16 base
   - The tail is dtype noise, and the Gemma result stayed inside the rule, so no Qwen probe ran
   - Evidence in `docs/history/2026-08-03-llamacpp-p1-envelopes.md`
 - [x] Gemma 12B MTP ctx ladder (32k..200k, crash matrix per rung, graphs on); pick ceiling
@@ -92,14 +93,14 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - Verified: `[*]` carries all four, plus the fleet-constant sampling keys hoisted at the review sweep
   - min-p/n-predict/repeat-penalty/top-p/presence-penalty live in `[*]`; per-entry values only where they differ
 - [x] froggeric template pinned into `llamacpp/templates/`
-  - Done at P0; sha256 `d203f334...` re-verified at P2
+  - Done at Phase 0; sha256 `d203f334...` re-verified at Phase 2
 - [x] `llamacpp/README.md`: layout, alias policy, add-a-model procedure
 - [x] Name-parity check against `ollama list`; spot-loads verified via `/props` (4 ran)
-  - Parity EXACT 2026-08-03: 17 ids + 6 aliases == the 23 `ollama list` names
+  - Parity EXACT 2026-08-03: 17 ids + 6 aliases matched the 23 `ollama list` names
   - Heretic templates extracted offline 2026-08-03 (review-sweep M8): zero `raise_exception` in either GGUF
   - Spot-loads 2026-08-04: PASS 4/4 (31b-mtp, queen-27b-coding, 35b-a3b-mtp-coding, 26b-heretic carrying the probe)
   - Spot-load `/props`: sampling exact per profile on all 4; ctx-size pads to a 256 boundary (200000 -> 200192)
-  - Spot-load `/props` display-only artifacts: `n_predict -1` (known P0), `speculative.types "none"` while drafting
+  - Spot-load `/props` display-only artifacts: `n_predict -1` (known at Phase 0), `speculative.types "none"` while drafting
   - Queen's served template byte-identical to froggeric; acceptance 0.83 (31B pair) / 0.88 (35B); no CUDA lines
   - Heretic probe HTTP 200 via the "outdated gemma4 chat template" compat rewrite (3 warnings; unsloth sibling 0)
   - That multi-system pass depends on the upstream compat workaround staying present
@@ -155,7 +156,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - #26977's zero hits mean the path was never exercised, not fixed - the risk on plan.md's Watch list stays open
 - [x] Pi best-effort config tried or explicitly deferred
   - Explicitly deferred 2026-08-07 (user: "defer pi for now"); Pi is not installed here, so nothing was rewired
-  - No Pi config landed in the repo; wire it from `llamacpp/models.ini` at pickup - does not block Phase 4
+  - No Pi client config was added to the repo; wire it from `llamacpp/models.ini` at pickup - does not block Phase 4
 
 ## Phase 4 - staged retirement
 
@@ -163,7 +164,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Purge (user-confirmed): store deleted, modelfiles/ + create script retired, vhdx compacted
-  - [ ] Same pass: demote the Ollama benchmark suites and the AGENTS.md Commands block
+  - [ ] Same pass: mark the Ollama benchmark suites and the AGENTS.md Commands block retired (exact action decided at purge)
   - Both of those are unrunnable once the binary and store go
   - Pruned HF snapshots are already gone, deleted at the fleet reduction
 - [ ] Disk numbers and final state recorded in a dated docs/history log
@@ -181,9 +182,9 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
   - 2026-08-07: six files (those plus openwebui.md and parameters.md touch-ups); rumdl-clean then (MD013 carryovers persist)
   - architecture.md redrawn for the router: runbook, frozen-legacy framing, fresh du figures (HF 199G, store 186G)
   - The silent Responses tool-drop folded into architecture.md + openwebui.md; openwebui.md guidance inverted
-  - benchmarking.md pending action replaced by the graphs-on stance with P1 evidence
+  - benchmarking.md pending action replaced by the graphs-on stance with Phase 1 evidence
   - launch.sh pin documented as record-not-assertion (reconciles the spec's pin-enforcement wording)
-- [x] PR #15 review response (2026-08-08): merge-gating comments addressed
+- [x] PR #15 review response (2026-08-08): the comments blocking the merge were addressed
   - The dated sections below are that response and everything it pulled in, through 2026-08-11
 
 ### PR #15 review response - 2026-08-08
@@ -224,7 +225,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 
 Decided 2026-08-08 (user): the B6 deferral is revoked - "the wrapper change MUST be taken"; fix applied same day.
 
-- First fix: claude-local consumes a --model flag, so main + tier + subagent vars follow one _cl_model knob
+- First fix: claude-local consumes a --model flag, so main + tier + subagent vars follow one _cl_model variable
   - Stub-verified: default, --model X, --model=X, and missing-value abort; flag never reaches claude itself
   - Discovery en route: the wrapper had been repointed to gemma4-12b-it-qat-mtp for ALL roles (docs said 35B)
   - Default stays gemma4-12b-it-qat-mtp (owner's standing pin) pending the 35B large-ctx verdict; docs updated
@@ -232,7 +233,7 @@ Decided 2026-08-08 (user): the B6 deferral is revoked - "the wrapper change MUST
   - The last lane persists in ~/.config/claude-local.last; non-TTY reuses it or fails with the fleet list
   - claude's own --model is not overloaded; every claude arg passes through untouched
   - Re-verified via stub + pty: menu pick, Enter-reuse, non-TTY reuse note, out-of-range abort, passthrough
-- Simplify review (opus) applied 2026-08-08 to that menu: decimal 10# index (fixes octal 08/09), empty-ini guard
+- Simplify review (opus) applied 2026-08-08 to that menu: decimal 10# index (fixes octal 08/09), empty-ini check
   - Off-list picks launch visibly but are not persisted; EOF aborts; the verbatim-name fallback is documented in fn + CLAUDE.md
   - Menu ordering resolved 2026-08-09 (user, "why not just a simple sort"): LC_ALL=C sort over ids + aliases
   - That sort is the simplest of the three options (no file-order dependency)
@@ -289,7 +290,7 @@ Decided 2026-08-08 (user): the reshape below, blocked on the new-GGUF chat-templ
 - Executed 2026-08-08 config-side only - the GPU work window was closed that day
   - models.ini 18 + 8, OpenCode/Codex swapped, doc counts moved
   - Download complete (29.3G blob, snapshot a483e9e6); stale 16.9G .incomplete removed
-  - New-GGUF gate greps: guard 0, merged_system 7 - joins the carriers (now 5 GGUFs / 7 entries)
+  - New-GGUF gate greps: guard 0, merged_system 7 - joins the merged_system carriers (now 5 GGUFs / 7 entries)
 
 ### GPU-window diagnosis queue - 2026-08-08
 
@@ -318,12 +319,12 @@ Fixed 2026-08-08 (user "1"): the 9-tag whitespace patch is applied to the vendor
 - Provenance + new sha recorded in templates/README.md; upstream report (option 2) not taken
 - Chat-template gate re-validation of the patched (template, b10335) pair: PASS 2026-08-10
   - Multi-system /v1/chat/completions returned 200 on all 3 guarded entries; template sha 8daaa08a re-verified
-  - Control (9B, no override, -ngl 0): guard fired, so the override is load-bearing; sanity single-system = 200
+  - Control (9B, no override, -ngl 0): the guard rejected it, so the override is required; sanity single-system = 200
   - Finding: the guard returns HTTP 500 on b10335, not 400 as at b10326
   - AGENTS.md gate step 3 therefore matches on the guard message text, never the status code
   - A code-only check would read that 500 as "not guarded" and pass a guarded GGUF
 - Online investigation 2026-08-08 (all 66 repo discussions grepped byte-exact): the bug is unreported - novel
-- It is a v21.3 regression: the vulnerable split landed in the repo's last commit (2026-07-02); v21.2 was immune
+- It is a v21.3 regression: the vulnerable split was introduced in the repo's last commit (2026-07-02); v21.2 was immune
 - Qwen/unsloth official templates are immune by construction (single string literal); froggeric-only exposure
 - Undiagnosed symptom threads #55/#56/#64 (broken tool calls "with v21.3") are consistent with this root cause
 - Author pattern: bursty batch fixes, 5-week lull ongoing; best traction = detailed repro report (#43 precedent)
@@ -371,9 +372,9 @@ The cause was this box's +230 MHz GPU core clock offset, nothing upstream.
 Decided 2026-08-10 (user, "1. exit, 2. remove, 3. single-home, 4. collapse all three").
 
 - launch.sh exits on a non-empty LLAMA_CACHE
-- SLEEP_IDLE_SECONDS/MODELS_MAX env knobs removed, since the last flag value given takes effect
+- SLEEP_IDLE_SECONDS/MODELS_MAX env vars removed, since the last flag value given takes effect
 - Build record single-homed in launch.sh, crash status in docs/benchmarking.md; the satellites became pointers
-- Also collapsed: MTP mechanisms -> architecture.md s3, FA+q8_0 -> AGENTS.md, guarded count -> templates/README.md
+- Also collapsed: MTP mechanisms -> architecture.md section 3, FA+q8_0 -> AGENTS.md, guarded count -> templates/README.md
 
 ### Final sweep response - 2026-08-10 (head 05f08c5 + repo-independence addendum)
 
@@ -409,28 +410,29 @@ The tasks.md collapse was scoped to closed sections (user).
 
 ### Post-commit sweep on f1b8696 - 2026-08-11
 
-4 opus lenses + an inline permission-scope null. All 35 prior items verified resolved with zero regressions.
+4 opus review passes + an inline permission-scope check that found nothing.
+All 35 prior items verified resolved with zero regressions.
 The new findings were dispatched on user go (all four tiers approved).
 
 - REVERSED item 29: the .cache-empty ignore is restored
   - Un-ignoring made bare-hex blob downloads commit-eligible while *.gguf still hid the symlinks
-  - launch.sh's fail-closed guard is the real control; .claude/worktrees/ joined the tracked ignores
+  - launch.sh's fail-closed check is the real control; .claude/worktrees/ joined the tracked ignores
 - Fixed in round-1 text: the 766/780 qualifier (four-day window, not the located subset)
 - Fixed in round-1 text: the env -u rationale split (HF_TOKEN caps downloads; OLLAMA_API_KEY is unread by llama-server)
 - The spec now scopes env-file sourcing to the MCP branch and names the dummy auth token
 - The spec marks B8 firing UNVERIFIED, since whether it logs anything depends on the telemetry settings
-- Collapse orphans restored inline above (P3 log:6-7 names this file the surviving record for 2026-08-04)
+- Items orphaned by the closed-section collapse restored inline above (P3 log:6-7 names this file the record)
 - Synced script hardened (user: all three): plugin kill-switch fails closed, python parse aborts visibly
   - Unprintable router ids skipped with a warning
   - OLLAMA_API_KEY inheritance accepted + documented (mcp/README.md)
-- Dedup applied (user: pointers win over round-1's models.ini restatements); CLAUDE.md cut to a pure pointer
+- Dedup applied (user: prefer pointers over round-1's models.ini restatements); CLAUDE.md cut to a pure pointer
 
 ### Simplify round - 2026-08-11
 
-2 opus lenses (user: "go ahead on all").
+2 opus review passes (user: "go ahead on all").
 
 - The synced claude-local script rewritten, 110 -> ~100 lines
-  - Real bug fixed: the empty-fleet guard never fired
+  - Real bug fixed: the empty-fleet check never ran
   - Dead fallbacks replaced by fail-visibly indexing; the control-char filter dropped as guarding no trust boundary
   - Plugin build hoisted above the menu; alias rows show status
 - AGENTS.md restyled to the instruction register: ~240 -> ~130 lines, 15 -> 9 sections
@@ -439,4 +441,17 @@ The new findings were dispatched on user go (all four tiers approved).
   - DiffusionGemma cut from parameters
 - 5 must-move orphan candidates relocated first
   - merged_system inventory -> llamacpp/README.md; graphs-reused note -> benchmarking.md
-  - Modelfile scheme -> architecture.md s2; ollama-create.sh usage header; LLAMA_ARG_* citation
+  - Modelfile scheme -> architecture.md section 2; ollama-create.sh usage header; LLAMA_ARG_* citation
+
+### Code-comment pass + second prose pass - 2026-08-11
+
+The 22:17 review: the 3-step prose pass applies to all code comments too; owner goal added a second md pass.
+Archived files excluded (docs/history/, frozen modelfiles/, the sha-pinned vendored files).
+
+- Code comments rewritten terse: <=80 cols, md charter rules applied, detail replaced by pointers to its home
+  - models.ini header reduced to format/value rules + a profile-by-suffix legend; banners reduced to family names
+  - launch.sh flag/CSRF/scrub comments now point at docs/architecture.md section 4; build record stays defined there
+- Second md pass: personal read of all 22 in-scope files + 3 report-only opus flaggers (52 flags adjudicated)
+  - 4 flags rejected: plan-era counts and defined terms stay as recorded (detail in the PR closure comment)
+- Declared: web-search-mcp.py docstrings stay upstream-verbatim (mcp/README.md "do not reformat"; sha-recorded)
+- Verified: rumdl clean, links + anchors resolve, token net vs 683d8f9 all-deliberate, full diff hand-read

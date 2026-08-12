@@ -13,7 +13,7 @@ Status legend: [ ] pending, [x] done. Resume point for this side task.
 
 ## Chat-template gate
 
-- [ ] `qwen3.5-queen-27b-coding`: multi-system-message probe; record verdict.
+- [x] `qwen3.5-queen-27b-coding`: probed 2026-07-23 - guarded; froggeric-validated (spec.md).
 - [ ] `gemma4-31b-it-heretic`: multi-system-message probe; record verdict.
 - [ ] Verdicts recorded in docs/openwebui.md (the README catalog tables were deleted 2026-08-08).
 

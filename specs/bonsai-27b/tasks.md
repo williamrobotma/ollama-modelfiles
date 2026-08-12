@@ -1,16 +1,16 @@
 # Tasks: Bonsai-27B onboarding
 
-Status legend: [ ] pending, [x] done. This file is the resume point for the feature; update as phases land.
+Status legend: [ ] pending, [x] done. This file is the resume point for the feature; update as phases complete.
 
 DRAFT 2026-07-17, reworked 2026-08-03 (ternary first-class) - not started.
 
-Blocked on `specs/llamacpp-migration` (the serving stack + config home; llamacpp-serving verdict landed).
+Blocked on `specs/llamacpp-migration` (the serving stack + config home; llamacpp-serving verdict delivered).
 
 Spec review pending: the two remaining decisions in spec.md (sampling profile, intended role).
 
 ## Phase 0 - prerequisite check + rebuild
 
-- [ ] Serving-config home known (from `specs/llamacpp-migration`). llamacpp-serving verdict has landed (B).
+- [ ] Serving-config home known (from `specs/llamacpp-migration`). llamacpp-serving verdict delivered (option B).
 - [x] #25707 status re-checked: merged 2026-07-30 (checked 2026-08-03; fork + llama-swap contingency retired).
 - [ ] Rebuild past the merge; migration-spec rebuild rule passed (crash matrix, froggeric, Gemma MTP re-check).
   - Amended 2026-08-08: the prerequisite is met build-wise (build b10326 includes #25707).
@@ -36,7 +36,7 @@ Spec review pending: the two remaining decisions in spec.md (sampling profile, i
 
 - [ ] Download + pin `Q1_0` + dspark Q4_1 (~5.6 GB; no second mmproj).
 - [ ] Served far enough to bench: template vet + `/props`; parity rows `bonsai27b-q1` / `bonsai27b-q1-dspark`.
-- [ ] Three-way comparison + serving-role verdict; winner wired into the serving config.
+- [ ] Three-way comparison + serving-role verdict; the winner added as a preset entry.
 
 ## Phase 4 - document
 

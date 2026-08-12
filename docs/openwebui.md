@@ -13,7 +13,7 @@ Evidence logs:
   - First 0.11.0 start ran 9 alembic migrations + 13 seeded config defaults; settings and the Brave key survived.
 - No background service (user preference).
   - The launcher `~/.local/bin/openwebui` runs it on demand, in the foreground; Ctrl+C stops it.
-- `DATA_DIR=~/.open-webui` is pinned in the launcher. This is load-bearing.
+- `DATA_DIR=~/.open-webui` is pinned in the launcher. Do not remove the pin:
   - The pipx-venv default `DATA_DIR` lives *inside* the venv and is destroyed by `pipx upgrade` (per `env.py`).
   - That default already destroyed one install - the admin account plus 7 chats were recovered via an sqlite backup.
 

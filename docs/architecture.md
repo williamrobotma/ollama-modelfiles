@@ -110,7 +110,7 @@ Both families now run as router children on stock llama.cpp, with CUDA graphs on
 - #24795 is caused by configuration, not by the build: graphs off reproduces the Gemma drafter load failure,
   and graphs on serves it.
 - Never set `GGML_CUDA_DISABLE_GRAPHS`: it tests presence only, so even `=0` disables graphs (`common.cuh:1258`).
-- Phase 1 (2026-08-03): 36/36 gens across the 12B ctx ladder, 30/30 on the Qwen hammer, 0 crashes.
+- Phase 1 (2026-08-03): 36/36 generations across the 12B ctx ladder, 30/30 on the Qwen hammer, 0 crashes.
 - The 26B-A4B entry is the exception: its drafter is pinned to CPU (`spec-draft-ngl = 0`, 241 MiB).
   - A full GPU reports free=0 -> NaN layer split -> `devices.at(1)` throws (`llama-model.cpp:1291` at b9860-era
     source; the line moves across builds).
@@ -140,7 +140,7 @@ Both families now run as router children on stock llama.cpp, with CUDA graphs on
    disabled         exists in this build                WebSearch                 tools DROPPED at 200
 ```
 
-The launcher takes no env knobs of its own: pass flags to `launch.sh`, and the last value given takes effect.
+The launcher reads no env vars of its own: pass flags to `launch.sh`, and the last value given takes effect.
 
 - llama-server itself reads `LLAMA_ARG_*` env vars and applies them (`common/arg.cpp` `.set_env`), so keep them unset.
 - Every client was cut over and validated against the router on 11433.
@@ -187,7 +187,7 @@ What an attacker gets if one is reached:
 - claude-local picks a lane per session and exports `ANTHROPIC_BASE_URL` + the model vars.
   - Full spec: [AGENTS.md](../AGENTS.md#claude-local).
   - It execs `claude` with all three flags (`--settings`, `--disallowedTools`, `--mcp-config`) in `=VALUE` form,
-    because the space form consumes `"$@"` as the flag's value and lands it in the deny list.
+    because the space form consumes `"$@"` as the flag's value and puts it in the deny list.
   - Its MCP is the official Ollama web-search script, run via pipx on an `mcp>=1.9,<2` pin.
 - Open WebUI: started on demand, no background service, OpenAI connection at 11433 ([openwebui.md](openwebui.md)).
 - Codex: llama-server silently skips Responses tools typed `namespace` or `web_search` and still returns 200.

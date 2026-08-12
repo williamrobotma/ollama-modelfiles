@@ -13,7 +13,7 @@ Ollama tracking drops out at planning.
 ## Decide at planning
 
 - What to record, and where.
-- When to update: on a schedule, or triggered by a watched fix landing.
+- When to update: on a schedule, or triggered by a watched fix merging upstream.
 - The check each component must pass before an update is trusted.
   - Decided for chat templates (2026-07-23): the AGENTS.md gate section's vetting procedure.
 - What stays pinned on purpose.
@@ -32,11 +32,9 @@ A short procedure doc exists and each component has a named check. No new servic
   - It also silently drops web_search/namespace-typed tools with HTTP 200 (the invisible Codex MCP failure).
   - Choices held: Open WebUI api_type (docs/openwebui.md) and OpenCode stay on Chat Completions; Codex is Responses-native.
   - Flip triggers: llama-server Responses gains timings, tool-type errors, and state; or a client degrades Chat Completions.
-  - The update posture above means no version pin protects these choices: re-check at every rebuild and client upgrade.
+  - No version pin protects these choices (components stay updatable): re-check at every rebuild and client upgrade.
 
 ## Version snapshot 2026-08-03 (superseded - do not act on)
-
-Superseded once planning starts.
 
 - llama.cpp: local b9860, upstream b10251. No fix merged for the Gemma MTP bugs - don't upgrade for that.
   - #26017 and #24795 are both still open with no linked PR (checked 2026-08-03).

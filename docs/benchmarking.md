@@ -39,10 +39,10 @@ Each Ollama suite's `run.sh` sets its suite name and sources `common.sh`.
 Everything is dry-run by default - nothing runs without `--execute`:
 
 ```bash
-benchmarks/<suite>/run.sh            # print the plan and the exact commands it would run
+benchmarks/<suite>/run.sh            # print the plan and exact commands
 benchmarks/<suite>/run.sh --list     # configured models and prompts
 benchmarks/<suite>/run.sh --execute  # run the full matrix.tsv
-benchmarks/all.sh                    # qwen, gemma, 9b-coders sequentially (safe - see the port note)
+benchmarks/all.sh                    # qwen, gemma, 9b-coders sequentially
 ```
 
 Executed runs write raw logs and timing under `benchmark-results/<timestamp>/` (gitignored).
@@ -89,10 +89,10 @@ Run the commands below at three points in every trial:
 
 ```bash
 nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu,clocks_throttle_reasons.active \
-    --format=csv,noheader                      # GPU; the guest cannot see Windows-side consumers
-free -m | sed -n '2p;3p'                       # host RAM and swap (WSL2 shares them)
+    --format=csv,noheader    # GPU; the guest cannot see Windows-side use
+free -m | sed -n '2p;3p'     # host RAM and swap (WSL2 shares them)
 
-# GPU hardware faults, Windows-side. Bracket every trial with this and record the delta.
+# GPU hardware faults (Windows-side): bracket every trial; record the delta.
 /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command \
     "(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='nvlddmkm';Id=13} -EA 0).Count"
 ```
@@ -135,7 +135,7 @@ Distilled from the evidence logs; follow the links for the primary-source detail
 
 ### MTP speedups (decode throughput)
 
-- Qwen 3.5 9B self-draft MTP: ~1.65x; 98-121 tok/s on the router child (P1 hammer, 2026-08-03).
+- Qwen 3.5 9B self-draft MTP: ~1.65x; 98-121 tok/s on the router child (Phase 1 hammer test, 2026-08-03).
   - See [history/2026-06-23-qwen3.5-9b-mtp-bench.md](history/2026-06-23-qwen3.5-9b-mtp-bench.md).
 - Gemma 4 MTP via Ollama `DRAFT`: 1.67x on the 12B pair, 1.54x on the 26B pair.
   - See [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md).
@@ -150,7 +150,7 @@ Distilled from the evidence logs; follow the links for the primary-source detail
   - The mechanism is voltage-for-frequency, not peak clock: the overclock was validated under full load
     (~1100 mV), and LLM decode runs below that band, where it was never validated.
 - Current stance: CUDA graphs are on fleet-wide, deliberately.
-  - P1-validated.
+  - Validated in Phase 1.
   - Graphs were disproven as the trigger during the investigation.
   - The Ollama-era serve kept graphs off to avoid what was then read as an MTP x graphs crash
     ([history/2026-07-01-mtp-graphs-crash.md](history/2026-07-01-mtp-graphs-crash.md)).
@@ -164,7 +164,7 @@ Distilled from the evidence logs; follow the links for the primary-source detail
   - qwen9b +6-14%, gemma12b +16%, qwen9b-mtp +4-13%; stock-only gemma12b MTP ran 1.83x.
   - See [history/2026-07-17-llamacpp-eval.md](history/2026-07-17-llamacpp-eval.md).
 - On stock, the Gemma MTP drafter's stability is set by configuration, not by the build.
-  - It is stable only with CUDA graphs on at moderate ctx (7/7 gens at 16k).
+  - It is stable only with CUDA graphs on at moderate ctx (7/7 generations at 16k).
   - Graphs-off fails the drafter load at 200k with the #24795 signature.
   - Graphs-off also crashes in-flight at 16k (misaligned address).
   - Ollama's `DRAFT` path (graphs-off env) crashed 9/10 requests on-box.

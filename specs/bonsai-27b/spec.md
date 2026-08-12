@@ -29,8 +29,8 @@ See [research.md](research.md) in this bundle - verification status marked per c
 
 ## Prerequisites
 
-1. `specs/llamacpp-migration` builds the serving stack and fixes where non-Ollama models are configured.
-   - `specs/done/llamacpp-serving` already landed its Phase 2 parity + Phase 4 verdict.
+1. `specs/llamacpp-migration` builds the serving stack and defines where non-Ollama models are configured.
+   - `specs/done/llamacpp-serving` already delivered its Phase 2 parity + Phase 4 verdict.
    - This spec adds a model to that stack; it creates no new serving machinery.
 2. Ternary: PR #25707 merged 2026-07-30; the remaining prerequisite is the on-box rebuild (migration spec rebuild rule).
 3. Watch only, not a prerequisite: [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen a Modelfile path someday.
@@ -60,5 +60,5 @@ See [research.md](research.md) in this bundle - verification status marked per c
   - The Anthropic path is structurally immune; the OpenAI path is the risk.
 - docs/parameters.md gains a Bonsai-27B profile section with source URLs.
   - Benchmarking notes and watch items (#25707, #13668) recorded.
-- Ollama untouched: no Modelfiles, its model-store keep policy intact, disk budgeted against `/mnt/f`.
+- Ollama untouched: no Modelfiles, its model store left as-is, disk budgeted against `/mnt/f`.
   - Downloads: ~10.2 GB for ternary, ~5.6 GB more for the 1-bit comparison (no second mmproj).

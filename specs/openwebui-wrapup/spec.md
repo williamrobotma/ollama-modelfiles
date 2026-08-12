@@ -7,13 +7,14 @@ Small side task. This spec is its own plan - no separate plan.md; tasks.md is th
 Open WebUI is set up and verified at the DB level, but it has never been exercised end-to-end in a browser:
 
 - Installed (pipx 0.10.2) and wired to the migrated Ollama stack.
-- Settings verified at the DB level: native Ollama connection, Brave search engine + key, `openai.enable=false`.
+- Verified: native Ollama connection, Brave search engine + key, `openai.enable=false`.
 - Background: docs/openwebui.md and docs/history/2026-07-10-migration-local-ggufs.md.
 
-Three loose ends remain:
+The loose ends:
 
 - An in-browser smoke pass.
 - The chat-template gate on one still-unvetted community model.
+- The user-facing default model list.
 - One pending host-side disk reclaim.
 
 ## What / acceptance
@@ -27,13 +28,13 @@ Each check either works, or gets a written issue in docs/openwebui.md or a histo
 - Chat against a migrated model (any repo Modelfile model) - response streams, sampling looks right.
 - Web search round-trip: a query that triggers Brave, results cited in the answer.
   - The key is in the DB and live-tested at HTTP 200; confirm it works in a real chat.
-- Native tool calling with a tools-capable model (`qwen3.6-27b-coding`) - a tool call fires and returns.
+- Native tool calling with a tools-capable model (`qwen3.6-27b-coding`) - the model issues a tool call and gets a result.
 - Vision: drop an image on a gemma4 model that has an mmproj (`gemma4-12b-it-qat`) - it reads the image.
   - This confirms the second `FROM mmproj` line kept the `vision` capability.
 
 ### 2. Chat-template gate on community models
 
-Vet per the AGENTS.md gate procedure (`ollama show --template` is retired - it shows a template that never runs):
+Vet per the AGENTS.md gate procedure (the only template that runs is the one embedded in the GGUF - read it there):
 
 - `qwen3.5-queen-27b-coding`: done 2026-07-23 - guarded; froggeric-validated (see the 2026-07-23 history log).
 - `gemma4-31b-it-heretic`: still unvetted.

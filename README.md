@@ -45,9 +45,9 @@ The fleet spans these families:
 
 - Gemma 4: thinking, with vision via mmproj.
 - Qwen 3.6 coders.
-- Qwen 3.5 small coders. Qwen 3.6's smallest GGUF is 27B (offloads), so the resident coding line is
-  Qwen 3.5 dense.
-- An uncensored track of community abliterated builds (plain Q4/i1-Q4, not UD-*). Abliteration can dent
+- Qwen 3.5 small coders. Qwen 3.6's smallest GGUF is 27B (it partial-offloads), so the fully-resident
+  coders are Qwen 3.5 dense.
+- An uncensored track of community abliterated builds (plain Q4/i1-Q4, not UD-*). Abliteration can degrade
   reasoning and tool-calling.
   - Verify on-task. All of them must pass the [chat-template gate](AGENTS.md#chat-template-gate-for-community-ggufs).
 

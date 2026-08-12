@@ -66,7 +66,7 @@ The test: for every served GGUF you can name which chat template it runs under, 
 The live serve is `llamacpp/launch.sh`, which starts llama-server in router mode on `127.0.0.1:11433`.
 The runbook is [docs/architecture.md](docs/architecture.md) section 4.
 
-Launch flags - the launcher takes no env knobs, so configuration is passed as flags:
+Launch flags - the launcher reads no env vars of its own, so configuration is passed as flags:
 
 - Defaults are emitted before `"$@"`, so the last value given takes effect.
 - Keep `LLAMA_ARG_*` env vars unset - llama-server reads them and applies them, invisibly bypassing the flags.
@@ -104,7 +104,7 @@ Benchmarks are dry-run by default - nothing runs without `--execute`:
 benchmarks/qwen/run.sh            # print the plan
 benchmarks/qwen/run.sh --list     # configured models and prompts
 benchmarks/qwen/run.sh --execute  # run the full matrix.tsv
-benchmarks/all.sh                 # the three Ollama suites, sequential (parity runs alone)
+benchmarks/all.sh                 # the three Ollama suites; parity runs alone
 ```
 
 Suites share ports 11435-11438, so never run two concurrently.
