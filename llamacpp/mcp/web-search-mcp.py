@@ -1,9 +1,9 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#   # Local pins; rationale and history: README.md in this directory.
-#   "mcp>=1.9,<2",
-#   "ollama>=0.6.2,<1",
+#   # Pin history: README.md in this directory.
+#   "mcp>=1.9,<2",  # mcp 2.0 removed FastMCP, imported below
+#   "ollama>=0.6.2,<1",  # floor = the known-working resolved version
 # ]
 # ///
 # pyright: reportMissingImports=false
@@ -12,8 +12,7 @@
 """MCP stdio server exposing Ollama web_search and web_fetch as tools.
 
 Environment:
-- OLLAMA_API_KEY (required): sent as the Authorization header to ollama.com;
-  requests fail without it.
+- OLLAMA_API_KEY (required): sent as the Authorization header to ollama.com.
 """
 
 from __future__ import annotations

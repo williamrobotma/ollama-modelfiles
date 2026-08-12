@@ -43,9 +43,11 @@ A short procedure doc exists and each component has a named check. No new servic
   - Flip triggers: llama-server Responses gains timings, tool-type errors, and state; or a client degrades Chat Completions.
   - No version pin protects these choices (components stay updatable): re-check at every rebuild and client upgrade.
 
-## Planning leads from the 2026-08-03 snapshot (superseded; do not act on)
+## Planning leads (carried from the 2026-08-03 version snapshot)
 
 - llama.cpp has since moved to b10335 (`llamacpp/launch.sh` is the build record).
+- The Gemma MTP issues (#26017, #24795) had no merged fix as of 2026-08-03, so upgrading does not help them;
+  their live status sits in the migration Watch list this spec inherits.
 - Rebuild cautions recorded then: llama-cli was rewritten; b10242 moved penalties sampling to the GPU;
   re-smoke speculative decoding and the pinned sampling flags after any rebuild.
 - Open WebUI 0.11.0: DB migration ran and browser validation passed (2026-08-04/07); state in docs/openwebui.md.

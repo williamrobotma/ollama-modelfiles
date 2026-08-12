@@ -13,10 +13,8 @@ Notation used throughout:
 - `PASS N/N` - N of N trials clean.
 - Dated labels, written `<Label> YYYY-MM-DD (who):` when both are recorded.
   - `Amended` / `Decided` / `Finding` mark rulings; `Applied`, `Executed`, `Fixed`, and similar mark work done.
-- Review-item codes (`B6`, `B8`, `M8`, `#32`, ...) number findings within one review sweep; they only have
-  meaning inside that sweep's dated section.
-- "the P1 log", "the diagnosis log", "the dossier log" - dated evidence logs under `docs/history/`
-  (`docs/history/index.md` maps names to files).
+- Review-item codes (`B6`, `M8`, `#32`, ...) number findings inside one review sweep's dated section only.
+- "the P1 log", "the diagnosis log", ... - dated evidence logs in `docs/history/` (its index.md maps names).
 
 ## Pre-flight (2026-07-25)
 
@@ -167,20 +165,20 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 ### Open items
 
 - [ ] Validation window (~2 weeks daily use) completed without rollback
-- [ ] Store purge (user-confirmed, after the window ~2026-08-21): `ollama rm` all, uninstall, delete the
-  `/usr/share/ollama` store, `wsl --shutdown` + `Optimize-VHD` host-side
+- [ ] Store purge (user-confirmed, ~2026-08-21): `ollama rm` all, uninstall, delete `/usr/share/ollama`
+  - Then host-side: `wsl --shutdown` + `Optimize-VHD`
   - Pruned HF snapshots are already gone, deleted at the fleet reduction
 - [ ] Disk numbers and final state recorded in a dated docs/history log
-- [ ] At spec close: move the still-live spec.md Watch issues to `specs/stack-upkeep` (entries are
-  as-recorded, not re-checked)
+- [ ] At spec close: move the still-live spec.md Watch issues to `specs/stack-upkeep` (as-recorded, unchecked)
 
 ### Closed items
 
 - [x] Repo-side purge executed 2026-08-12 (review directive: "eliminate all ollama"; user picked repo-now/disk-later)
   - `git rm`: `modelfiles/` (every Modelfile), `scripts/` (ollama-create.sh, repro-mtp-graphs.sh),
     `benchmarks/` (the 3 Ollama suites, llamacpp-parity, common.sh, report.py, all.sh)
-  - `benchmarks/` and `scripts/` went beyond the plan's named purge list because every file in them runs
-    only against the retired stack; git history preserves all of it, `benchmark-results/` keeps raw outputs
+  - Wider than the plan's list, deliberately: nothing in `benchmarks/` or `scripts/` runs without the retired stack
+    - Even the cross-engine parity suite needs Ollama as one arm of its A/B
+    - Git history preserves all of it; `benchmark-results/` keeps the raw outputs
   - Docs swept same pass: README, AGENTS.md, architecture.md, benchmarking.md, pyproject.toml, .gitignore
 - [x] Prerequisites met (claude-local, Open WebUI, OpenCode validated; Codex validated or documented-blocked)
   - Met 2026-08-07: all four cutovers validated (claude-local/OpenCode/Codex 2026-08-04, Open WebUI 2026-08-07)

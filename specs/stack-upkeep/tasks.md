@@ -1,4 +1,4 @@
 # Tasks: stack-upkeep
 
-- [x] Scaffold + version snapshot (2026-07-17).
+- [x] Scaffolded 2026-07-17; spec.md carries the planning leads from the 2026-08-03 version snapshot.
 - [ ] Plan in a fresh session (fill plan.md), then run per run-spec.

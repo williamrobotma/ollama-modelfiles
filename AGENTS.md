@@ -13,8 +13,8 @@ The detail is defined in the files under `docs/`, and this file points to them.
 - Every served GGUF is a pinned absolute path into the local Hugging Face cache, and the preset lists every
   model kept on disk.
 - Re-provisioning from nothing is `git clone` + `hf download` - no build or import step.
-- The retired Ollama layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12; git history
-  preserves it. Only the on-disk store remains, until the purge tracked in `specs/llamacpp-migration`.
+- The retired Ollama layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12 (git history keeps it).
+  - Only the on-disk store remains, until the store purge tracked in `specs/llamacpp-migration`.
 
 ## Models and sourcing
 
@@ -78,8 +78,7 @@ GPU and stability:
 - CUDA graphs stay on fleet-wide. Never set `GGML_CUDA_DISABLE_GRAPHS`.
   - It disables graphs on presence alone, even `=0`, and Gemma MTP needs graphs on.
   - MTP wiring, both mechanisms: [docs/architecture.md](docs/architecture.md) section 3.
-- The 26B MTP pair keeps `spec-draft-ngl = 0` (drafter on CPU); graphs-off reproduces the drafter load
-  failure tracked upstream as #24795.
+- The 26B MTP pair keeps `spec-draft-ngl = 0` (drafter on CPU); graphs-off reproduces its load failure (#24795).
 - **Keep the GPU core clock offset at or below +120 MHz** - above it, large-ctx MTP runs crash
   ([why](docs/benchmarking.md#mtp-crash-investigation-resolved-gpu-core-overclock)).
 - **Capture GPU + host RAM per trial on any GPU run whose numbers you will quote.** Both are shared with
@@ -116,8 +115,8 @@ The implementation is the synced `~/.claude/bin/claude-local`, which a per-machi
 - With `~/.config/claude-local.mcp.json` present (WSL), it sources `~/.config/claude-local.env` (mode 600) and
   execs with `--disallowedTools=WebSearch` plus the vendored web-search MCP (`llamacpp/mcp/`). Without that
   file, only the plugin override applies.
-  - That env file also enables raw-body logging to `/tmp/claude-bodies` - a held review item the owner has
-    not released; whether it logs anything depends on the telemetry settings, and that is unverified live.
+  - That env file also enables raw-body logging to `/tmp/claude-bodies`, a held review item (not yet released).
+    - Whether it actually logs depends on the telemetry settings; unverified live.
 - Sends requests to `/v1/messages` - immune to the chat-template guard above.
 
 The test: the lane you picked is the model every session role is talking to.

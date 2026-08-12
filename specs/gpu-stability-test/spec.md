@@ -12,6 +12,7 @@ One command answers two questions: is the GPU stable at the current clocks, and 
 - The suite lives in `benchmarks/gpu-stability/` - a fresh directory; the old suites were purged 2026-08-12.
   - It keeps the retired suites' CLI convention: dry-run by default, `--list`, `--execute`.
   - It reports a pass/fail verdict rather than throughput numbers.
+  - Port: pick from 11435-11438, freed at the purge (docs/benchmarking.md, Retired suites); record the pick there.
 - The ~81k-token prompt is generated from a short seed to a target token count, never committed.
   - Record the sha256 of the generated body so comparability with the 2026-08-10 decomposition arms stays checkable.
 - Default entry is `gemma4-12b-it-qat-mtp` at ~81k ctx: the most crash-sensitive configuration found.

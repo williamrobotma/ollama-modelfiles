@@ -1,5 +1,8 @@
 # Bonsai-27B research findings (2026-07-17)
 
+RECORD - claims as-recorded 2026-07/08 with their verification status; re-verify at pickup (plan.md).
+Ollama-era references in here are historical; the style passes do not rewrite records.
+
 Research record for this spec bundle. Sources: HF repo file trees, PrismML docs/announcement, ggml-org/llama.cpp PRs and discussions, community benchmarks, plus on-box checks (WSL2, RTX 4070 12 GB, stock llama.cpp b9860 at `~/Developer/llama.cpp`, Ollama 0.31.2 systemd). Verification status is marked per section; a partial adversarial-verification pass confirmed the file inventories 3-0, all other web claims are single-source quotes. Vendor performance numbers are unbenched on this box.
 
 ## Family

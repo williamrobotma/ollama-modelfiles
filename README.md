@@ -2,7 +2,8 @@
 
 Local LLM serving config for a single 12 GB GPU, organized by model family and use profile.
 The live serving stack is stock llama.cpp in router mode ([llamacpp/](llamacpp/README.md), port 11433).
-The repo name is historical: the Ollama build layer it is named for was retired and removed at the 2026-08-12 purge.
+The repo name is historical: the Ollama build layer it is named for was removed at the 2026-08-12 repo purge.
+The retired Ollama install itself still sits on disk; its store purge is pending (`specs/llamacpp-migration`).
 Every served GGUF is a pinned Hugging Face cache snapshot (`hf download`; mostly [Unsloth](https://unsloth.ai) builds).
 Agents should read [AGENTS.md](AGENTS.md) first.
 
@@ -76,10 +77,10 @@ Sampling profiles (Gemma thinking, Qwen precise-coding/general/instruct) are def
 
 Local models have no web access of their own; `claude-local` sessions get it from one MCP server.
 
-- The server: `llamacpp/mcp/web-search-mcp.py`, which calls **Ollama's hosted web-search API** (a cloud service on `ollama.com`).
+- The server: `llamacpp/mcp/web-search-mcp.py`, calling **Ollama's hosted web-search API** (`ollama.com`).
 - The key: `OLLAMA_API_KEY`, read from `~/.config/claude-local.env` (mode 600) - it never enters this repo.
-- **Brave is not involved in claude-local's search.** A swap to a Brave-backed MCP is planned in `specs/brave-search-mcp`.
-  - The one place Brave does appear: Open WebUI's own in-app search feature uses a Brave key, client-side.
+- **Brave is not involved in claude-local's search.** The planned swap to Brave is `specs/brave-search-mcp`.
+  - The one place Brave does appear: Open WebUI's own in-app search feature (its key lives in `webui.db`).
 - This cloud API is the one remaining Ollama dependency; the local Ollama serving stack is retired.
 - Wiring and provenance: [llamacpp/mcp/README.md](llamacpp/mcp/README.md).
 
@@ -95,7 +96,7 @@ Local models have no web access of their own; `claude-local` sessions get it fro
 
 ## Benchmarking
 
-The Ollama-era benchmark suites were removed at the 2026-08-12 purge; git history preserves them.
+The Ollama-era benchmark suites were removed at the 2026-08-12 repo purge; git history preserves them.
 The distilled findings and the GPU resource-capture procedure stay live in [docs/benchmarking.md](docs/benchmarking.md).
 
 ## More

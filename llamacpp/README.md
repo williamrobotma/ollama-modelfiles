@@ -2,6 +2,7 @@
 
 One stock `llama-server` process runs in router mode on `127.0.0.1:11433`.
 It reads the fleet from `models.ini` and starts one child server per model, on demand.
+Only one child is resident at a time (`--models-max 1`): requesting another model evicts the current one.
 A child that sits idle for 24 h is put to sleep.
 Router mode is stock llama.cpp (`--models-preset`); the preset behaviors quoted below come from its source.
 The migration that built this stack is `specs/llamacpp-migration`.
@@ -10,16 +11,17 @@ The migration that built this stack is `specs/llamacpp-migration`.
 
 - `launch.sh` - starts the router; owns the build record (which llama.cpp build is on disk, and its test state).
 - `models.ini` - the fleet: one `[section]` per served model; the `[*]` section holds defaults merged into every entry.
-- `templates/` - the vendored froggeric chat template that guarded GGUFs are served under (`templates/README.md`).
-- `mcp/` - the web-search MCP server claude-local loads (`mcp/README.md`).
+- `templates/` - the vendored froggeric chat template guarded GGUFs serve under (provenance: `templates/README.md`).
+- `mcp/` - the web-search MCP server claude-local loads (provenance + wiring: `mcp/README.md`).
 
 ## Ids and aliases
 
 An id is the model name a client sends, and it names the entry, never the quant (decided 2026-08-09).
 The grammar is defined here; other files point to this section.
 
-- Shape: `<family>-<size>[-variant][-mtp][-profile]`; a blank profile means instruct.
+- Shape: `<family>[-finetune]-<size>[-variant][-mtp][-profile]`; a blank profile means instruct.
   - `qwen3.6-27b-mtp-coding` - family `qwen3.6`, size `27b`, MTP lane, coding profile.
+    - MTP = multi-token prediction, the speculative-decoding lanes (docs/architecture.md section 3).
   - `gemma4-12b-it-qat-mtp` - upstream variant tokens (`it-qat`) keep their upstream spot: after the size.
   - `qwen3.5-queen-27b` - a finetune name (`queen`) sits before the size.
 - The quant appears only in the `model =` path, so promoting a new quant is a path edit: no rename, no client churn.
@@ -65,7 +67,8 @@ Guarded GGUFs, served under the froggeric replacement:
    - `[*]` already carries the fleet-wide keys; add only what the entry owns (ctx-size, temp, top-k, paths).
 3. Vet the embedded chat template (AGENTS.md gate); a guarded GGUF gets `chat-template-file = <froggeric path>`.
 4. MTP entry: add `spec-type = draft-mtp` and `spec-draft-n-max = 2`; Gemma also needs its drafter as `model-draft =`.
-   - Vision goes as `mmproj =` on the non-MTP sibling only (the MTP x vision split: docs/parameters.md).
+   - Vision goes as `mmproj =` (the vision-projector GGUF) on the non-MTP sibling only
+     (the MTP x vision split: docs/parameters.md).
 5. Restart with `launch.sh`; confirm `/props?model=<id>` reports the profile values and one generation succeeds.
 
 Two preset behaviors to know while editing (from llama.cpp source; line numbers drift across builds):

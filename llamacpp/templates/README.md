@@ -19,7 +19,7 @@ The guarded GGUF list lives in `../README.md`; the vetting steps are the AGENTS.
 
 ## Local fix
 
-2026-08-08 (user-approved): nine tags in the tool-instructions block changed from `{%-` to `{%`.
+2026-08-08 (user-approved): nine tags in the `tool_instructions` block changed from `{%-` to `{%`.
 
 - `{%-` strips the whitespace before a tag; llama.cpp and HF also run Jinja with `trim_blocks` (strip after).
 - Under that combination v21.3 over-strips - a regression, unreported upstream as of 2026-08-08.
@@ -31,8 +31,11 @@ The guarded GGUF list lives in `../README.md`; the vetting steps are the AGENTS.
 
 Both the template file and the llama.cpp build affect what a request sees, so validation is per (template, build) pair.
 A template is identified by its sha256; the prefixes below abbreviate the full values in Provenance.
-PASS = probe requests carrying a mid-conversation `system` message succeeded, with no rejection from the guard.
+Probes are mid-conversation-`system` requests to `/v1/chat/completions` (the only endpoint the guard can reach).
+PASS = the probes returned HTTP 200 with no guard rejection in the body.
 A FAIL row would name the failing probe.
+A fourth entry (`qwen3.5-queen-27b`, added 2026-08-11) serves this same template and GGUF; it postdates the
+b10335 probe run, which covered the then-three entries.
 
 | Template | Build | Date | Result | Notes |
 |---|---|---|---|---|

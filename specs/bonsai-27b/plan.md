@@ -17,7 +17,7 @@ Terms:
 - Confirm the build record is at or past b10335.
   - Verify: `llamacpp/launch.sh` header; b10335 contains #25707 and passed certification 2026-08-10.
   - If the record moved since: the migration spec's rebuild rule applies (crash matrix, froggeric pair,
-    Gemma MTP load re-check).
+    and the Gemma MTP load re-check that the 2026-07-17 eval's verdict item 5 defines).
 - Record the two open decisions in tasks.md: sampling profile (vendor card vs the qwen3.6 coding profile)
   and intended role.
 
@@ -65,4 +65,5 @@ Terms:
 
 - Vendor quality and speed numbers are unbenched marketing until Phase 2/3; do not promote the model on them.
 - DSpark can be a net slowdown (-37% on a DGX Spark community bench); treat it as an experiment, not a default.
-- VRAM contention while benchmarking: keep the router's resident child idle; nothing else competes for the card.
+- VRAM contention while benchmarking: keep the router's resident child idle; the card and host RAM are
+  still shared with Windows (AGENTS.md resource-capture rule applies to every quoted run).

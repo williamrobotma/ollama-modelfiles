@@ -1,6 +1,7 @@
 # Benchmarking
 
-The benchmark suites targeted the retired Ollama stack and were removed at the 2026-08-12 repo purge.
+The benchmark suites were removed at the 2026-08-12 repo purge: the three runtime A/B suites targeted the
+retired Ollama stack outright, and the cross-engine parity suite needed Ollama as one arm of its A/B.
 Two things stay live here: the resource-capture procedure (mandatory for GPU runs) and the distilled findings.
 
 ## Retired suites

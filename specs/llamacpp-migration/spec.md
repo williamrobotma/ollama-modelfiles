@@ -117,6 +117,7 @@ Decided at the first execution session's review; these supersede the specific lo
     (Queen-27B backs both `queen-27b-*` entries - corrected 2026-07-28, was "two entries").
     - Amended 2026-08-11: the Queen instruct entry makes it 4 froggeric entries.
   - Phase 4 purge shrinks to: Ollama uninstall + 232G store, `modelfiles/` + create-script retirement, vhdx compact.
+    - Repo-side retirement executed 2026-08-12; the uninstall, store, and vhdx steps remain.
 - **KV probe replaced** (supersedes the same-prompt comparison): Gemma-only `llama-perplexity` KL run, one
   ~16k-token wikitext segment, f16-cache baseline vs q8_0; read the tool's numbers as-is, no pooling.
   - Also record the f16-vs-q8_0 VRAM delta at fixed ctx - the input the ctx ladder actually needs.
@@ -161,9 +162,8 @@ User-confirmed at the Phase 0 pre-implementation review; recorded here per the k
 
 ## Watch
 
-Upstream issues affecting this stack, as-recorded on their check dates (not re-checked since).
-These live only here until spec close; at close, the still-live ones move to `specs/stack-upkeep`
-so monitoring continues after this bundle is archived.
+Upstream issues affecting this stack, each as-recorded on its own check date.
+At spec close the still-live rows move to `specs/stack-upkeep`, so monitoring outlives this bundle.
 
 - <https://github.com/ggml-org/llama.cpp/pull/24942> - Gemma MTP fix candidate; open, unreviewed (2026-07-23).
 - <https://github.com/ggml-org/llama.cpp/issues/24795> - open, no fix merged (re-verified 2026-07-23).
@@ -175,6 +175,7 @@ so monitoring continues after this bundle is archived.
   - <https://github.com/ggml-org/llama.cpp/issues/25618> - draft-MTP greedy divergence on quantized targets (correctness).
   - <https://github.com/ggml-org/llama.cpp/issues/25828> - closed, same crash family, resolution unknown.
 - <https://github.com/ggml-org/llama.cpp/pull/25707> - ternary prerequisite (bonsai); open, blocked, needs rebase (2026-07-23).
+  - Resolved since: merged 2026-07-30 (re-checked 2026-08-03, bonsai bundle); this row does not migrate at close.
 - <https://github.com/mostlygeek/llama-swap/issues/946> - TTL race deadlock; matters only if a contingency trigger fires.
 
 ## Done when

@@ -10,10 +10,10 @@ Spec review pending: the two remaining decisions in spec.md (sampling profile, i
 
 ## Phase 0 - prerequisites + decisions
 
-- [x] #25707 (fast group-64 ternary CUDA) merged upstream 2026-07-30; checked 2026-08-03, fork contingency retired.
+- [x] #25707 (fast group-64 ternary CUDA) merged upstream 2026-07-30.
+  - Checked 2026-08-03; the fork option and its llama-swap contingency retired with it.
 - [x] Build prerequisite met: on-disk b10335 contains #25707 and passed certification 2026-08-10.
-  - [ ] At pickup: confirm the build record (`llamacpp/launch.sh`) has not moved; if it has, the migration
-    spec's rebuild rule applies.
+  - [ ] At pickup: confirm the build record (`llamacpp/launch.sh`) has not moved; else the rebuild rule applies.
 - [ ] Spec review: sampling-profile and role decisions recorded here.
 
 ## Phase 1 - ternary lane

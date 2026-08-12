@@ -7,14 +7,15 @@
   - Size: fully resident on the 12 GB 4070; the fleet's 27B class partial-offloads today.
 - **Ternary is first-class (decision 2026-08-03, user)**: onboarded directly, not via a 1-bit interim phase.
   - The stepping-stone rationale expired when #25707 (fast group-64 ternary CUDA) merged 2026-07-30.
-  - Q1_0, the 1-bit variant, stays as a bench comparison only; it already ran on stock build b9860.
+  - Q1_0, the 1-bit variant, stays as a bench comparison only; it is runnable on stock llama.cpp
+    (kernel support verified on-box at b9860).
   - Q1_0 shares ternary's file layout, drafter, and template family.
 - llama.cpp-only, by necessity then and by default now.
   - Ollama could not load either variant (bundled ggml lacked type 41; verified on-box) - moot since its retirement.
 
 ## Known facts
 
-See [research.md](research.md) in this bundle - verification status marked per claim. The hard ones:
+See `research.md` in this bundle - verification status marked per claim. The hard ones:
 
 - Q1_0 runs on stock llama.cpp b9860 with CUDA kernels (on-box verified).
 - Ternary fast CUDA was blocked on ggml-org/llama.cpp [PR #25707](https://github.com/ggml-org/llama.cpp/pull/25707) (group-64).
@@ -22,7 +23,7 @@ See [research.md](research.md) in this bundle - verification status marked per c
   - The `Q2_g64` GGUF is the upstream-compatible file; the fork's g128 formats will never be upstream.
 - DSpark is a classic separate drafter (`-md`, not `--spec-type draft-mtp`).
   - Community speedups range +33% to -37% by hardware - it must be A/B'd, not assumed.
-- Vendor retention numbers put agentic tool use as the weakest domain.
+- The vendor's quality-retained numbers put agentic tool use as the weakest domain.
   - Relevant because the daily drivers here are agentic coding.
 
 ## Prerequisites
@@ -30,10 +31,8 @@ See [research.md](research.md) in this bundle - verification status marked per c
 1. Met: `specs/llamacpp-migration` built the serving stack; models are configured in `llamacpp/models.ini`.
    - This spec adds a model to that stack; it creates no new serving machinery.
 2. Met at b10335 (2026-08-10): the on-disk build contains #25707 and passed certification.
-   - Re-check the build record (`llamacpp/launch.sh`) at pickup; a moved record re-certifies per the
-     migration spec's rebuild rule.
-3. Watch only, not a prerequisite: [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen an
-   Ollama path someday.
+   - Re-check the build record (`llamacpp/launch.sh`) at pickup; a moved record re-certifies (rebuild rule).
+3. Watch only: [ollama#13668](https://github.com/ollama/ollama/issues/13668) would reopen an Ollama path someday.
 
 ## Decisions at spec review
 
@@ -44,7 +43,7 @@ See [research.md](research.md) in this bundle - verification status marked per c
    - The vendor is the authority for its own requant.
    - `repeat_penalty` 1.0 stands either way (Qwen-lineage mandate, docs/parameters.md).
 3. **Intended role**: resident benchmark/general model vs coding daily-driver candidate.
-   - The vendor's agentic-retention numbers say candidate status must be earned by the Phase 2/3 bench, not assumed.
+   - The weak agentic quality-retained numbers say candidate status must be earned by the Phase 2/3 bench, not assumed.
 
 ## Acceptance
 
