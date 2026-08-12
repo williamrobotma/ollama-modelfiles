@@ -1,9 +1,9 @@
 # Templates
 
-`chat_template.jinja` serves the guarded Qwen GGUFs to OpenAI-style clients, whose embedded templates reject
-multi-system requests (the vet rule is under Validated pairs, below). It covers every entry that sets
-`chat-template-file`: unsloth Qwen3.5-9B non-MTP, plus the Queen-27B entries (coding, reasoning, and the
-instruct entry added 2026-08-11) that share one GGUF.
+`chat_template.jinja` serves the guarded Qwen GGUFs to OpenAI-style clients.
+Their embedded templates reject multi-system requests; the vet rule is under Validated pairs, below.
+It covers every entry that sets `chat-template-file`: unsloth Qwen3.5-9B non-MTP plus the Queen-27B entries.
+The Queen-27B entries - coding, reasoning, instruct (added 2026-08-11) - share one GGUF.
 
 ## Provenance
 
