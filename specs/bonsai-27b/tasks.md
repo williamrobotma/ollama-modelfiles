@@ -6,6 +6,8 @@ DRAFT 2026-07-17, reworked 2026-08-03 (ternary first-class), pre-flight review 2
 
 Cleared to start (user, 2026-08-12): full send, in its own session. Does not wait on `specs/llamacpp-migration`.
 
+GPU-loading items are heavy loads: get user confirmation before starting each.
+
 Resume point: Phase 0. Everything below Phase 0 is untouched.
 
 ## Phase 0 - prerequisites + decisions
@@ -30,6 +32,8 @@ Resume point: Phase 0. Everything below Phase 0 is untouched.
 - [ ] Template vet per the AGENTS.md gate, with a positive control; result recorded in `llamacpp/README.md`.
   - The guard is known present, so a zero hit means the grep window was too small.
 - [ ] Measure the residency ceiling with `nvidia-smi` at all three capture points.
+  - q8_0-conditional: f16 KV roughly halves it, so `specs/kv-cache-ab` can void this result.
+  - Measure the entry's real shape (projector resident if the entry carries one); `ctx-size` pads up to 256.
 - [ ] Decide role and `ctx-size` from that measurement; write the preset entry.
 - [ ] llama-server launch from the pinned path; `/props` matches the profile; coding smoke.
 - [ ] Served through the router preset (one-gen smoke).
@@ -38,8 +42,8 @@ Resume point: Phase 0. Everything below Phase 0 is untouched.
 ## Phase 2 - bench (ternary)
 
 - [ ] `llama-bench`: ternary vs `qwen3.6-27b-coding` across a ctx ladder, warmup plus repetitions.
-- [ ] Sampling arms: coding, reasoning, instruct, vendor card.
-- [ ] Serve-path checks scoped at pickup.
+- [ ] Serve-path checks scoped at pickup; the four sampling arms are part of them, not of `llama-bench`.
+- [ ] Sampling arms compared on quality: coding, reasoning, instruct, vendor card.
 - [ ] (optional) mmproj vision smoke.
 
 ## Phase 3 - 1-bit comparison

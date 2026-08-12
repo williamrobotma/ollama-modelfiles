@@ -51,3 +51,8 @@ A short procedure doc exists and each component has a named check. No new servic
 - Rebuild cautions recorded then: llama-cli was rewritten; b10242 moved penalties sampling to the GPU;
   re-smoke speculative decoding and the pinned sampling flags after any rebuild.
 - Open WebUI 0.11.0: DB migration ran and browser validation passed (2026-08-04/07); state in docs/openwebui.md.
+- A Qwen tool-calling fix is waiting in an unbuilt llama.cpp (found at the bonsai-27b pre-flight, 2026-08-12).
+  - #26793, merged 2026-08-11: the bare `<function` trigger constrained valid text such as `#include
+    <functional>` whenever a client supplied tools. It needs the complete `<function=name>` sequence now.
+  - Affects every Qwen coding entry under OpenCode, Codex, and claude-local, which all send tools.
+  - This is the first named reason to rebuild past b10335; weigh it against the re-certification cost.

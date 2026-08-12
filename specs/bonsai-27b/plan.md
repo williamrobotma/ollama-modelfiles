@@ -26,6 +26,11 @@ Terms:
   - Verify: matched by the guard's message text, never the HTTP status; recorded in `llamacpp/README.md`.
 - Measure the residency ceiling before writing the entry.
   - Predicted near 100K; 200000 and 262144 are over the card (arithmetic in research.md).
+  - Measure the entry's actual shape: if it will carry `mmproj`, the projector is resident for the measurement.
+    It costs 0.586 GiB, against a margin of roughly 1 GiB at 100K.
+  - `ctx-size` pads up to a 256 boundary on load (200000 -> 200192), so set the entry below the ceiling, not at it.
+  - **The ceiling is q8_0-conditional.** f16 KV costs 64 KiB/token against q8_0's 34.0, so it roughly halves the
+    ceiling. If `specs/kv-cache-ab` moves this family to f16, the ceiling, the role, and the entry are re-derived.
   - Verify: `nvidia-smi` at all three capture points (docs/benchmarking.md).
 - Decide role and `ctx-size` from that measurement, then write the preset entry.
   - Verify: `/props` matches the profile; one coding smoke returns coherent output with timings.
@@ -38,8 +43,10 @@ Terms:
 
 - `llama-bench`: ternary vs `qwen3.6-27b-coding` (same base model) across a ctx ladder.
   - Verify: warmup plus repetitions recorded, not a single-run smoke.
-- Sampling arms: coding, reasoning, instruct, and the vendor card.
 - Serve-path checks are the runner's call: `llama-bench` exercises neither the router nor the chat template.
+- Sampling arms - coding, reasoning, instruct, and the vendor card - belong to those serve-path checks, not to
+  `llama-bench`, which measures throughput and would return four near-identical figures.
+  - They are a quality comparison. The method is set at pickup, and it is what decides the served profile.
 - Optional: mmproj load plus one vision smoke.
 
 ## Phase 3 - 1-bit comparison

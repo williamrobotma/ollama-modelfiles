@@ -25,6 +25,9 @@ family, not just the one that raised it.
 - Behavioural arm: needs a repetition check and a tool-call round-trip. Design is open.
 - `-fa on` and quantized KV stay paired, so an f16 arm is the only alternative under test.
 - Cost is the constraint: every arm is a GPU load, and both budgets are shared with Windows.
+- Ordering against `specs/bonsai-27b`: its Phase 1 ceiling is measured at q8_0, and f16 costs 64 KiB/token
+  against q8_0's 34.0. Running the Bonsai arm first avoids a ceiling, role, and entry that expire; running it
+  second means re-deriving all three.
 
 ## Done when
 
