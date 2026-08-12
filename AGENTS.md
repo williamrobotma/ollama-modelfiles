@@ -136,8 +136,14 @@ The test: the lane you picked is the model every session role is talking to.
 - [docs/history/index.md](docs/history/index.md) - dated, immutable session evidence logs.
 - `specs/<feature>/` - in-flight work, tasks.md as the resume point; `specs/ROADMAP.md` orders the bundles.
 
-Markdown: rumdl enforces `.rumdl.toml` (120-col, check-only, never `--fix`); `docs/history/` is excluded as
-immutable. Soft-wrap only - fix a long line by cutting or splitting ideas, never a mid-idea break.
+## Writing
 
-Name sets, never their size, because written counts drift. The one sanctioned count is a file's own header
-total (e.g. `llamacpp/models.ini:1`); check it against the file whenever you touch that file.
+- Two registers, two rules:
+  - Reference text (READMEs, docs/, a spec's current-state) is rewritten in place for a cold reader - no sediment.
+  - Records (tasks.md dated sections, docs/history/, specs/*/research.md) append as-recorded; never restyled.
+  - Amendments belong only in started bundles; a not-started bundle is edited clean instead.
+- Define at first use, per file: a repo-specific term gets a one-clause gloss, or a pointer plus a rationale hint.
+- Markdown: rumdl enforces `.rumdl.toml` (120 cols, check-only, never `--fix`); record-register files are excluded.
+  - Soft-wrap only: fix a long line by cutting or splitting ideas, never a mid-idea break.
+- Name sets, never their size, because written counts drift.
+  - The one sanctioned count is a file's own header total (e.g. `llamacpp/models.ini:1`); re-check it on touch.

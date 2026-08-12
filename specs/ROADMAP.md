@@ -16,3 +16,5 @@ Status lives in the folder layout (`specs/README.md`); this file only orders the
    - Runs any time; no dependency beyond the stack existing.
 7. **gpu-stability-test** - package the crash matrix as one certifying command.
    - A sibling of step 1 rather than nested, so it stays in flight when step 1 moves to `done/`.
+8. **writing-guards** - mechanical + reviewer gates for the writing rules (scaffold).
+   - Deliverables land in the synced `~/.claude`, not this repo; independent of the other steps.
