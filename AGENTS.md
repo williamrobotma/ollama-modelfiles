@@ -138,16 +138,9 @@ The test: the lane you picked is the model every session role is talking to.
 
 ## Writing
 
-- Docs state the present: when a fact changes, rewrite the sentence that carried it.
-  - Never stack a dated correction on top of old text.
-  - Records are the exception: dated tasks.md sections, docs/history/, and specs/*/research.md only ever
-    gain new entries, and old entries stay as written.
-- "Amended YYYY-MM-DD" lines belong to bundles with work already done.
-  - A bundle nothing has started on is simply edited, as if written right the first time.
-- Write for a reader with zero context.
-  - The first time a file uses a repo term, give a few words of meaning or point to the doc that defines it.
-  - A pointer says in a few words what it points to - "docs/parameters.md (why FA stays paired)" - never a bare path.
-- One idea per line; rumdl checks lines at 120 cols (`.rumdl.toml`; check-only, never `--fix`).
-  - Shorten a long line by cutting words or splitting ideas - never wrap mid-sentence.
-- Name the members, not the count ("the guarded entries", not "the 4 guarded entries") - written counts drift.
-  - The one exception: a file's own header total (`llamacpp/models.ini:1`), re-checked whenever that file changes.
+- Plain language, one idea per line; shorten a long line by cutting words, never by wrapping mid-sentence.
+- Record files - dated tasks.md sections, docs/history/, specs/*/research.md - are append-only, kept as written.
+  - Everything else states the present: a changed fact means rewriting the sentence that carried it.
+- "Amended YYYY-MM-DD" fits only a spec bundle with work already done; an unstarted bundle is edited clean.
+- rumdl checks md at 120 cols (`.rumdl.toml`; check-only, never `--fix`); record files are excluded.
+- The one sanctioned count is a file's own header total (`llamacpp/models.ini:1`), re-checked on every touch.
