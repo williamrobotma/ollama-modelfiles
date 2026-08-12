@@ -14,7 +14,7 @@ The detail is defined in the files under `docs/`, and this file points to them.
   model kept on disk.
 - Re-provisioning from nothing is `git clone` + `hf download` - no build or import step.
 - The retired Ollama layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12 (git history keeps it).
-  - Only the on-disk store remains, until the store purge tracked in `specs/llamacpp-migration`.
+  - Only the on-disk install (store, binaries, override) remains, until the purge tracked in `specs/llamacpp-migration`.
 
 ## Models and sourcing
 
@@ -128,7 +128,7 @@ The test: the lane you picked is the model every session role is talking to.
   which template each entry runs, add-a-model.
 - [llamacpp/templates/README.md](llamacpp/templates/README.md) - vendored chat templates: shas, validated pairs.
 - [llamacpp/mcp/README.md](llamacpp/mcp/README.md) - the web-search MCP claude-local loads.
-  - Search is Ollama's hosted cloud API, not Brave; the swap to Brave is specced in `specs/brave-search-mcp`.
+  - Search rides Ollama's hosted cloud API; the swap to Brave is specced in `specs/brave-search-mcp`.
 - [docs/architecture.md](docs/architecture.md) - the stack: layering, MTP, serving + clients, disk.
 - [docs/parameters.md](docs/parameters.md) - sampling profiles, mandates, verification sources.
 - [docs/benchmarking.md](docs/benchmarking.md) - the retired-suite record, resource capture, distilled findings.
@@ -142,5 +142,6 @@ The test: the lane you picked is the model every session role is talking to.
 - Record files - dated tasks.md sections, docs/history/, specs/*/research.md - are append-only, kept as written.
   - Everything else states the present: a changed fact means rewriting the sentence that carried it.
 - "Amended YYYY-MM-DD" fits only a spec bundle with work already done; an unstarted bundle is edited clean.
-- rumdl checks md at 120 cols (`.rumdl.toml`; check-only, never `--fix`); record files are excluded.
+- rumdl checks md at 120 cols; run it check-only, never `--fix` (`.rumdl.toml` excludes the history logs
+  and research records).
 - The one sanctioned count is a file's own header total (`llamacpp/models.ini:1`), re-checked on every touch.

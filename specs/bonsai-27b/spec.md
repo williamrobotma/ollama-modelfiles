@@ -56,9 +56,10 @@ See `research.md` in this bundle - verification status marked per claim. The har
   - No serving-role claim of its own.
 - DSpark drafter A/B'd with recorded accept rates and tok/s delta; adopted only if it wins on this hardware.
 - Chat-template gate passed: multi-system `/v1/chat/completions` probe recorded.
-  - The guard can only fire on `/v1/chat/completions`, which passes mid-conversation `system` messages through.
+  - The guard fires where `system` messages pass through untouched: `/v1/chat/completions` is the probed
+    endpoint, and `/v1/responses` shares the template path.
   - `/v1/messages` folds all system blocks into one leading message before the template runs, so it cannot trip.
 - docs/parameters.md gains a Bonsai-27B profile section with source URLs.
-  - Benchmarking notes and watch items (#25707, #13668) recorded.
+  - Benchmarking notes and watch items (#25707, ollama#13668) recorded.
 - Disk budgeted against `/mnt/f` (AGENTS.md rule: never the guest `df /`).
   - Downloads: ~10.2 GB for ternary, ~5.6 GB more for the 1-bit comparison (no second mmproj).

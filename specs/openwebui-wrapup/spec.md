@@ -5,7 +5,7 @@ Small side task. This spec is its own plan - no separate plan.md; tasks.md is th
 ## Why
 
 Open WebUI serves from the router (OpenAI connection at 11433; cut over and browser-validated 2026-08-07).
-Login, chat, and Brave-search chats were exercised in that validation.
+Chat and search-enabled chats were exercised in that validation.
 What never happened:
 
 - Native tool calling and vision, in the browser.

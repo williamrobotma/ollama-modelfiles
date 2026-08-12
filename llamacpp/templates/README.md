@@ -31,7 +31,8 @@ The guarded GGUF list lives in `../README.md`; the vetting steps are the AGENTS.
 
 Both the template file and the llama.cpp build affect what a request sees, so validation is per (template, build) pair.
 A template is identified by its sha256; the prefixes below abbreviate the full values in Provenance.
-Probes are mid-conversation-`system` requests to `/v1/chat/completions` (the only endpoint the guard can reach).
+Probes are mid-conversation-`system` requests to `/v1/chat/completions`.
+`/v1/messages` is immune (it folds system blocks into one); `/v1/responses` shares the template path, unprobed.
 PASS = the probes returned HTTP 200 with no guard rejection in the body.
 A FAIL row would name the failing probe.
 A fourth entry (`qwen3.5-queen-27b`, added 2026-08-11) serves this same template and GGUF; it postdates the

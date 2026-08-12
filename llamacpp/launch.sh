@@ -3,7 +3,7 @@
 # Port neighbors: 8080 Open WebUI; 11434 was Ollama (retired 2026-08-07).
 # Children inherit this env verbatim, so env hygiene here is fleet-wide.
 # Never set GGML_CUDA_DISABLE_GRAPHS: any value, even =0, turns CUDA graphs
-# off, and Gemma MTP crashes without graphs (AGENTS.md Serving).
+# off, and the Gemma MTP drafter fails to load without them (AGENTS.md).
 set -euo pipefail
 
 # Build record (defined here; other files point to it):

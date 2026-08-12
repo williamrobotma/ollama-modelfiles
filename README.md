@@ -81,7 +81,7 @@ Local models have no web access of their own; `claude-local` sessions get it fro
 - The key: `OLLAMA_API_KEY`, read from `~/.config/claude-local.env` (mode 600) - it never enters this repo.
 - **Brave is not involved in claude-local's search.** The planned swap to Brave is `specs/brave-search-mcp`.
   - The one place Brave does appear: Open WebUI's own in-app search feature (its key lives in `webui.db`).
-- This cloud API is the one remaining Ollama dependency; the local Ollama serving stack is retired.
+- This cloud API is the one remaining Ollama dependency.
 - Wiring and provenance: [llamacpp/mcp/README.md](llamacpp/mcp/README.md).
 
 ## Repo map
@@ -94,15 +94,11 @@ Local models have no web access of their own; `claude-local` sessions get it fro
 | `specs/done/<feature>/` | Completed bundles (spec.md Acceptance met), filed here by the run-spec skill. |
 | `AGENTS.md` / `CLAUDE.md` | Canonical agent instructions (incl. the claude-local spec); CLAUDE.md is `@AGENTS.md`. |
 
-## Benchmarking
-
-The Ollama-era benchmark suites were removed at the 2026-08-12 repo purge; git history preserves them.
-The distilled findings and the GPU resource-capture procedure stay live in [docs/benchmarking.md](docs/benchmarking.md).
-
 ## More
 
 - [AGENTS.md](AGENTS.md) - conventions and commands for any coding agent.
 - [docs/architecture.md](docs/architecture.md) - how the stack fits together.
+- [docs/benchmarking.md](docs/benchmarking.md) - distilled findings + the GPU resource-capture procedure.
 - [docs/parameters.md](docs/parameters.md) - sampling profiles and mandates.
 - [docs/openwebui.md](docs/openwebui.md) - the browser frontend.
 - [docs/history/index.md](docs/history/index.md) - the research trail.

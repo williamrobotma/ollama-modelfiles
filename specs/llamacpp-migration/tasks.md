@@ -167,6 +167,7 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 - [ ] Validation window (~2 weeks daily use) completed without rollback
 - [ ] Store purge (user-confirmed, ~2026-08-21): `ollama rm` all, uninstall, delete `/usr/share/ollama`
   - Then host-side: `wsl --shutdown` + `Optimize-VHD`
+  - The migration's orphan-blob list is `.migration-artifacts/orphans.txt` (machine-local)
   - Pruned HF snapshots are already gone, deleted at the fleet reduction
 - [ ] Disk numbers and final state recorded in a dated docs/history log
 - [ ] At spec close: move the still-live spec.md Watch issues to `specs/stack-upkeep` (as-recorded, unchecked)
@@ -174,8 +175,8 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 ### Closed items
 
 - [x] Repo-side purge executed 2026-08-12 (review directive: "eliminate all ollama"; user picked repo-now/disk-later)
-  - `git rm`: `modelfiles/` (every Modelfile), `scripts/` (ollama-create.sh, repro-mtp-graphs.sh),
-    `benchmarks/` (the 3 Ollama suites, llamacpp-parity, common.sh, report.py, all.sh)
+  - `git rm`: `modelfiles/` (every Modelfile) and `scripts/` (ollama-create.sh, repro-mtp-graphs.sh)
+  - `git rm`: `benchmarks/` (the 3 Ollama suites, llamacpp-parity, common.sh, report.py, all.sh)
   - Wider than the plan's list, deliberately: nothing in `benchmarks/` or `scripts/` runs without the retired stack
     - Even the cross-engine parity suite needs Ollama as one arm of its A/B
     - Git history preserves all of it; `benchmark-results/` keeps the raw outputs
@@ -339,8 +340,7 @@ Fixed 2026-08-08 (user "1"): the 9-tag whitespace patch is applied to the vendor
 
 ### Validation window clock - 2026-08-08
 
-Decided 2026-08-08 (user): the validation-window clock (sweep item #32) does NOT restart at the b10326 re-cert;
-the 2026-08-07 opening stands.
+Decided 2026-08-08 (user): the #32 window clock does NOT restart at the b10326 re-cert; the 2026-08-07 opening stands.
 
 ### Q6 is the 35B standard - 2026-08-08
 
@@ -545,7 +545,8 @@ make the search routing clear at top level; propose future mitigation.
   - Decided (user): swap to a Brave-backed MCP; scaffolded as `specs/brave-search-mcp`
   - Open WebUI's in-app search is the one Brave user (client-side key), now stated in the README
 - web-search-mcp.py became locally maintained (user ruff-fix 094878a + review fixes): dead fallback deleted,
-  editor flags cleared, provenance + new sha in mcp/README.md; stdio handshake re-verified
+  editor flags cleared, provenance + new sha in mcp/README.md
+  - Re-verified per content change: pipx stdio handshake + tools/list, both tools returned each time
 - Plain-language rewrites: llamacpp/README.md (alias example, quoted source lines), templates/README.md
   (guard quoted, terms defined), launch.sh + models.ini comments (fact-per-line, rationale hints at pointers)
 - Amendment policy applied per review: not-started bundles (bonsai-27b, stack-upkeep, openwebui-wrapup)

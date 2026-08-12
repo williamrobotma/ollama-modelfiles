@@ -44,8 +44,8 @@ The sections below record how each decision got here.
   - The purge runs last, blocked until that validation window closes.
   - The purge itself: uninstall, delete the 232G store, retire `modelfiles/` + create script, compact vhdx.
   - Everything Ollama-side stays frozen (not edited, not deleted) until that purge.
-  - Amended 2026-08-12 (review directive): the repo-side retirement ran early - `modelfiles/`, `scripts/`,
-    `benchmarks/` removed. The store purge and vhdx compact still wait for the window.
+  - Amended 2026-08-12 (review): the repo-side retirement (`modelfiles/`, `scripts/`, `benchmarks/`) ran early.
+    - The store purge and vhdx compact still wait for the window.
   - The pending graphs-off systemd fix (docs/benchmarking.md) no longer applies (Ollama no longer serves).
 - **Prune** (skip migration; delete at purge; ~60G HF-cache reclaim):
   - `models--noctrex--Qwopus3.5-9B-Coder-MTP` (15G): orphaned, no Modelfile ever referenced it.

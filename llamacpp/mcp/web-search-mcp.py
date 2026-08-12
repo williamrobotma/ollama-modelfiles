@@ -6,35 +6,19 @@
 #   "ollama>=0.6.2,<1",  # floor = the known-working resolved version
 # ]
 # ///
-# pyright: reportMissingImports=false
-# (Deps resolve from the PEP 723 block at run time; editor envs cannot see
-# them, so the missing-import diagnostic is noise here.)
 """MCP stdio server exposing Ollama web_search and web_fetch as tools.
 
 Environment:
 - OLLAMA_API_KEY (required): sent as the Authorization header to ollama.com.
 """
 
-from __future__ import annotations
-
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
-from ollama import Client
+# Editor-only ignores: the deps resolve from the PEP 723 block at run time.
+from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
+from ollama import Client  # pyright: ignore[reportMissingImports]
 
 client = Client()
-
-
-def _web_search_impl(query: str, max_results: int = 3) -> dict[str, Any]:
-    res = client.web_search(query=query, max_results=max_results)
-    return res.model_dump()
-
-
-def _web_fetch_impl(url: str) -> dict[str, Any]:
-    res = client.web_fetch(url=url)
-    return res.model_dump()
-
-
 app = FastMCP("ollama-search-fetch")
 
 
@@ -49,7 +33,7 @@ def web_search(query: str, max_results: int = 3) -> dict[str, Any]:
     Returns:
       JSON-serializable dict matching ollama.WebSearchResponse.model_dump()
     """
-    return _web_search_impl(query=query, max_results=max_results)
+    return client.web_search(query=query, max_results=max_results).model_dump()
 
 
 @app.tool()
@@ -62,7 +46,7 @@ def web_fetch(url: str) -> dict[str, Any]:
     Returns:
       JSON-serializable dict matching ollama.WebFetchResponse.model_dump()
     """
-    return _web_fetch_impl(url=url)
+    return client.web_fetch(url=url).model_dump()
 
 
 if __name__ == "__main__":

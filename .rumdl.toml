@@ -1,9 +1,14 @@
-# Repo-local rumdl config. It replaces (not merges) the global one, so the
-# MD013 choices - 120 cols, check-only, never --fix - are restated here.
-# Excluded: docs/history/*.md and specs/*/research.md (records, kept as
-# written) and CLAUDE.md (a single @AGENTS.md import line).
+# Repo rumdl config; it replaces (not merges) the global one, so MD013 is
+# respecified here. Run it check-only: --fix is an invocation choice, not a
+# key. Excluded: history logs and research records (kept as written), and
+# CLAUDE.md (a single @AGENTS.md import line).
 [global]
-exclude = ["docs/history/*.md", "specs/*/research.md", "CLAUDE.md"]
+exclude = [
+    "docs/history/*.md",
+    "specs/*/research.md",
+    "specs/done/*/research.md",
+    "CLAUDE.md",
+]
 
 [MD013]
 line-length = 120

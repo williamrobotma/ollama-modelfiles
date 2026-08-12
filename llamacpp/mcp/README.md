@@ -8,24 +8,22 @@ Brave is not involved; the planned swap to a Brave-backed server is `specs/brave
 
 - Upstream origin: <https://raw.githubusercontent.com/ollama/ollama-python/main/examples/web-search-mcp.py>
   - Fetched 2026-08-04; upstream sha256 `231fc23755ee41abe4fb9378fc7094dc5a78d361499b5ab84df65b422d870287`.
-- Locally maintained since 2026-08-12: repo Python rules apply. Earlier vendored shas live in git history.
-- Current sha256: `d77501af1290c63d9dc2ae05a7506feabd080586d4ad095fc71ead459ac9c882`
+  - Upstream watch: at any review trigger, re-fetch upstream, diff against that sha, and port what matters.
+- Locally maintained since 2026-08-12; the upstream-verbatim exemption ended. Earlier shas live in git history.
+- Current sha256: `10d3402b6d2ba1512a1bcc581dd90eded9ca7d66826583e506cec8598fb50d58`
 - Change log:
   - 2026-08-04: `"mcp"` -> `"mcp>=1.9,<2"` - mcp 2.0.0 removed FastMCP, which the script imports.
   - 2026-08-08: `rich` dropped (never imported); `ollama` pinned `>=0.6.2,<1` (the pipx-resolved working version).
     - Both were unbounded, re-resolving from PyPI on every `pipx run` with `OLLAMA_API_KEY` in the environment.
   - 2026-08-09: the mcp pin's comment corrected - `Server.tool()` never existed at 1.9; FastMCP removal is the reason.
-  - 2026-08-12 (user): ruff reformat - 4-space indent, built-in generics, docstring shape.
-  - 2026-08-12 (review): dead non-FastMCP fallback branch deleted; dep-block comments point here instead of
-    explaining in place; upstream's contradictory env note ("required ... if set") fixed; editor lint flags cleared.
-  - 2026-08-12 (loss review): an unverified "requests fail without it" claim removed from the docstring.
-  - 2026-08-12 (fidelity review): per-pin rationale hints restored inline in the dep block.
+  - 2026-08-12: taken under local maintenance - ruff reformat (user), dead fallback branch and pass-through
+    helpers removed, env note corrected, per-pin hints inline, editor ignores scoped to the two import lines.
 - Range pins kept deliberately (user, 2026-08-09): in-range re-resolution on pipx cache expiry is an accepted risk.
   - Extended 2026-08-10: the transitive deps (httpx, pydantic, anyio, ...) are fully unpinned and re-resolve the
     same way, with `OLLAMA_API_KEY` in the environment - same accepted risk, same review trigger (an mcp 2.x bump).
 - An mcp 2.x bump means a rewrite, not an unpin (the removed fallback was never a real escape hatch).
 - Verified 2026-08-04: pipx stdio handshake + live web_search 200 against ollama.com (migration tasks.md, Phase 3).
-  - Re-verified 2026-08-12 after the fallback removal: pipx stdio handshake + `tools/list` returns both tools
+  - Re-verified after each 2026-08-12 content change: pipx stdio handshake + `tools/list`, both tools returned
     (record: migration tasks.md, "PR #15 review response - 2026-08-12").
 - Consumer (WSL): `~/.config/claude-local.mcp.json` runs it via `pipx run`; Windows contract below.
   - `OLLAMA_API_KEY` comes from the user env file, never this repo.

@@ -4,7 +4,7 @@ Status legend: [ ] pending, [x] done. Resume point for this side task.
 
 ## In-browser checks
 
-- [x] Login, chat, and search-enabled chats - covered by the 2026-08-07 cutover validation (migration P3 log).
+- [x] Chat and search-enabled chats - covered by the 2026-08-07 cutover validation (migration P3 log).
 - [ ] Native tool calling with `qwen3.6-27b-coding`.
 - [ ] Vision: image drop on `gemma4-12b-it-qat`.
 - [ ] Any failure written up in docs/openwebui.md or a history log.

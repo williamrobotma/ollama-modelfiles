@@ -71,7 +71,7 @@ Guarded GGUFs, served under the froggeric replacement:
      (the MTP x vision split: docs/parameters.md).
 5. Restart with `launch.sh`; confirm `/props?model=<id>` reports the profile values and one generation succeeds.
 
-Two preset behaviors to know while editing (from llama.cpp source; line numbers drift across builds):
+Preset behaviors to know while editing (from llama.cpp source; line numbers drift across builds):
 
 - Values are stored literally (`preset.options[opt] = value;`, `common/preset.cpp:322`): no `~` or env expansion.
   - The absolute `model =` and template paths must be re-edited if the repo is cloned to another machine.

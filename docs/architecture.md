@@ -4,7 +4,7 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
 
 - Move to local GGUFs: [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md).
 - Cutover off Ollama: [the P3 log](history/2026-08-07-llamacpp-p3-cutovers.md).
-- Retirement and purge state lives in `specs/llamacpp-migration`, not in this file.
+- The retirement schedule and purge tracking live in `specs/llamacpp-migration`; this file keeps the current shape.
 
 ## 1. The big picture - one source of truth, one router
 
@@ -30,8 +30,8 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
               run from ~/Developer/llama.cpp/build/bin/llama-server
               one child llama-server per served id, spawned on demand
 
-   FROZEN LEGACY (host-disk leftover, freed at the store purge)
-              Ollama blob store (/usr/share/ollama/.ollama/models)
+   Ollama blob store (host-disk leftover, freed at the store purge)
+              /usr/share/ollama/.ollama/models
 ```
 
 Key property: `llamacpp/models.ini` is the *only* mapping layer.
@@ -42,10 +42,8 @@ Key property: `llamacpp/models.ini` is the *only* mapping layer.
 Ollama was retired as the serving stack on 2026-08-07: no client points at it any more.
 
 - The repo-side layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12; git history preserves it.
-- The store, binaries, and systemd override stay on disk until the Phase 4 store purge (~2-week validation window),
-  so the retired stack can still be restored if the validation window turns something up.
+- The store, binaries, and systemd override stay on disk until the Phase 4 store purge (~2-week validation window).
 - Service stop/disable and the purge itself are tracked in `specs/llamacpp-migration`, not here.
-- FROZEN LEGACY, used in this file, marks those on-disk leftovers: out of the serving path, freed at the store purge.
 
 ## 2. Preset layering (inside the repo)
 
@@ -80,9 +78,6 @@ Ids name the entry, never the quant: the quant lives in the `model =` path only.
   - Each entry carries an `aliases` field, which the claude-local menu reads ([AGENTS.md](../AGENTS.md#claude-local)).
 - The profile a child actually serves is visible at `/props?model=<id>`. The router's own `/props` returns dummies.
 - Guarded GGUFs take `chat-template-file` = the pinned froggeric template in `llamacpp/templates/`.
-
-The Ollama Modelfile layer that preceded this mapping was removed from the repo 2026-08-12;
-its three-layer scheme survives in git history only.
 
 ## 3. The two MTP mechanisms
 
@@ -184,7 +179,7 @@ What an attacker gets if one is reached:
   - It execs `claude` with all three flags (`--settings`, `--disallowedTools`, `--mcp-config`) in `=VALUE` form,
     because the space form consumes `"$@"` as the flag's value and puts it in the deny list.
   - Its MCP is the vendored web-search script (`llamacpp/mcp/`), run via pipx on an `mcp>=1.9,<2` pin.
-    - Search is Ollama's hosted cloud API, not Brave; a Brave-backed swap is specced (`specs/brave-search-mcp`).
+    - Search rides Ollama's hosted cloud API; the swap to Brave is specced (`specs/brave-search-mcp`).
 - Open WebUI: started on demand, no background service, OpenAI connection at 11433 ([openwebui.md](openwebui.md)).
 - Codex: llama-server silently skips Responses tools typed `namespace` or `web_search` and still returns 200.
   - Codex-side MCP therefore fails invisibly on this stack; plain `function` tools are unaffected.
@@ -209,7 +204,7 @@ Windows F: (1.9TB NTFS) --contains--> ext4.vhdx (WSL2 root; GROWS, never shrinks
                                           |
      guest `df /` reports the VIRTUAL disk -> always budget against `df /mnt/f` instead
      HF cache = the single live source: 199G (du -sh 2026-08-07; the 2026-07-27 cut logged 285G -> 199G)
-     ollama store = frozen legacy bytes, freed at the purge: 186G (du -sh 2026-08-07; the spec's
+     ollama store = retired leftover bytes, freed at the purge: 186G (du -sh 2026-08-07; the spec's
        232G predates that cut)
      after large in-guest deletions: `wsl --shutdown` + Optimize-VHD (Windows side)
      to return freed space to NTFS
@@ -229,8 +224,7 @@ leftover, not a design choice.
   - `.migration-artifacts/` is git-excluded: pre-migration store baselines, HF inventories, the migration scripts.
 - Rollback: the Ollama store, binaries, and override are retained on disk, so the retired stack can be restored
   until the store purge.
-  - The repo-side rebuild path (`scripts/ollama-create.sh` + `modelfiles/`) was removed 2026-08-12; git history
-    holds it if a rollback ever needs it.
+  - The repo-side rebuild path went at the 2026-08-12 purge (section 1); git history holds it.
 
 Two pins to keep in mind:
 

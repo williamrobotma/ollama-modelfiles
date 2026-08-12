@@ -1,12 +1,11 @@
 # Benchmarking
 
-The benchmark suites were removed at the 2026-08-12 repo purge: the three runtime A/B suites targeted the
-retired Ollama stack outright, and the cross-engine parity suite needed Ollama as one arm of its A/B.
+The benchmark suites were removed at the 2026-08-12 repo purge: all of them needed the retired Ollama stack to run.
 Two things stay live here: the resource-capture procedure (mandatory for GPU runs) and the distilled findings.
 
 ## Retired suites
 
-Removed 2026-08-12; git history preserves them, and `benchmark-results/` (gitignored) keeps their raw outputs.
+Git history preserves them; `benchmark-results/` (gitignored) keeps their raw outputs.
 
 - `benchmarks/{qwen,gemma,9b-coders}` - Ollama runtime A/B: CUDA graphs off vs on, shared `common.sh` harness.
 - `benchmarks/llamacpp-parity` - the same GGUF on Ollama vs stock llama-server (the 2026-07-17 eval below).
