@@ -115,6 +115,16 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
   - Steps 3-4 (the live probe) are held with the rest of the GPU work.
     - The identical template plus the passing (froggeric, b10335) pair make the outcome near-certain.
 - [ ] Confirm it generates correct output, not just that it loads - greedy diff against a known-good reference.
+  - Reference settled at pickup: the same GGUF on the CPU path (`-ngl 0`), greedy, against the CUDA/MMQ path.
+    - Upstream's Q1_0 CPU kernels merged 2026-04-06 (PR #21273) and are separately verified, so CPU is the
+      trustworthy side of the comparison.
+    - Pass criterion is coherence and semantic agreement over 100-200 greedy tokens, not a byte diff.
+      CUDA and CPU diverge on reduction order, so byte-identity would fail for the wrong reason.
+    - The ternary CPU probe already produced coherent output, so the reference format is known good.
+  - The vendor's own two sources disagree on whether this needs their fork, which is the open question here.
+    - The 1-bit card says to clone the fork: `# Clone the PrismML fork of llama.cpp`.
+    - The formats docs say the opposite: "Because Q1_0 is upstream, any llama.cpp-based tool built from a
+      recent enough version runs 1-bit Bonsai."
 - [ ] Template vet + `/props`; bench rows alongside ternary.
 - [ ] Three-way comparison + serving-role verdict; the winner added as a preset entry.
 
