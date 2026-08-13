@@ -8,12 +8,32 @@ Cleared to start (user, 2026-08-12): full send, in its own session. Does not wai
 
 GPU-loading items are heavy loads: get user confirmation before starting each.
 
-Resume point: Phase 1, at the residency measurement. Phase 0 is closed, and the download and template vet are done.
-The next three Phase 1 items all need the GPU gate cleared.
+Resume point: Phase 1, at the residency measurement, HELD on the GPU gate (user, 2026-08-12).
+Everything in Phase 1 that does not touch the GPU is done: both downloads, and the template vet for both files.
+Held work, in order, once the gate clears:
+
+1. The residency ladder, both arms (with and without `--mmproj`), rungs 32768 / 65536 / 100000 / 131072.
+   - Ceiling = the largest rung that loads with every layer pinned. Run one rung per server start:
+
+   ```text
+   llama-server -m <snapshot>/Ternary-Bonsai-27B-Q2_g64.gguf [--mmproj <snapshot>/Ternary-Bonsai-27B-mmproj-Q8_0.gguf]
+       -ngl 99 -c <rung> -fa on -ctk q8_0 -ctv q8_0 -np 1 --jinja --no-warmup --port 11435
+   ```
+
+   - `-ngl` pinned, never left unset: docs/benchmarking.md warns the split otherwise tracks host conditions.
+   - `-fa on` with q8_0 KV mirrors the `[*]` block, and the pair is mandatory.
+   - Capture `nvidia-smi` and `free -m` before load, after load, and at completion, and bracket the whole
+     ladder with the nvlddmkm Id-13 count. The commands are in docs/benchmarking.md (Resource capture).
+   - Read the split off the `offloaded N/M layers to GPU` line in the server log.
+
+2. The three ternary preset entries, written from the measured ceiling.
+3. Serve, `/props`, coding smoke, router one-gen smoke.
+4. The 1-bit live probe (gate steps 3-4) at `-ngl 0`, which is cheap to fold in with the above.
 
 Runner decisions taken at pickup (user, 2026-08-12), where the plan left the call open:
 
-- Ternary carries `mmproj`, matching `qwen3.6-27b`. The projector is resident for the residency measurement.
+- `mmproj` is measured both ways before it is decided. The projector costs 0.586 GiB against a headroom under
+  5 GiB, so the arithmetic alone does not settle it.
 - The full ternary profile set lands up front: `bonsai-27b-ternary-coding`, `-reasoning`, and `bonsai-27b-ternary`.
 - Ids stand as ruled. A blank variant token reads as the binary build, so `bonsai-27b` is the 1-bit instruct entry
   and `bonsai-27b-ternary` is the ternary instruct entry.
@@ -73,7 +93,16 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
 
 ## Phase 3 - 1-bit comparison
 
-- [ ] Download + pin `Q1_0` (3.80 GB; no second mmproj).
+- [x] Download + pin `Q1_0` (3.80 GB; no second mmproj).
+  - Done 2026-08-12. Snapshot `f10afb355f104535e3e3e98cf7ab7795c72bd292`, 3,803,452,480 B, byte-exact
+    against research.md.
+- [x] Template vet steps 1-2 (the grep half; no GPU). Same result as ternary: guarded, no `merged_system`,
+      same 8 distinct `raise_exception` sites as the positive control.
+  - Both GGUFs embed a byte-identical chat template: 7,764 chars, sha256 `e84f32a23fdda27689f868aa...`,
+    read from the `tokenizer.chat_template` header field with llama.cpp's `gguf-py`. Architecture is `qwen35`
+    on both, matching the `src/models/qwen35.cpp` code research.md cites.
+  - Steps 3-4 (the live probe) are held with the rest of the GPU work, though the identical template plus the
+    already-passing (froggeric, b10335) pair make the outcome near-certain.
 - [ ] Confirm it generates correct output, not just that it loads - greedy diff against a known-good reference.
 - [ ] Template vet + `/props`; bench rows alongside ternary.
 - [ ] Three-way comparison + serving-role verdict; the winner added as a preset entry.
