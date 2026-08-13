@@ -133,4 +133,8 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
 - [ ] docs/parameters.md Bonsai-27B profile section.
 - [ ] docs/benchmarking.md findings, the measured ceiling, and the first published 4070 numbers.
 - [ ] research.md resolution notes appended.
-- [ ] Watch items recorded: #26337 (DSpark), ollama#13668.
+- [x] Watch item recorded: #26337 (DSpark). `specs/bonsai-dspark/tasks.md` already watches it, which is its
+      home now that DSpark is its own bundle.
+  - [x] ollama#13668 struck as moot 2026-08-12 (user), and removed from spec.md's Acceptance.
+    - Ollama was retired 2026-08-07, so an issue about what Ollama cannot load no longer gates anything here.
+    - It was not moved to `specs/stack-upkeep`, whose scope line states that Ollama left when it was retired.

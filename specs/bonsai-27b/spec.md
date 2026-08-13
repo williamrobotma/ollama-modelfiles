@@ -65,5 +65,6 @@ Evidence and sources: `research.md`, section "Pre-flight re-verification 2026-08
   - No serving-role claim of its own.
 - Chat-template gate passed, with a positive control so a zero hit means the guard is absent, not unread.
 - docs/parameters.md gains a Bonsai-27B profile section with source URLs.
-- Watch items recorded: #26337 (DSpark), ollama#13668.
+- Watch item recorded: #26337 (DSpark), tracked by `specs/bonsai-dspark`.
+  - ollama#13668 struck as moot 2026-08-12 (user): Ollama was retired 2026-08-07, so nothing serves from it.
 - Disk budgeted against `/mnt/f`. Downloads: 8.21 GB ternary, 3.80 GB 1-bit.
