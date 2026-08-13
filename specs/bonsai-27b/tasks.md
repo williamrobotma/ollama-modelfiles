@@ -87,9 +87,40 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
     - Matched on the message text. A leading-`system` request to the same server returned 200.
   - Step 3, froggeric override: HTTP 200. The override does the work on this GGUF at b10335.
   - Step 4, `/v1/messages` multi-block `system`: HTTP 200 on both arms, immune as documented.
-- [ ] Measure the residency ceiling with `nvidia-smi` at all three capture points.
+- [x] Measure the residency ceiling with `nvidia-smi` at all three capture points.
   - q8_0-conditional: f16 KV roughly halves it, so `specs/kv-cache-ab` can void this result.
   - Measure the entry's real shape (projector resident if the entry carries one); `ctx-size` pads up to 256.
+  - **Measured ceiling: 100000.** Done 2026-08-13, quiesced box, ladder run twice (with and without `mmproj`).
+  - Confirmed two independent ways, which agree.
+    - Memory: the drift-corrected footprint tracks predicted growth exactly to 100000, then stops.
+    - Throughput: decode holds at ~54 tok/s to 100000, then collapses.
+
+  | ctx | footprint, no mmproj | growth | predicted | decode tok/s | prompt tok/s |
+  |---|---|---|---|---|---|
+  | 32768 | 8537 MiB | - | - | 54.10 | 101.95 |
+  | 65536 | 9785 MiB | +1248 | +1248 | not run | not run |
+  | 100000 | 11101 MiB | +1316 | +1316 | 54.21 | 107.07 |
+  | 131072 | 11581 MiB | +480 | +1179 | 16.37 | 35.32 |
+  | 200000 | 11619 MiB | +38 | +2632 | not run | not run |
+  | 262144 | 11581 MiB | 0 | +2365 | 9.47 | 28.32 |
+
+  - Load success is not a ceiling test on this box, which is why the first ladder read every rung as passing.
+    - Every rung to 262144 loaded and reported `offloaded 65/65 layers to GPU`.
+    - At 262144 llama.cpp's own buffers claim 17,096 MiB on a 12,282 MiB card, and `nvidia-smi` shows 11,581.
+    - WSL2's WDDM driver backs the excess with shared host memory instead of failing the allocation.
+    - So the ceiling had to be found by where the footprint stops tracking, and confirmed by throughput.
+  - research.md's arithmetic is confirmed exactly, read off llama.cpp's own buffer accounting.
+    - `CUDA0 KV buffer size` at 32768 is 1088.00 MiB, which is 32768 x 34.0 KiB to the byte.
+    - `CUDA0 RS buffer size` is 149.62 MiB and constant at every rung, against a predicted ~150 MiB.
+    - The KV log shows `layer 0: filtered` and `layer 3: dev = CUDA0`, so 16 of 64 layers hold KV.
+  - The projector costs about 516-602 MiB of real VRAM, and its cost is invisible in the LLM's own accounting.
+    - It reports `CUDA0 model buffer size = 0.00 MiB`, and the vendor card calls the tower "usually offloaded".
+    - The two arms differ by 602 MiB at 32768 and 516 MiB at 100000, which is the `nvidia-smi` truth.
+    - At 100000 with the projector the footprint is 11,617 MiB, leaving 665 MiB for Windows.
+  - The measurement is only valid quiesced. The Windows baseline drifted 1397 -> 226 MiB during the first ladder.
+    - That drift exceeds the projector delta, so absolute readings are useless and only per-rung deltas count.
+  - Id-13 nvlddmkm count was 1146 before and 1146 after both ladders, so no GPU hardware fault. A zero delta
+    still proves nothing on its own.
 - [ ] Decide role and `ctx-size` from that measurement; write the preset entry.
 - [ ] llama-server launch from the pinned path; `/props` matches the profile; coding smoke.
 - [ ] Served through the router preset (one-gen smoke).
