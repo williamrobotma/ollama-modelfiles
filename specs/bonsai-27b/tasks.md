@@ -12,8 +12,10 @@ Resume point: Phase 1, at the residency measurement, HELD on the GPU gate (user,
 Everything in Phase 1 that does not touch the GPU is done: both downloads, and the template vet for both files.
 Held work, in order, once the gate clears:
 
-1. The residency ladder, both arms (with and without `--mmproj`), rungs 32768 / 65536 / 100000 / 131072.
-   - Ceiling = the largest rung that loads with every layer pinned. Run one rung per server start:
+1. The residency ladder, both arms (with and without `--mmproj`), rungs 32768 / 65536 / 100000 / 131072 / 200000.
+   - Run both arms back to back in one sitting, or host drift lands inside the 0.586 GiB projector delta
+     the comparison exists to measure.
+   - Ceiling = the largest rung that keeps **every** layer on the card. Run one rung per server start:
 
    ```text
    llama-server -m <snapshot>/Ternary-Bonsai-27B-Q2_g64.gguf [--mmproj <snapshot>/Ternary-Bonsai-27B-mmproj-Q8_0.gguf]
@@ -24,7 +26,14 @@ Held work, in order, once the gate clears:
    - `-fa on` with q8_0 KV mirrors the `[*]` block, and the pair is mandatory.
    - Capture `nvidia-smi` and `free -m` before load, after load, and at completion, and bracket the whole
      ladder with the nvlddmkm Id-13 count. The commands are in docs/benchmarking.md (Resource capture).
-   - Read the split off the `offloaded N/M layers to GPU` line in the server log.
+   - Pass a rung only when the log's `offloaded N/M layers to GPU` line has `N == M`. A bound server is not
+     the criterion: llama.cpp fits layers to free VRAM (`models.ini:16`) and nothing auto-shrinks on OOM
+     (AGENTS.md), so an over-budget rung can bind with layers quietly spilled and report success.
+   - Stop rule: climb until a rung fails, since a ladder whose top rung passes has measured a floor rather
+     than a ceiling. 200000 is predicted at 13.70 GiB and is there to terminate the climb; if it passes,
+     extend the ladder upward.
+   - The Id-13 bracket is a recorded pair, not a verdict. Expect it to come back blank under WSL, and never
+     read a zero or empty delta as "no fault" - docs/benchmarking.md says a zero delta proves nothing.
 
 2. The three ternary preset entries, written from the measured ceiling.
 3. Serve, `/props`, coding smoke, router one-gen smoke.
