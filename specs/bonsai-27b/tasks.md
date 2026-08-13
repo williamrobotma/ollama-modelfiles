@@ -13,48 +13,49 @@ Everything in Phase 1 that does not touch the GPU is done: both downloads, and t
 Held work, in order, once the gate clears:
 
 1. The residency ladder, both arms (with and without `--mmproj`), rungs 32768 / 65536 / 100000 / 131072 / 200000.
-   - Run both arms back to back in one sitting, or host drift lands inside the 0.586 GiB projector delta
-     the comparison exists to measure.
-   - Ceiling = the largest rung that keeps **every** layer on the card. Run one rung per server start:
+   - Run both arms back to back, or host drift lands inside the 0.586 GiB projector delta being measured.
+   - Ceiling = the largest rung that keeps every layer on the card. One rung per server start:
 
    ```text
    llama-server -m <snapshot>/Ternary-Bonsai-27B-Q2_g64.gguf [--mmproj <snapshot>/Ternary-Bonsai-27B-mmproj-Q8_0.gguf]
        -ngl 99 -c <rung> -fa on -ctk q8_0 -ctv q8_0 -np 1 --jinja --no-warmup --port 11435
    ```
 
-   - `-ngl` pinned, never left unset: docs/benchmarking.md warns the split otherwise tracks host conditions.
+   - `-ngl` pinned, never unset: docs/benchmarking.md warns the split otherwise tracks host conditions.
    - `-fa on` with q8_0 KV mirrors the `[*]` block, and the pair is mandatory.
-   - Capture `nvidia-smi` and `free -m` before load, after load, and at completion, and bracket the whole
-     ladder with the nvlddmkm Id-13 count. The commands are in docs/benchmarking.md (Resource capture).
-   - Pass a rung only when the log's `offloaded N/M layers to GPU` line has `N == M`. A bound server is not
-     the criterion: llama.cpp fits layers to free VRAM (`models.ini:16`) and nothing auto-shrinks on OOM
-     (AGENTS.md), so an over-budget rung can bind with layers quietly spilled and report success.
-   - Stop rule: climb until a rung fails, since a ladder whose top rung passes has measured a floor rather
-     than a ceiling. 200000 is predicted at 13.70 GiB and is there to terminate the climb; if it passes,
-     extend the ladder upward.
-   - The Id-13 bracket is a recorded pair, not a verdict. Expect it to come back blank under WSL, and never
-     read a zero or empty delta as "no fault" - docs/benchmarking.md says a zero delta proves nothing.
+   - Capture `nvidia-smi` and `free -m` at all three points, per docs/benchmarking.md (Resource capture).
+   - Bracket the whole ladder with the nvlddmkm Id-13 count.
+   - Pass a rung only when the log's `offloaded N/M layers to GPU` line has `N == M`.
+     - A bound server is not the criterion.
+     - llama.cpp fits layers to free VRAM (`models.ini:16`), and nothing auto-shrinks on OOM (AGENTS.md).
+     - So an over-budget rung can bind with layers quietly spilled, and report success.
+   - Stop rule: climb until a rung fails.
+     - A ladder whose top rung passes has measured a floor, not a ceiling.
+     - 200000 is predicted at 13.70 GiB and is there to terminate the climb; extend upward if it passes.
+   - The Id-13 bracket is a recorded pair, not a verdict.
+     - Expect it blank under WSL, and never read a zero or empty delta as "no fault" (docs/benchmarking.md).
 
 2. The three ternary preset entries, written from the measured ceiling.
 3. Serve, `/props`, coding smoke, router one-gen smoke.
-4. The 1-bit live probe (gate steps 3-4) at `-ngl 0`, which is cheap to fold in with the above.
+4. The 1-bit live probe (gate steps 3-4) at `-ngl 0`, cheap to fold in with the above.
 
 Runner decisions taken at pickup (user, 2026-08-12), where the plan left the call open:
 
-- `mmproj` is measured both ways before it is decided. The projector costs 0.586 GiB against a headroom under
-  5 GiB, so the arithmetic alone does not settle it.
+- `mmproj` is measured both ways before it is decided.
+  - The projector costs 0.586 GiB against a headroom under 5 GiB, so the arithmetic alone does not settle it.
 - The full ternary profile set lands up front: `bonsai-27b-ternary-coding`, `-reasoning`, and `bonsai-27b-ternary`.
-- Ids stand as ruled. A blank variant token reads as the binary build, so `bonsai-27b` is the 1-bit instruct entry
-  and `bonsai-27b-ternary` is the ternary instruct entry.
-- Long context may spill into system RAM. `ctx-size` is not capped at the measured ceiling; the entry states the spill.
+- Ids stand as ruled: a blank variant token reads as the binary build.
+  - So `bonsai-27b` is the 1-bit instruct entry, and `bonsai-27b-ternary` is the ternary instruct entry.
+- Long context may spill into system RAM.
+  - `ctx-size` is not capped at the measured ceiling; the entry states the spill.
 
 ## Phase 0 - prerequisites + decisions
 
 - [x] #25707 (group-64 ternary CUDA) merged upstream 2026-07-30, and is in the served build's history.
 - [x] Build prerequisite met: on-disk b10335 matches its `llamacpp/launch.sh` record.
   - [x] Pinning at b10335 confirmed defensible; b10375 changes nothing this spec depends on.
-  - [x] At pickup 2026-08-12: record unmoved. `llama-server --version` gives `version: 10335 (74ce15741)`,
-        matching the `llamacpp/launch.sh:10` record `b10335 (74ce15741)`. No rebuild.
+  - [x] At pickup 2026-08-12: record unmoved, so no rebuild.
+    - `llama-server --version` gives `version: 10335 (74ce15741)`, matching the `llamacpp/launch.sh:10` record.
 - [x] Spec review closed. Decisions and their evidence are in spec.md and research.md.
   - [x] DSpark dropped; follow-on bundle scaffolded as `specs/bonsai-dspark`.
   - [x] KV cache A/B moved out to `specs/kv-cache-ab`, fleet-wide, with Bonsai as one arm.
@@ -69,20 +70,21 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
 
 - [x] Download + pin `Q2_g64` and mmproj `Q8_0` (8.21 GB; check `/mnt/f` before and after).
   - Never `Q2_0` or `PQ2_0` - fork group-128 packing, and `PQ2_0` is vendor-marked unstable.
-  - Done 2026-08-12. Snapshot `abbae723028d71be674e71e1a71201a6f43fab22`; sizes byte-exact against research.md
-    (`Q2_g64` 7,585,330,240 B, mmproj `Q8_0` 629,246,880 B).
-  - `df -h /mnt/f` read 277G both before and after. The vhdx reused internal free space rather than growing, so
-    the delta check was inconclusive here; the byte-exact sizes are what verify the download.
+  - Done 2026-08-12, snapshot `abbae723028d71be674e71e1a71201a6f43fab22`.
+  - Sizes byte-exact against research.md: `Q2_g64` 7,585,330,240 B, mmproj `Q8_0` 629,246,880 B.
+  - `df -h /mnt/f` read 277G both before and after, so the delta check was inconclusive.
+    - The vhdx reused internal free space rather than growing. The byte-exact sizes are what verify the download.
 - [x] Template vet per the AGENTS.md gate, with a positive control; result recorded in `llamacpp/README.md`.
   - The guard is known present, so a zero hit means the grep window was too small.
-  - Done 2026-08-12, on-box, all four steps at `-ngl 0` on port 11435. Verdict: guarded, no `merged_system`,
-    so both entries serve under froggeric's template - which is what research.md predicted from the HF side.
+  - Done 2026-08-12, on-box, all four steps at `-ngl 0` on port 11435.
+  - Verdict: guarded, no `merged_system`, so both entries serve under froggeric's template.
+    - That is what research.md predicted from the HF side, now confirmed on the downloaded file.
   - Step 1: 1 hit. Verbatim: `{{- raise_exception('System message must be at the beginning.') }}`.
   - Step 2: 0 hits for `merged_system`.
-  - Positive control: 8 distinct `raise_exception(...)` sites read inside the same 30 MB window, so the window
-    reached the whole template body and the step-2 zero is a real absence, not truncation.
+  - Positive control: 8 distinct `raise_exception(...)` sites read inside the same 30 MB window.
+    - So the window reached the whole template body, and the step-2 zero is a real absence, not truncation.
   - Step 3, embedded template (control): HTTP 500, `Jinja Exception: System message must be at the beginning.`
-    Matched on the message text; a leading-`system` request to the same server returned 200.
+    - Matched on the message text. A leading-`system` request to the same server returned 200.
   - Step 3, froggeric override: HTTP 200. The override does the work on this GGUF at b10335.
   - Step 4, `/v1/messages` multi-block `system`: HTTP 200 on both arms, immune as documented.
 - [ ] Measure the residency ceiling with `nvidia-smi` at all three capture points.
@@ -103,15 +105,15 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
 ## Phase 3 - 1-bit comparison
 
 - [x] Download + pin `Q1_0` (3.80 GB; no second mmproj).
-  - Done 2026-08-12. Snapshot `f10afb355f104535e3e3e98cf7ab7795c72bd292`, 3,803,452,480 B, byte-exact
-    against research.md.
-- [x] Template vet steps 1-2 (the grep half; no GPU). Same result as ternary: guarded, no `merged_system`,
-      same 8 distinct `raise_exception` sites as the positive control.
-  - Both GGUFs embed a byte-identical chat template: 7,764 chars, sha256 `e84f32a23fdda27689f868aa...`,
-    read from the `tokenizer.chat_template` header field with llama.cpp's `gguf-py`. Architecture is `qwen35`
-    on both, matching the `src/models/qwen35.cpp` code research.md cites.
-  - Steps 3-4 (the live probe) are held with the rest of the GPU work, though the identical template plus the
-    already-passing (froggeric, b10335) pair make the outcome near-certain.
+  - Done 2026-08-12, snapshot `f10afb355f104535e3e3e98cf7ab7795c72bd292`.
+  - 3,803,452,480 B, byte-exact against research.md.
+- [x] Template vet steps 1-2 (the grep half; no GPU).
+  - Same verdict as ternary: guarded, no `merged_system`, same 8 `raise_exception` sites as the control.
+  - Both GGUFs embed a byte-identical chat template: 7,764 chars, sha256 `e84f32a23fdda27689f868aa...`.
+    - Read from the `tokenizer.chat_template` header field with llama.cpp's `gguf-py`, not inferred from greps.
+    - Architecture reads `qwen35` on both, matching the `src/models/qwen35.cpp` code research.md cites.
+  - Steps 3-4 (the live probe) are held with the rest of the GPU work.
+    - The identical template plus the passing (froggeric, b10335) pair make the outcome near-certain.
 - [ ] Confirm it generates correct output, not just that it loads - greedy diff against a known-good reference.
 - [ ] Template vet + `/props`; bench rows alongside ternary.
 - [ ] Three-way comparison + serving-role verdict; the winner added as a preset entry.
