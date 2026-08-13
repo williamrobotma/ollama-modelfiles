@@ -111,6 +111,78 @@ That flag is what makes it non-thinking on llama.cpp.
 The per-request equivalent is `chat_template_kwargs {"enable_thinking": false}`.
 Under Ollama the profile's values were set but thinking could not actually be disabled.
 
+## Bonsai-27B (PrismML)
+
+An extreme-quantization rebuild of Qwen3.6-27B, onboarded by `specs/bonsai-27b`.
+Sources, read 2026-08-12:
+
+- Ternary card: <https://huggingface.co/prism-ml/Ternary-Bonsai-27B-gguf>
+- 1-bit card: <https://huggingface.co/prism-ml/Bonsai-27B-gguf>
+- Vendor docs: <https://docs.prismml.com/models/bonsai-27b>
+
+Both cards publish one three-row table, identical across the two repos.
+
+| Parameter | Value | Note |
+|---|---|---|
+| temperature | 0.7 | Thinking-mode value, per the card's own scoping below |
+| top_p | 0.95 | |
+| top_k | 20 | |
+| min_p | not stated | The string does not occur in either card |
+| repeat_penalty | not stated | The Qwen mandate applies instead - see below |
+| presence_penalty | not stated | |
+| num_ctx | 262144 | `qwen35.context_length` in the GGUF agrees with the card's "262K tokens" |
+
+The card scopes that table to thinking mode, verbatim:
+"These are the settings used for all reported benchmark results (thinking mode)."
+So it is a thinking-mode profile by the vendor's own statement, and not this repo's Instruct profile.
+
+### The GGUF ships its own sampling defaults
+
+Bonsai's GGUF carries `general.sampling.*` metadata keys, and `temp` disagrees with the card.
+
+| Key | Value in the GGUF | Card |
+|---|---|---|
+| `general.sampling.temp` | 1.0 | 0.7 |
+| `general.sampling.top_k` | 20 | 20 |
+| `general.sampling.top_p` | 0.95 | 0.95 |
+
+The conflict is recorded rather than reconciled, and every Bonsai entry sets its sampling values explicitly.
+
+An unset flag does not fall through to the build default. It falls through to the GGUF.
+
+- `common/common.cpp:1180-1193`: the getter returns early when the user set the flag.
+- Otherwise it overwrites the value from the GGUF key.
+- The keys read that way are wider than the `models.ini` header note records (`common.cpp:1206-1216`).
+  - `top_k`, `top_p`, `min_p`, `xtc_probability`, `xtc_threshold`, `temp`, `penalty_last_n`, `penalty_repeat`.
+  - `mirostat`, `mirostat_tau`, `mirostat_eta`, and the sampler `sequence`.
+- `[*]` already pins `top-p`, `min-p`, and `repeat-penalty`, and every entry sets `temp` and `top-k`.
+
+Bonsai is not the only served GGUF carrying these keys, so the mechanism is fleet-wide rather than Bonsai-specific.
+Header scan of the pinned files, 2026-08-12:
+
+| GGUF | `temp` | `top_k` | `top_p` |
+|---|---|---|---|
+| Qwen3.6-27B-UD-Q4_K_XL (non-MTP and MTP) | 1.0 | 20 | 0.95 |
+| Qwen3.5-Queen-27B.i1-Q4_K_M | 0.6 | 20 | 0.95 |
+| gemma-4-26B-A4B-it-heretic and gemma-4-31B-it-heretic | 1.0 | 64 | 0.95 |
+| Qwen3.5-9B-UD-Q4_K_XL | absent | absent | absent |
+
+Nothing is being taken from GGUF metadata today: every entry backed by those files sets `temp` and `top-k` itself.
+The exposure is a future entry written without them, which would serve the GGUF's value with no warning.
+
+### repeat_penalty stays 1.0
+
+The Qwen mandate applies unchanged, because Bonsai is a Qwen3.6-27B rebuild and the vendor publishes no value.
+
+- Community practice on the ternary repo leans 1.1-1.15 and is declined.
+- One user at 1.15 still reported "syntax hallucinations while coding" (ternary repo discussion #36).
+- DRY sampling is a separate mechanism the mandate does not cover, so it stays available as the mitigation.
+
+### Which profile Bonsai serves
+
+Undecided until `specs/bonsai-27b` Phase 2 compares four arms on quality.
+The arms are this repo's coding, reasoning, and instruct profiles, plus the vendor card above.
+
 ## Serving flags (llama.cpp)
 
 The tables above are sampling only. These are the launch-side flags a served model also needs.

@@ -26,6 +26,12 @@ Terms:
   - Verify: matched by the guard's message text, never the HTTP status; recorded in `llamacpp/README.md`.
 - Measure the residency ceiling before writing the entry.
   - Predicted near 100K; 200000 and 262144 are over the card (arithmetic in research.md).
+  - Amended 2026-08-12: that prediction is optimistic, because research.md's totals exclude compute buffers.
+    - The vendor card puts "activations and runtime buffers" at "~1.3 GB across backends", so add ~1.21 GiB.
+    - The card's peak table also describes the g128 pack at 7.15 GB of weights, and the g64 file we serve is
+      7.585 GB, so add another ~0.39 GiB on top.
+    - With both corrections and the projector resident, 100K lands near 12.3 GiB against a 11.99 GiB card.
+    - Expect the ceiling nearer 64K with `mmproj`, and the ladder now runs to 200000 so a failing rung bounds it.
   - Measure the entry's actual shape: if it will carry `mmproj`, the projector is resident for the measurement.
     It costs 0.586 GiB, against a margin of roughly 1 GiB at 100K.
   - `ctx-size` pads up to a 256 boundary on load (200000 -> 200192), so set the entry below the ceiling, not at it.
