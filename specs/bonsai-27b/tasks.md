@@ -121,9 +121,29 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
     - That drift exceeds the projector delta, so absolute readings are useless and only per-rung deltas count.
   - Id-13 nvlddmkm count was 1146 before and 1146 after both ladders, so no GPU hardware fault. A zero delta
     still proves nothing on its own.
-- [ ] Decide role and `ctx-size` from that measurement; write the preset entry.
-- [ ] llama-server launch from the pinned path; `/props` matches the profile; coding smoke.
-- [ ] Served through the router preset (one-gen smoke).
+- [x] Decide role and `ctx-size` from that measurement; write the preset entry.
+  - Three entries written 2026-08-13: `bonsai-27b-ternary-coding`, `-reasoning`, and `bonsai-27b-ternary`.
+  - `ctx-size` keeps the fleet convention, 200000 and 262144, which is above the measured 100000 ceiling.
+    - User decision 2026-08-13, taken with the spill cost quoted at 16.4 tok/s (131072) and 9.5 (262144).
+    - Those figures came from standalone runs without `mmproj`. The served entries are much slower - see below.
+  - All three carry `mmproj`, since the fleet's no-projector rule exists only for the MTP speed split.
+- [x] llama-server launch from the pinned path; `/props` matches the profile; coding smoke.
+  - `/props` verified per entry 2026-08-13. The field is `temperature`, not `temp`.
+  - Coding: temperature 0.6, top_k 20, top_p 0.95, min_p 0.0, repeat_penalty 1.0, presence_penalty 0.0.
+  - Instruct: top_p 0.80 and presence_penalty 1.5, both as the profile requires.
+  - `ctx-size` padding confirmed as plan.md predicted: 200000 is served as `n_ctx` 200192.
+  - `reasoning = off` works: only the instruct entry returned visible text on a 32-token budget.
+    - The coding and reasoning entries spent the whole budget thinking and returned empty content.
+    - That is the same behaviour templates/README.md records for Queen-27B, and it is a pass.
+- [x] Served through the router preset (one-gen smoke).
+  - All three ids appear in `/v1/models` and each generated through the router.
+- [ ] **Open: the served entries run at 2-4 tok/s, far below the 16.4 and 9.5 the ctx decision assumed.**
+  - Measured through the router: coding 2.18 tok/s, reasoning 1.89, instruct 4.06.
+  - Against 54 tok/s at or below the ceiling, that is roughly a 25x penalty, not the 3.3x quoted at decision time.
+  - The gap is because the earlier spill figures were standalone and carried no projector.
+  - Confirmed as spill, not a sampling artifact: with the coding entry resident, GPU sits at 10,361 MiB while
+    host RAM rises from ~1.9 GB to 5.9 GB, so roughly 4 GB of the model is in host memory.
+  - Needs a user re-decision, because the choice rested on a figure that understated the cost about sevenfold.
 - [ ] Record any repetition loops or malformed tool calls.
 
 ## Phase 2 - bench (ternary)
