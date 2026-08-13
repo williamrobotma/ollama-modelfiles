@@ -44,12 +44,13 @@ Evidence and sources: `research.md`, section "Pre-flight re-verification 2026-08
 4. Role and `ctx-size`: decided after measuring, in Phase 1.
 5. Bench tool: `llama-bench` for throughput. Serve-path checks are the runner's call at Phase 2 pickup.
 6. KV cache type is out of scope. The fleet-wide q8_0 vs f16 A/B is `specs/kv-cache-ab`; Bonsai is one arm.
-
-## Open decision, to rule at Phase 1
-
-- Served ids. The grammar says an id names the entry, never the quant (`llamacpp/README.md:19`), which rules out
-  the draft's `bonsai27b-q2g64` and `bonsai27b-q1`.
-  - Recommendation: PrismML's own repo names, `ternary-bonsai-27b` and `bonsai-27b`, plus profile tokens.
+7. Served ids: `bonsai-27b-ternary` and `bonsai-27b`, plus profile tokens. This replaces the draft's
+   `bonsai27b-q2g64` and `bonsai27b-q1`.
+   - Both start with `bonsai-27b` so they group together, and the split mirrors PrismML's two repos, where the
+     plain one is the 1-bit build.
+   - `ternary` rides the grammar's `[-variant]` slot; the file-level quant stays in the `model =` path.
+   - The id rule was softened the same day to cover this (`llamacpp/README.md`, "Ids and aliases").
+   - Ternary carries the profile entries. The 1-bit is bench-only, so it needs one entry, not a profile set.
 
 ## Acceptance
 

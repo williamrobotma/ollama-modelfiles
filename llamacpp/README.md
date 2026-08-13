@@ -16,7 +16,7 @@ The migration that built this stack is `specs/llamacpp-migration`.
 
 ## Ids and aliases
 
-An id is the model name a client sends, and it names the entry, never the quant (decided 2026-08-09).
+An id is the model name a client sends, and it names the entry, not the quant (decided 2026-08-09).
 The grammar is defined here; other files point to this section.
 
 - Shape: `<family>[-finetune]-<size>[-variant][-mtp][-profile]`; a blank profile means instruct.
@@ -25,6 +25,11 @@ The grammar is defined here; other files point to this section.
   - `gemma4-12b-it-qat-mtp` - upstream variant tokens (`it-qat`) keep their upstream spot: after the size.
   - `qwen3.5-queen-27b` - a finetune name (`queen`) sits before the size.
 - The quant appears only in the `model =` path, so promoting a new quant is a path edit: no rename, no client churn.
+- Softened 2026-08-12 (user): where two separately released builds of one model would otherwise collide, the
+  token that tells them apart goes in the id.
+  - It rides the `[-variant]` slot, and the file-level quant still stays in the `model =` path.
+  - `bonsai-27b-ternary` and `bonsai-27b` - two PrismML repos, different weights, different published quality.
+  - This disambiguates releases. It does not license tagging a packaging choice such as `q5` vs `q6`.
 
 An alias is a second name for an entry, written as a key on the entry that owns it:
 

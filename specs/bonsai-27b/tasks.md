@@ -8,7 +8,7 @@ Cleared to start (user, 2026-08-12): full send, in its own session. Does not wai
 
 GPU-loading items are heavy loads: get user confirmation before starting each.
 
-Resume point: Phase 0. Everything below Phase 0 is untouched.
+Resume point: Phase 1, after the one at-pickup re-check left in Phase 0. Nothing below Phase 0 has been started.
 
 ## Phase 0 - prerequisites + decisions
 
@@ -22,8 +22,9 @@ Resume point: Phase 0. Everything below Phase 0 is untouched.
   - [x] Sampling: four arms - coding, reasoning, instruct, and the vendor card.
   - [x] Role and `ctx-size`: decided after measuring, in Phase 1.
   - [x] Bench tool: `llama-bench`; serve-path checks are the runner's call at Phase 2.
-- [ ] Owner confirms the GPU core clock offset is at or below +120 MHz. Blocking; not readable from WSL.
-- [ ] Rule on the served ids (spec.md's open decision).
+- [x] GPU core clock offset confirmed at or below +120 MHz (user, 2026-08-12). Re-confirm if the profile changes.
+- [x] Served ids ruled (user, 2026-08-12): `bonsai-27b-ternary` and `bonsai-27b`, plus profile tokens.
+  - [x] The id rule softened for disambiguation in `llamacpp/README.md`.
 
 ## Phase 1 - ternary lane
 
