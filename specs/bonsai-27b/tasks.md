@@ -137,13 +137,36 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
     - That is the same behaviour templates/README.md records for Queen-27B, and it is a pass.
 - [x] Served through the router preset (one-gen smoke).
   - All three ids appear in `/v1/models` and each generated through the router.
-- [ ] **Open: the served entries run at 2-4 tok/s, far below the 16.4 and 9.5 the ctx decision assumed.**
-  - Measured through the router: coding 2.18 tok/s, reasoning 1.89, instruct 4.06.
-  - Against 54 tok/s at or below the ceiling, that is roughly a 25x penalty, not the 3.3x quoted at decision time.
-  - The gap is because the earlier spill figures were standalone and carried no projector.
-  - Confirmed as spill, not a sampling artifact: with the coding entry resident, GPU sits at 10,361 MiB while
-    host RAM rises from ~1.9 GB to 5.9 GB, so roughly 4 GB of the model is in host memory.
-  - Needs a user re-decision, because the choice rested on a figure that understated the cost about sevenfold.
+- [x] `ctx-size` set to 100096 on all three entries (user, 2026-08-16), replacing the convention values.
+  - 100096 is the measured resident rung written literally. llama.cpp pads ctx up to a 256 boundary, so the
+    ladder's "100000" rung in fact ran at 100096, and the padded value is the one with a measurement behind it.
+  - This follows the documented practice, which the research pass confirmed against the pinned build.
+    - The KV cache is allocated in full at load, never lazily (`src/llama-kv-cache.cpp:286`).
+    - `--fit` stops auto-sizing the moment `ctx-size` is set (`common/fit.cpp:369`), so every entry here opts out.
+    - No paged or lazy KV exists in mainline; ggml-org discussion #21961 is open design work, unshipped.
+    - So an oversized ctx is a misconfiguration rather than a strategy, and on WSL2 it fails silently: the WDDM
+      driver backs the overflow with host memory instead of refusing the allocation as Linux would.
+- [ ] **Open: the router path is far slower than standalone for the same config, and the cause is unknown.**
+  - Same entry, same ctx, same flags, same session: standalone 44.63 tok/s against 4.02 through the router.
+  - Not explained by memory. GPU read 11,815 MiB standalone and 11,779 MiB under the router, which is a wash.
+  - Only N=1 per path. The isolation run (router overhead, repeat runs, child flags) was cut by the GPU gate.
+  - Candidates not yet tested: a CUDA context held by the router parent, eviction not releasing memory between
+    models, or simply a busier desktop during the router run.
+  - This is a fleet-wide question, not a Bonsai one, if it reproduces on another entry.
+- [ ] **Open: the headroom numbers behind the ctx decision were measured on an unrepresentatively idle desktop.**
+  - The 52-54 tok/s figures were taken with the Windows desktop at roughly 226-400 MiB.
+  - Re-measured at a realistic 1,692 MiB desktop, standalone, same session:
+
+  | ctx | mmproj | GPU absolute | decode tok/s |
+  |---|---|---|---|
+  | 100096 | yes | 11,815 MiB | 44.63 |
+  | 100096 | no | 11,337 MiB | 51.38 |
+  | 65536 | yes | 10,623 MiB | 53.39 |
+  | 65536 | no | 10,062 MiB | 52.55 |
+
+  - So the served config loses about 16% to a merely awake desktop, and the loss grows as the desktop does.
+  - 65536 is unaffected either way, which is why it was the recommendation.
+  - The decision stands as the user's; this records the price so it is not rediscovered later.
 - [ ] Record any repetition loops or malformed tool calls.
 
 ## Phase 2 - bench (ternary)
