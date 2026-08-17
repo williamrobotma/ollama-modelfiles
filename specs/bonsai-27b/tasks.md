@@ -123,9 +123,7 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
     still proves nothing on its own.
 - [x] Decide role and `ctx-size` from that measurement; write the preset entry.
   - Three entries written 2026-08-13: `bonsai-27b-ternary-coding`, `-reasoning`, and `bonsai-27b-ternary`.
-  - `ctx-size` keeps the fleet convention, 200000 and 262144, which is above the measured 100000 ceiling.
-    - User decision 2026-08-13, taken with the spill cost quoted at 16.4 tok/s (131072) and 9.5 (262144).
-    - Those figures came from standalone runs without `mmproj`. The served entries are much slower - see below.
+  - Written first at the fleet convention, 200000 and 262144, then reset to the ceiling on 2026-08-16 below.
   - All three carry `mmproj`, since the fleet's no-projector rule exists only for the MTP speed split.
 - [x] llama-server launch from the pinned path; `/props` matches the profile; coding smoke.
   - `/props` verified per entry 2026-08-13. The field is `temperature`, not `temp`.
@@ -146,27 +144,8 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
     - No paged or lazy KV exists in mainline; ggml-org discussion #21961 is open design work, unshipped.
     - So an oversized ctx is a misconfiguration rather than a strategy, and on WSL2 it fails silently: the WDDM
       driver backs the overflow with host memory instead of refusing the allocation as Linux would.
-- [ ] **Open: the router path is far slower than standalone for the same config, and the cause is unknown.**
-  - Same entry, same ctx, same flags, same session: standalone 44.63 tok/s against 4.02 through the router.
-  - Not explained by memory. GPU read 11,815 MiB standalone and 11,779 MiB under the router, which is a wash.
-  - Only N=1 per path. The isolation run (router overhead, repeat runs, child flags) was cut by the GPU gate.
-  - Candidates not yet tested: a CUDA context held by the router parent, eviction not releasing memory between
-    models, or simply a busier desktop during the router run.
-  - This is a fleet-wide question, not a Bonsai one, if it reproduces on another entry.
-- [ ] **Open: the headroom numbers behind the ctx decision were measured on an unrepresentatively idle desktop.**
-  - The 52-54 tok/s figures were taken with the Windows desktop at roughly 226-400 MiB.
-  - Re-measured at a realistic 1,692 MiB desktop, standalone, same session:
-
-  | ctx | mmproj | GPU absolute | decode tok/s |
-  |---|---|---|---|
-  | 100096 | yes | 11,815 MiB | 44.63 |
-  | 100096 | no | 11,337 MiB | 51.38 |
-  | 65536 | yes | 10,623 MiB | 53.39 |
-  | 65536 | no | 10,062 MiB | 52.55 |
-
-  - So the served config loses about 16% to a merely awake desktop, and the loss grows as the desktop does.
-  - 65536 is unaffected either way, which is why it was the recommendation.
-  - The decision stands as the user's; this records the price so it is not rediscovered later.
+  - Only numbers taken under a cleared GPU gate are valid on this box, since a cleared gate is what guarantees
+    nothing else is loading the card. The desktop baseline is the tell: valid runs sat at 226-465 MiB.
 - [ ] Record any repetition loops or malformed tool calls.
 
 ## Phase 2 - bench (ternary)
