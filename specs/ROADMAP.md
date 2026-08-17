@@ -7,7 +7,8 @@ Status lives in the folder layout (`specs/README.md`); this file only orders the
    - Serving and every client cutover are live; what remains: the validation window, the store purge
      (~2026-08-21), and spec close-out.
 2. **bonsai-27b** - onboard ternary Bonsai-27B onto the stack.
-   - Pre-flight review done 2026-08-12; cleared to start in its own session, and it does not wait on step 1.
+   - In flight, and it does not wait on step 1. The ternary lane serves as of 2026-08-16.
+   - What remains is the bench, the 1-bit comparison, and the write-up, all needing the GPU.
 3. **kv-cache-ab** - re-test q8_0 vs f16 KV across every family, numerically and behaviourally (scaffold).
    - Raised by step 2, which contributes one arm; the current fleet-wide default rests on a single Gemma probe.
 4. **openwebui-wrapup** - the remaining in-browser checks and the model-visibility decision.

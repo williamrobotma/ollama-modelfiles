@@ -2,52 +2,28 @@
 
 Status legend: [ ] pending, [x] done. This file is the resume point for the feature; update as phases complete.
 
-DRAFT 2026-07-17, reworked 2026-08-03 (ternary first-class), pre-flight review 2026-08-12 - implementation not started.
+DRAFT 2026-07-17, reworked 2026-08-03 (ternary first-class), pre-flight review 2026-08-12.
+Phases 0 and 1 are complete as of 2026-08-16, and the ternary lane serves.
 
 Cleared to start (user, 2026-08-12): full send, in its own session. Does not wait on `specs/llamacpp-migration`.
 
 GPU-loading items are heavy loads: get user confirmation before starting each.
+Only numbers taken under a cleared GPU gate are valid on this box, since a cleared gate is what guarantees
+nothing else is loading the card. The desktop baseline is the tell: valid runs sat at 226-465 MiB.
 
-Resume point: Phase 1, at the residency measurement, HELD on the GPU gate (user, 2026-08-12).
-Everything in Phase 1 that does not touch the GPU is done: both downloads, and the template vet for both files.
-Held work, in order, once the gate clears:
+Resume point: Phase 2, which is GPU-gated end to end.
+Phase 3 is downloaded and half-vetted; everything left in it needs the gate.
+Phase 4 waits on Phase 2 and 3 numbers, except its `docs/parameters.md` section, which is written.
 
-1. The residency ladder, both arms (with and without `--mmproj`), rungs 32768 / 65536 / 100000 / 131072 / 200000.
-   - Run both arms back to back, or host drift lands inside the 0.586 GiB projector delta being measured.
-   - Ceiling = the largest rung that keeps every layer on the card. One rung per server start:
+Runner decisions (user), where the plan left the call open:
 
-   ```text
-   llama-server -m <snapshot>/Ternary-Bonsai-27B-Q2_g64.gguf [--mmproj <snapshot>/Ternary-Bonsai-27B-mmproj-Q8_0.gguf]
-       -ngl 99 -c <rung> -fa on -ctk q8_0 -ctv q8_0 -np 1 --jinja --no-warmup --port 11435
-   ```
-
-   - `-ngl` pinned, never unset: docs/benchmarking.md warns the split otherwise tracks host conditions.
-   - `-fa on` with q8_0 KV mirrors the `[*]` block, and the pair is mandatory.
-   - Capture `nvidia-smi` and `free -m` at all three points, per docs/benchmarking.md (Resource capture).
-   - Bracket the whole ladder with the nvlddmkm Id-13 count.
-   - Pass a rung only when the log's `offloaded N/M layers to GPU` line has `N == M`.
-     - A bound server is not the criterion.
-     - llama.cpp fits layers to free VRAM (`models.ini:16`), and nothing auto-shrinks on OOM (AGENTS.md).
-     - So an over-budget rung can bind with layers quietly spilled, and report success.
-   - Stop rule: climb until a rung fails.
-     - A ladder whose top rung passes has measured a floor, not a ceiling.
-     - 200000 is predicted at 13.70 GiB and is there to terminate the climb; extend upward if it passes.
-   - The Id-13 bracket is a recorded pair, not a verdict.
-     - Expect it blank under WSL, and never read a zero or empty delta as "no fault" (docs/benchmarking.md).
-
-2. The three ternary preset entries, written from the measured ceiling.
-3. Serve, `/props`, coding smoke, router one-gen smoke.
-4. The 1-bit live probe (gate steps 3-4) at `-ngl 0`, cheap to fold in with the above.
-
-Runner decisions taken at pickup (user, 2026-08-12), where the plan left the call open:
-
-- `mmproj` is measured both ways before it is decided.
-  - The projector costs 0.586 GiB against a headroom under 5 GiB, so the arithmetic alone does not settle it.
-- The full ternary profile set lands up front: `bonsai-27b-ternary-coding`, `-reasoning`, and `bonsai-27b-ternary`.
+- The full ternary profile set landed up front: `bonsai-27b-ternary-coding`, `-reasoning`, `bonsai-27b-ternary`.
 - Ids stand as ruled: a blank variant token reads as the binary build.
   - So `bonsai-27b` is the 1-bit instruct entry, and `bonsai-27b-ternary` is the ternary instruct entry.
-- Long context may spill into system RAM.
-  - `ctx-size` is not capped at the measured ceiling; the entry states the spill.
+- `mmproj` rides all three ternary entries.
+- `ctx-size` is 100096 on all three, which is the measured residency ceiling (2026-08-16).
+  - This replaced an earlier call to keep the fleet's convention ctx and accept the spill.
+  - Oversizing buys nothing: the KV cache is allocated in full at load, not as context fills.
 
 ## Phase 0 - prerequisites + decisions
 
@@ -90,19 +66,24 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
 - [x] Measure the residency ceiling with `nvidia-smi` at all three capture points.
   - q8_0-conditional: f16 KV roughly halves it, so `specs/kv-cache-ab` can void this result.
   - Measure the entry's real shape (projector resident if the entry carries one); `ctx-size` pads up to 256.
-  - **Measured ceiling: 100000.** Done 2026-08-13, quiesced box, ladder run twice (with and without `mmproj`).
+  - **Measured ceiling: 100096.** Done 2026-08-13, quiesced box, ladder run twice (with and without `mmproj`).
   - Confirmed two independent ways, which agree.
-    - Memory: the drift-corrected footprint tracks predicted growth exactly to 100000, then stops.
-    - Throughput: decode holds at ~54 tok/s to 100000, then collapses.
+    - Memory: the drift-corrected footprint tracks predicted growth exactly to the ceiling, then stops.
+    - Throughput: decode holds at ~54 tok/s to the ceiling, then collapses.
 
-  | ctx | footprint, no mmproj | growth | predicted | decode tok/s | prompt tok/s |
+  | ctx requested | served n_ctx | footprint, no mmproj | growth | predicted | decode tok/s |
   |---|---|---|---|---|---|
-  | 32768 | 8537 MiB | - | - | 54.10 | 101.95 |
-  | 65536 | 9785 MiB | +1248 | +1248 | not run | not run |
-  | 100000 | 11101 MiB | +1316 | +1316 | 54.21 | 107.07 |
-  | 131072 | 11581 MiB | +480 | +1179 | 16.37 | 35.32 |
-  | 200000 | 11619 MiB | +38 | +2632 | not run | not run |
-  | 262144 | 11581 MiB | 0 | +2365 | 9.47 | 28.32 |
+  | 32768 | 32768 | 8537 MiB | - | - | 54.10 |
+  | 65536 | 65536 | 9785 MiB | +1248 | +1248 | not run |
+  | 100000 | 100096 | 11101 MiB | +1316 | +1316 | 54.21 |
+  | 131072 | 131072 | 11581 MiB | +480 | +1179 | 16.37 |
+  | 200000 | 200192 | 11619 MiB | +38 | +2632 | not run |
+  | 262144 | 262144 | 11581 MiB | 0 | +2365 | 9.47 |
+
+  - The served column is why the entries read 100096: llama.cpp pads ctx up to a 256 boundary at load, so the
+    rung requested as 100000 is the same configuration as an entry written 100096.
+  - Prefill was not measured at depth. The only prompt-rate figures taken here came from a ~20-token prompt,
+    which says nothing about prefill at the ceiling, so they are left out. `llama-bench` in Phase 2 is that job.
 
   - Load success is not a ceiling test on this box, which is why the first ladder read every rung as passing.
     - Every rung to 262144 loaded and reported `offloaded 65/65 layers to GPU`.
@@ -147,6 +128,9 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
   - Only numbers taken under a cleared GPU gate are valid on this box, since a cleared gate is what guarantees
     nothing else is loading the card. The desktop baseline is the tell: valid runs sat at 226-465 MiB.
 - [ ] Record any repetition loops or malformed tool calls.
+  - Nothing to report yet, and nothing that counts as evidence either: the only generations so far were
+    short smokes with no tools in play. The community reports this on 12 GB cards, so it needs a real
+    agentic session before it can be called absent.
 
 ## Phase 2 - bench (ternary)
 
@@ -183,8 +167,16 @@ Runner decisions taken at pickup (user, 2026-08-12), where the plan left the cal
 
 ## Phase 4 - document
 
-- [ ] docs/parameters.md Bonsai-27B profile section.
+- [x] docs/parameters.md Bonsai-27B profile section. Written 2026-08-12, `docs/parameters.md:114`.
+  - Carries the vendor triple with source URLs, the thinking-mode scoping, and the repeat_penalty stance.
+  - Also records that an unset sampling flag falls through to the GGUF rather than the build default, which
+    is fleet-wide rather than Bonsai-specific.
+  - Its "which profile Bonsai serves" line stays open until the Phase 2 arm comparison.
 - [ ] docs/benchmarking.md findings, the measured ceiling, and the first published 4070 numbers.
+  - Blocked on Phase 2 and 3; the ceiling and the resident decode rate are ready to go in with them.
+  - Worth carrying: on this box an over-budget entry does not partial-offload the way AGENTS.md describes.
+    All layers report resident and WDDM backs the overflow with host memory, so any ceiling test that asks
+    only "did it load" gets a wrong answer here.
 - [ ] research.md resolution notes appended.
 - [x] Watch item recorded: #26337 (DSpark). `specs/bonsai-dspark/tasks.md` already watches it, which is its
       home now that DSpark is its own bundle.

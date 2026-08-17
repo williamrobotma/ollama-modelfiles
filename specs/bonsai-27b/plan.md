@@ -1,6 +1,8 @@
 # Plan: Bonsai-27B onboarding
 
-Not started. Pre-flight review 2026-08-12; its decisions are in spec.md, its evidence in research.md.
+Pre-flight review 2026-08-12; its decisions are in spec.md, its evidence in research.md.
+Phases 0 and 1 are done as of 2026-08-16. What each step actually produced is in tasks.md, which is the
+resume point; this file stays as the plan it was, amended in place where a prediction proved wrong.
 `Verify:` marks the check that closes the step above it.
 
 Terms:
