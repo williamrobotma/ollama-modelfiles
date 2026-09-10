@@ -377,11 +377,12 @@ cscope.po.out
 
 .svn/
 
-# Claude Code local state. settings.json is deliberately ignored: it carries
-# only plugin/runtime state here. Local settings and worktrees are per-machine.
-.claude/settings.json
-.claude/settings.local.json
-.claude/worktrees/
+# Claude Code local state. Whitelist, not denylist: everything under .claude/ is
+# ignored, so a file an agent drops there never stages itself. Only the shared
+# skills and workflows are tracked; settings and worktrees stay per-machine.
+.claude/*
+!.claude/skills/
+!.claude/workflows/
 
 # Empty dir launch.sh points LLAMA_CACHE at. Stays ignored: launch.sh fails
 # closed if it is non-empty (the real control), and downloaded blobs have
