@@ -25,4 +25,4 @@ Status lives in the folder layout (`specs/README.md`); this file only orders the
 10. **bonsai-dspark** - speculative decoding for Bonsai-27B (scaffold).
     - Ordered late because it is blocked upstream (llama.cpp #26337, open). Cut from step 2; pure speed work.
 11. **qwen3.8-27b** - decide whether Qwen3.8-27B earns a fleet slot beside the qwen3.6 coders.
-    - Not yet planned, and there is no spec. Filed 2026-09-20 on a reported open-weights release.
+    - Not yet planned, and there is no spec. Filed 2026-09-20; `research.md` (2026-08-16) is what is known.

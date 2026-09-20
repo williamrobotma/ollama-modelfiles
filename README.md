@@ -57,7 +57,7 @@ Aliases now serve only profile defaults.
 
 ### Roadmap
 
-- [ ] Qwen 3.8 support. Open weights reported 2026-08-14, unconfirmed; scaffolded as `specs/qwen3.8-27b`.
+- [ ] Qwen 3.8 support. Apache 2.0 open weights, card checked 2026-08-16; scaffolded as `specs/qwen3.8-27b`.
 
 ## Quantization
 
