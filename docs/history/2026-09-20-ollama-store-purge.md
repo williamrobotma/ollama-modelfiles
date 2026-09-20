@@ -21,6 +21,13 @@ The user ran every command (sudo needs a password on this box); this session cap
 - Host-side reclaim is NOT done: `wsl --shutdown` + `Optimize-VHD` still has to run, or the vhdx keeps the
   space from Windows. The guest sees it back either way.
 
+### Follow-up: host-side reclaim, same day
+
+- User ran `wsl --shutdown` + `Optimize-VHD` in Windows.
+- Verified via `df -h /mnt/f`: 231G -> 417G available, a 186G gain matching the "186G reclaimed guest-side"
+  figure above exactly (that section's other number, 187G, is a separate pre-purge `du` estimate, not this delta).
+- Closes the bundle's last open item (`specs/done/llamacpp-migration/tasks.md`).
+
 ## What ran
 
 - `ollama rm` removed all 23 models, matching the 23 names of the 2026-08-03 parity check (tasks.md:101).

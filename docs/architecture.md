@@ -202,8 +202,8 @@ Windows F: (1.9TB NTFS) --contains--> ext4.vhdx (WSL2 root; GROWS, never shrinks
                                           |
      guest `df /` reports the VIRTUAL disk -> always budget against `df /mnt/f` instead
      HF cache = the single live source: 199G (du -sh 2026-08-07; the 2026-07-27 cut logged 285G -> 199G)
-     ollama store = retired leftover bytes, freed at the purge: 186G (du -sh 2026-08-07; the spec's
-       232G predates that cut)
+     ollama store: purged 2026-09-20, 186G reclaimed guest-side and, after `wsl --shutdown` + Optimize-VHD,
+       186G reclaimed host-side too (`df -h /mnt/f`: 231G -> 417G available)
      after large in-guest deletions: `wsl --shutdown` + Optimize-VHD (Windows side)
      to return freed space to NTFS
 ```
@@ -220,8 +220,8 @@ leftover, not a design choice.
 - Re-provision from nothing: `hf download` the repos in the `model =` paths -> same pinned snapshots -> `launch.sh`.
 - Session state: `specs/<feature>/tasks.md` is the resume point per feature, backed by the dated logs in `history/`.
   - `.migration-artifacts/` is git-excluded: pre-migration store baselines, HF inventories, the migration scripts.
-- Rollback: the Ollama store, binaries, and override are retained on disk, so the retired stack can be restored
-  until the store purge.
+- Rollback: not possible any more. The Ollama store, binaries, and override were deleted at the 2026-09-20 purge
+  ([history log](history/2026-09-20-ollama-store-purge.md)).
   - The repo-side rebuild path went at the 2026-08-12 purge (section 1); git history holds it.
 
 Two pins to keep in mind:

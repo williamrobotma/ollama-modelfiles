@@ -164,12 +164,13 @@ Completed 2026-07-28, all 11 smokes passed; evidence: `docs/history/2026-07-28-l
 
 ### Open items
 
-- [ ] Host-side vhdx compact: `wsl --shutdown` + `Optimize-VHD` (user runs it in Windows)
-  - The 186G is back guest-side but not host-side until this runs; the vhdx never shrinks by itself
-  - The only item left in this bundle, and it changes nothing inside the guest
+None - the bundle closed 2026-09-20 with the host-side vhdx compact below.
 
 ### Closed items
 
+- [x] Host-side vhdx compact: `wsl --shutdown` + `Optimize-VHD` (user ran it in Windows)
+  - Verified via `df -h /mnt/f`: 231G -> 417G available, a 186G gain matching the guest-side reclaim exactly
+  - The last open item in this bundle; nothing changed inside the guest
 - [x] Validation window (~2 weeks daily use) completed without rollback
   - Opened 2026-08-07 at the stop+disable, ran ~6 weeks to 2026-09-20, and no rollback was ever taken
 - [x] Store purge (user-confirmed, ~2026-08-21): `ollama rm` all, uninstall, delete `/usr/share/ollama`

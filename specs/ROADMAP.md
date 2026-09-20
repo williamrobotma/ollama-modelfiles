@@ -4,8 +4,8 @@ The in-flight bundles, ordered by dependency; work top-down.
 Status lives in the folder layout (`specs/README.md`); this file only orders the work.
 
 1. **llamacpp-migration** - retire Ollama, serve from stock llama-server. CLOSED 2026-09-20.
-   - Moved to `specs/done/llamacpp-migration`. The store purge ran that day and the Watch list moved to
-     step 6; only the host-side vhdx compact is left, and it changes nothing inside the guest.
+   - Moved to `specs/done/llamacpp-migration`. The store purge and the host-side vhdx compact both ran that
+     day, and the Watch list moved to step 6.
    - Kept in place rather than deleted so the steps below keep their numbers and their references to it.
 2. **bonsai-27b** - onboard ternary Bonsai-27B onto the stack.
    - In flight, and it does not wait on step 1. The ternary lane serves as of 2026-08-16.
