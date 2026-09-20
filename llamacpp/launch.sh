@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Starts the llama.cpp router on 127.0.0.1:11433 (specs/llamacpp-migration).
+# Starts the llama.cpp router on 127.0.0.1:11433 (specs/done/llamacpp-migration).
 # Port neighbors: 8080 Open WebUI; 11434 was Ollama (retired 2026-08-07).
 # Children inherit this env verbatim, so env hygiene here is fleet-wide.
 # Never set GGML_CUDA_DISABLE_GRAPHS: any value, even =0, turns CUDA graphs
