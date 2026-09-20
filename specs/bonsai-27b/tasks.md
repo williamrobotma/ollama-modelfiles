@@ -85,7 +85,6 @@ Runner decisions (user), where the plan left the call open:
     rung requested as 100000 is the same configuration as an entry written 100096.
   - Prefill was not measured at depth. The only prompt-rate figures taken here came from a ~20-token prompt,
     which says nothing about prefill at the ceiling, so they are left out. `llama-bench` in Phase 2 is that job.
-
   - Load success is not a ceiling test on this box, which is why the first ladder read every rung as passing.
     - Every rung to 262144 loaded and reported `offloaded 65/65 layers to GPU`.
     - At 262144 llama.cpp's own buffers claim 17,096 MiB on a 12,282 MiB card, and `nvidia-smi` shows 11,581.
