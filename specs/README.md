@@ -5,6 +5,9 @@ Spec-driven work bundles, executed end to end by the run-spec skill. Each `<feat
 - `spec.md` - its Acceptance section defines done.
 - `tasks.md` - the resume point.
 - `plan.md` - present when the work needs one.
+- `README.md` - the whole bundle when nothing is scoped yet, saying it is unplanned and what is known.
+  - Write spec.md when planning actually runs, and tasks.md only once there is a spec to execute.
+  - The three files above are structure standing in for work nobody has scoped until then.
 
 The work order lives in `ROADMAP.md`, next to this file.
 
