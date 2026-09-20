@@ -3,14 +3,14 @@
 Local LLM serving config for a single 12 GB GPU, organized by model family and use profile.
 The live serving stack is stock llama.cpp in router mode ([llamacpp/](llamacpp/README.md), port 11433).
 The repo name is historical: the Ollama build layer it is named for was removed at the 2026-08-12 repo purge.
-The retired Ollama install itself still sits on disk; its store purge is pending (`specs/llamacpp-migration`).
+The retired Ollama install is gone: the store purge ran 2026-09-20 (`specs/done/llamacpp-migration`).
 Every served GGUF is a pinned Hugging Face cache snapshot (`hf download`; mostly [Unsloth](https://unsloth.ai) builds).
 Agents should read [AGENTS.md](AGENTS.md) first.
 
 ## Requirements
 
 - A stock llama.cpp build. The build record is defined in the header comment of `llamacpp/launch.sh`.
-  - The rebuild rule is in `specs/llamacpp-migration/spec.md`'s Rules section.
+  - The rebuild rule is in `specs/done/llamacpp-migration/spec.md`'s Rules section.
 - The Hugging Face CLI (`hf`, from `huggingface_hub`) to provision GGUFs.
 - An NVIDIA CUDA GPU (reference box: RTX 4070, 12 GB, WSL2). Models larger than ~12 GB partial-offload to CPU.
   - The CUDA version mandates are in [docs/parameters.md](docs/parameters.md).
@@ -57,7 +57,7 @@ Aliases now serve only profile defaults.
 
 ### Roadmap
 
-- [ ] Qwen 3.8 support (pending official release of open weights)
+- [ ] Qwen 3.8 support. Open weights reported 2026-08-14, unconfirmed; scaffolded as `specs/qwen38-27b`.
 
 ## Quantization
 

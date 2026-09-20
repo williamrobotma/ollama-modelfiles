@@ -5,7 +5,7 @@ SCAFFOLD - research done and verified 2026-07-23; evidence: `docs/history/2026-0
 ## Goal
 
 - Point VS Code Copilot chat/agent mode at the local llama-server router (`127.0.0.1:11433`) as a BYOK model.
-- Non-blocking for `specs/llamacpp-migration`; must not be dropped after it - Copilot is a daily tool.
+- Non-blocking for `specs/done/llamacpp-migration`; must not be dropped after it - Copilot is a daily tool.
 
 ## Known facts (verified from VS Code docs, 2026-07-23)
 

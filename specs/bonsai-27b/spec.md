@@ -25,7 +25,7 @@ Evidence and sources: `research.md`, section "Pre-flight re-verification 2026-08
 
 ## Prerequisites
 
-1. Met: `specs/llamacpp-migration` built the serving stack. This spec adds a model, not machinery.
+1. Met: `specs/done/llamacpp-migration` built the serving stack. This spec adds a model, not machinery.
 2. Met: the on-disk build is b10335 and contains #25707.
    - Re-check `llamacpp/launch.sh` at pickup; a moved record re-certifies (rebuild rule).
    - Pinning is deliberate: nothing between b10335 and b10375 touches these quant types or the router.

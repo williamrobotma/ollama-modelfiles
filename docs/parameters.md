@@ -90,7 +90,7 @@ For non-coding use with thinking mode on.
 - Qwen READMEs are self-inconsistent elsewhere too (`Qwen/Qwen3.5-9B` discussion #51, unanswered since April).
 - Pinned `0.0` in `[*]`; the instruct entries (`qwen3.6-35b-a3b`, `qwen3.6-27b`, `qwen3.5-queen-27b`) override at `1.5`.
 - Only `qwen3.6-35b-a3b-mtp-reasoning` diverges from its own card within this profile.
-  - A post-migration A/B against `1.5` on that entry is filed in `specs/llamacpp-migration`.
+  - A post-migration A/B against `1.5` on that entry is filed in `specs/done/llamacpp-migration`.
 
 ## Qwen 3.6 (Instruct Mode, non-thinking)
 

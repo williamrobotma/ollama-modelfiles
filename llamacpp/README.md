@@ -5,7 +5,7 @@ It reads the fleet from `models.ini` and starts one child server per model, on d
 Only one child is resident at a time (`--models-max 1`): requesting another model evicts the current one.
 A child that sits idle for 24 h is put to sleep.
 Router mode is stock llama.cpp (`--models-preset`); the preset behaviors quoted below come from its source.
-The migration that built this stack is `specs/llamacpp-migration`.
+The migration that built this stack is `specs/done/llamacpp-migration`.
 
 ## Layout
 

@@ -178,6 +178,18 @@ At spec close the still-live rows move to `specs/stack-upkeep`, so monitoring ou
   - Resolved since: merged 2026-07-30 (re-checked 2026-08-03, bonsai bundle); this row does not migrate at close.
 - <https://github.com/mostlygeek/llama-swap/issues/946> - TTL race deadlock; matters only if a contingency trigger fires.
 
+Every row above re-checked 2026-09-20, except #25707, already resolved on its own row:
+
+- No fix landed for any of the rest. #24942 closed unmerged; #25873, #25986 and #26017 are closed
+  `not_planned`, so their risk stands rather than being resolved.
+- Still open: #24795, and #25618, whose 2026-09-16 comment reproduces the divergence on an f16 KV cache.
+  So quantized KV is not the trigger, which is an input to `specs/kv-cache-ab`.
+- #25828 is closed `completed` but carries no comment, so the "resolution unknown" caveat above stands.
+- #24443 closed on the reporter's own workaround, removing the `LLAMA_ARG_RERANKING` environment variable.
+  That trigger is an env var rather than repo config, so what keeps it off this stack is the AGENTS.md rule:
+  keep every `LLAMA_ARG_*` unset.
+- llama-swap #946 closed; the contingency it guarded never fired.
+
 ## Done when
 
 - Every non-pruned model serves from router mode via `llamacpp/`, launched by one script.

@@ -29,6 +29,12 @@ The per-rebuild re-vet checklist, to be formalized at planning:
   filed 2026-08-12 so they keep being monitored).
 
 At the migration spec's close, its still-live upstream Watch issues move here (recorded 2026-08-12).
+Moved 2026-09-20 at that close, as-recorded: #24795 and #25618 open; #25873, #25986 and #26017 closed
+`not_planned`. None of them has a merged fix.
+
+- #24795, #25873 and #26017 are the Gemma MTP lane; treat that group as a standing property of the stack
+  rather than a pending fix. #25986 is separate - gemma4 tool-call parsing, which MTP is not needed to hit.
+- Build at the move: b10335, 721 commits behind master, and no commit in that range names any of these issues.
 
 ## Done when
 

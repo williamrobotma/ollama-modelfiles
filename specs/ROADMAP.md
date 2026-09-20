@@ -3,9 +3,10 @@
 The in-flight bundles, ordered by dependency; work top-down.
 Status lives in the folder layout (`specs/README.md`); this file only orders the work.
 
-1. **llamacpp-migration** - retire Ollama, serve from stock llama-server.
-   - Serving and every client cutover are live; what remains: the validation window, the store purge
-     (~2026-08-21), and spec close-out.
+1. **llamacpp-migration** - retire Ollama, serve from stock llama-server. CLOSED 2026-09-20.
+   - Moved to `specs/done/llamacpp-migration`. The store purge ran that day and the Watch list moved to
+     step 6; only the host-side vhdx compact is left, and it changes nothing inside the guest.
+   - Kept in place rather than deleted so the steps below keep their numbers and their references to it.
 2. **bonsai-27b** - onboard ternary Bonsai-27B onto the stack.
    - In flight, and it does not wait on step 1. The ternary lane serves as of 2026-08-16.
    - What remains is the bench, the 1-bit comparison, and the write-up, all needing the GPU.
@@ -22,4 +23,7 @@ Status lives in the folder layout (`specs/README.md`); this file only orders the
 9. **writing-guards** - automatic checks + a review pass for the writing rules (scaffold).
    - The work lands in the synced `~/.claude`, not this repo; it runs independently of the other steps.
 10. **bonsai-dspark** - speculative decoding for Bonsai-27B (scaffold).
-    - Last because it is blocked upstream (llama.cpp #26337, open). Cut from step 2; pure speed work.
+    - Ordered late because it is blocked upstream (llama.cpp #26337, open). Cut from step 2; pure speed work.
+11. **qwen38-27b** - decide whether Qwen3.8-27B earns a fleet slot beside the qwen3.6 coders (scaffold).
+    - Scaffolded 2026-09-20 on a reported open-weights release, unconfirmed against the model card.
+    - Every step needs the GPU gate.

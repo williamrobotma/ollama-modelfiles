@@ -14,7 +14,7 @@ The detail is defined in the files under `docs/`, and this file points to them.
   model kept on disk.
 - Re-provisioning from nothing is `git clone` + `hf download` - no build or import step.
 - The retired Ollama layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12 (git history keeps it).
-  - Only the on-disk install (store, binaries, override) remains, until the purge tracked in `specs/llamacpp-migration`.
+  - The on-disk install (store, binaries, override) was purged 2026-09-20; nothing Ollama-side is left on disk.
 
 ## Models and sourcing
 

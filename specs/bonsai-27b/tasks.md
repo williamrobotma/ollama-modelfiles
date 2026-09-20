@@ -5,7 +5,7 @@ Status legend: [ ] pending, [x] done. This file is the resume point for the feat
 DRAFT 2026-07-17, reworked 2026-08-03 (ternary first-class), pre-flight review 2026-08-12.
 Phases 0 and 1 are complete as of 2026-08-16, and the ternary lane serves.
 
-Cleared to start (user, 2026-08-12): full send, in its own session. Does not wait on `specs/llamacpp-migration`.
+Cleared to start (user, 2026-08-12): full send, in its own session. Does not wait on `specs/done/llamacpp-migration`.
 
 GPU-loading items are heavy loads: get user confirmation before starting each.
 CPU inference loads are gated the same way (user, 2026-08-16), so an `-ngl 0` run needs its own confirmation too.

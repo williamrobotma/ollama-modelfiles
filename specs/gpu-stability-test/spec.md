@@ -1,7 +1,7 @@
 # GPU stability test
 
 Package the ad-hoc crash matrix into one command that certifies this box's GPU is stable enough to serve.
-Derives from specs/llamacpp-migration, which already names the crash matrix as its post-rebuild regression test.
+Derives from specs/done/llamacpp-migration, which already names the crash matrix as its post-rebuild regression test.
 
 ## Goal
 

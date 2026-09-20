@@ -4,7 +4,7 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
 
 - Move to local GGUFs: [history/2026-07-10-migration-local-ggufs.md](history/2026-07-10-migration-local-ggufs.md).
 - Cutover off Ollama: [the P3 log](history/2026-08-07-llamacpp-p3-cutovers.md).
-- The retirement schedule and purge tracking live in `specs/llamacpp-migration`; this file keeps the current shape.
+- The retirement schedule and purge record live in `specs/done/llamacpp-migration`; this file keeps the current shape.
 
 ## 1. The big picture - one source of truth, one router
 
@@ -30,8 +30,6 @@ How the local-LLM stack fits together: HF-cached GGUFs, one llama.cpp router on 
               run from ~/Developer/llama.cpp/build/bin/llama-server
               one child llama-server per served id, spawned on demand
 
-   Ollama blob store (host-disk leftover, freed at the store purge)
-              /usr/share/ollama/.ollama/models
 ```
 
 Key property: `llamacpp/models.ini` is the *only* mapping layer.
@@ -42,8 +40,8 @@ Key property: `llamacpp/models.ini` is the *only* mapping layer.
 Ollama was retired as the serving stack on 2026-08-07: no client points at it any more.
 
 - The repo-side layer (`modelfiles/`, `scripts/`, `benchmarks/`) was removed 2026-08-12; git history preserves it.
-- The store, binaries, and systemd override stay on disk until the Phase 4 store purge (~2-week validation window).
-- Service stop/disable and the purge itself are tracked in `specs/llamacpp-migration`, not here.
+- The store, binaries, and systemd override were purged 2026-09-20; the guest reclaimed 186G.
+- Service stop/disable and the purge are recorded in `specs/done/llamacpp-migration`, not here.
 
 ## 2. Preset layering (inside the repo)
 
